@@ -62,11 +62,11 @@
         <ul>
             <li>
                 <label for="name">Имя:</label>
-                <input type="text" id="name" name="Имя" />
+                <input type="text" id="name" name="Имя" disabled />
             </li>
             <li>
                 <label for="age">Возраст:</label>
-                <input type="text" id="age" name="Возраст" />
+                <input type="text" id="age" name="Возраст" disabled />
             </li>
             <li class="button">
                 <button id="submit" type="submit">Добавить</button>
@@ -80,6 +80,9 @@
             document.querySelector("#name").value = data['Имя']
             document.querySelector("#age").value = data['Возраст']
             document.querySelector("#rowNum").value = data['rowNum']
+
+            document.querySelector("#name").disabled = false
+            document.querySelector("#age").disabled = false
         }
 
         google.script.run.withSuccessHandler(fillSelectedRow).getSelectedRecord();
