@@ -8,9 +8,10 @@ function initialSetup () {
   scriptProp.setProperty('key', activeSpreadsheet.getId())
 }
 
-function doPost (e) {
+function submitRecord (data) {
   const lock = LockService.getScriptLock()
   lock.tryLock(10000)
+  Logger.log(data)
 
   try {
     const doc = SpreadsheetApp.openById(scriptProp.getProperty('key'))
@@ -19,12 +20,12 @@ function doPost (e) {
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
     var nextRow = sheet.getLastRow() + 1
 
-    if ('rowNum' in e.parameter) {
-      nextRow = parseInt(e.parameter['rowNum'])
+    if ('rowNum' in data) {
+      nextRow = parseInt(data['rowNum'])
     }
 
     const newRow = headers.map(function(header) {
-      return e.parameter[header]
+      return data[header]
     })
 
     sheet.getRange(nextRow, 1, 1, newRow.length).setValues([newRow])
