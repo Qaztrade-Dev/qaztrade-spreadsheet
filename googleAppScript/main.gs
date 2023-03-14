@@ -1,3 +1,5 @@
+const scriptProp = PropertiesService.getScriptProperties()
+
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("QazTrade")
@@ -5,6 +7,8 @@ function onOpen() {
     .addItem("Добавить запись", "formAdd")
     .addItem("Изменить запись", "formEdit")
     .addToUi();
+
+  scriptProp.setProperty('key', SpreadsheetApp.getActiveSpreadsheet().getId())
 }
 
 function sideMenu() {
@@ -19,8 +23,10 @@ function formAdd() {
 }
 
 function formEdit() {
-    const html = HtmlService.createHtmlOutputFromFile("form_edit");
-    SpreadsheetApp.getUi().showModalDialog(html, "Изменить запись");
+    const htmlTemplate = HtmlService.createTemplateFromFile("form_edit");
+    htmlTemplate.jsonBody = JSON.stringify(getSelectedRecord())
+
+    SpreadsheetApp.getUi().showModalDialog(htmlTemplate.evaluate(), "Изменить запись");
 }
 
 function getSelectedRecord() {

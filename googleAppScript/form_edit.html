@@ -17,11 +17,11 @@
         <ul>
             <li>
                 <label for="name">Имя:</label>
-                <input type="text" id="name" name="Имя" disabled />
+                <input type="text" id="name" name="Имя" />
             </li>
             <li>
                 <label for="age">Возраст:</label>
-                <input type="text" id="age" name="Возраст" disabled />
+                <input type="text" id="age" name="Возраст" />
             </li>
             <li class="button">
                 <button id="submit" type="submit">Добавить</button>
@@ -29,18 +29,16 @@
         </ul>
     </form>
 
-
     <script>
-        function fillSelectedRow(data) {
-            document.querySelector("#name").value = data['Имя']
-            document.querySelector("#age").value = data['Возраст']
-            document.querySelector("#rowNum").value = data['rowNum']
-
-            document.querySelector("#name").disabled = false
-            document.querySelector("#age").disabled = false
-        }
-
-        google.script.run.withSuccessHandler(fillSelectedRow).getSelectedRecord()
+        const jsonBody = JSON.parse('<?= jsonBody ?>')
+        Object.entries(jsonBody).forEach(([key, value]) => {
+            const inputs = document.getElementsByName(key)
+            if (inputs.length == 0) {
+                return
+            }
+            const input = inputs[0]
+            input.value = value
+        })
     </script>
 
     <script>

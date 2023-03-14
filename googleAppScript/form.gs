@@ -1,13 +1,6 @@
 // Original code from https://github.com/jamiewilson/form-to-google-sheets
 // Updated for 2021 and ES6 standards
 
-const scriptProp = PropertiesService.getScriptProperties()
-
-function initialSetup () {
-  const activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet()
-  scriptProp.setProperty('key', activeSpreadsheet.getId())
-}
-
 function submitRecord (data) {
   const lock = LockService.getScriptLock()
   lock.tryLock(10000)
