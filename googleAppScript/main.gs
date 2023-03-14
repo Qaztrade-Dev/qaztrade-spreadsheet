@@ -29,6 +29,11 @@ function formEdit() {
     SpreadsheetApp.getUi().showModalDialog(htmlTemplate.evaluate(), "Изменить запись");
 }
 
+function formAddCompany() {
+    const html = HtmlService.createHtmlOutputFromFile("form_add_company");
+    SpreadsheetApp.getUi().showModalDialog(html, "Добавить компанию");
+}
+
 function getSelectedRecord() {
     var activeSheet = SpreadsheetApp.getActiveSheet();
     var selectedCell = activeSheet.getSelection().getCurrentCell().getA1Notation();
@@ -50,7 +55,7 @@ function getColumnNum(column /* A,B,C,...,AA*/) {
 
     for (var i = 0; i < column.length; i++) {
         result *= 26;
-        result += c  - 'A'.charCodeAt() + 1;
+        result += column.charAt(i).charCodeAt()  - 'A'.charCodeAt() + 1;
     }
  
     return result;

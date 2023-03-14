@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        form {
+            margin: 0 auto;
+            padding: 1em;
+        }
+
+        ul {
+            list-style: none;
+            margin: 0
+        }
+
+        ul:nth-child(n + 1) {
+            padding-left: 1em;
+        }
+
+        form li+li {
+            margin-top: 1em
+        }
+
+        label {
+            text-align: right;
+        }
+
+        input {
+            font: 1em sans-serif;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #999
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #000
+        }
+
+        .button {
+            margin-top: 1em;
+        }
+
+        button {
+            margin-left: .5em
+        }
+    </style>
+</head>
+
+<body>
+    <form id="form">
+        <ul>
+        </ul>
+        <ul>
+            <li class="button">
+                <button id="submit" type="submit">Добавить</button>
+            </li>
+        </ul>
+    </form>
+
+    <script>
+        inputSkel = {
+            "Производитель/дочерняя компания/дистрибьютор/СПК": { "type": "text" },
+            "подтверждающий документ": {
+                "производитель": { "type": "text" },
+                "наименование": { "type": "text" },
+                "№": { "type": "text" },
+                "наименование товара": { "type": "text" },
+                "ТН ВЭД (6 знаков)": { "type": "text" },
+                "дата": { "type": "text" },
+                "срок": { "type": "text" },
+                "подтверждение на сайте уполномоченного органа": { "type": "text" }
+            }
+        }
+
+        const form = document.querySelector("#form")
+        const firstUl = document.querySelector("#form ul")
+        const submitButton = document.querySelector("#submit")
+
+        populateForm(firstUl, inputSkel, "");
+
+        form.addEventListener('submit', e => {
+            submitButton.disabled = true
+            e.preventDefault()
+
+            const formData = new FormData(form)
+            const jsonBody = Object.fromEntries(formData)
+            const reqJSON = createNestedJSON(jsonBody)
+            console.log(JSON.stringify(reqJSON))
+
+            // google.script.run.withSuccessHandler(accessTokenHandler).generateAccessToken()
+            // google.script.run.withSuccessHandler(formSubmittedHandler).submitCompany(reqJSON)
+        })
+
+        function formSubmittedHandler() {
+            submitButton.disabled = false
+        }
+
+        function accessTokenHandler(data) {
+            document.querySelector("#name").value = data
+            console.log(data)
+        }
+
+        function populateForm(parent, payload, prefix) {
+            Object.entries(payload).forEach(([key, value]) => {
+                if (isObject(value)) {
+                    var label = document.createElement("p")
+                    label.innerText = key
+
+                    var ul = document.createElement("ul")
+
+                    parent.appendChild(label)
+                    parent.appendChild(ul)
+                    populateForm(ul, value, prefix + "." + key)
+
+                    return
+                }
+
+                var li = document.createElement("li")
+
+                var label = document.createElement("label")
+                label.setAttribute("for", prefix + "." + key)
+                label.innerText = key
+
+                var input = document.createElement("input")
+                input.setAttribute("type", "text");
+                input.setAttribute("id", prefix + "." + key);
+                input.setAttribute("name", prefix + "." + key);
+
+                li.appendChild(label)
+                li.appendChild(input)
+
+                parent.appendChild(li)
+            })
+        }
+
+        function isObject(value) {
+            return !('type' in value)
+        }
+
+        function createNestedJSON(value) {
+            result = {}
+            Object.entries(value).forEach(([key, value]) => {
+                console.log(key, value)
+                result = setNestedKey(result, key, value)
+            })
+            return result
+        }
+
+        function setNestedKey(obj, k, v) {
+            const keys = k.split('.');
+
+            let temp = obj;
+            for (let i = 0; i < keys.length; i++) {
+                const key = keys[i];
+                if (key === '') continue
+                if (!(key in temp)) {
+                    temp[key] = (i === keys.length - 1) ? v : {};
+                }
+                temp = temp[key];
+            }
+
+            return obj;
+        }
+    </script>
+</body>
+
+</html>

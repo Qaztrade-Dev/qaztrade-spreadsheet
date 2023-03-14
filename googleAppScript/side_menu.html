@@ -58,19 +58,13 @@
 <body>
     <ul>
         <li class="form">
-            <button id="formAdd">Добавить запись</button>
-        </li>
-        <li class="form">
-            <button id="formEdit">Изменить запись</button>
+            <button id="formAddCompany">Добавить компанию</button>
         </li>
     </ul>
 
     <script type="text/javascript">
-        document.querySelector('#formAdd').addEventListener('click', (e) => {
-            google.script.run.formAdd();
-        })
-        document.querySelector('#formEdit').addEventListener('click', (e) => {
-            google.script.run.formEdit();
+        document.querySelector('#formAddCompany').addEventListener('click', (e) => {
+            google.script.run.formAddCompany();
         })
     </script>
 </body>
