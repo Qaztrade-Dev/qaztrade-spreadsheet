@@ -64,7 +64,7 @@ function myFunc() {
     "parentID": null,
     "childKey": "№",
     "value": {
-      "№": "1",
+      "№": "2",
       "Производитель/дочерняя компания/дистрибьютор/СПК": "Doodocs",
       "подтверждающий документ": {
         "производитель": "Doodocs",
@@ -80,20 +80,25 @@ function myFunc() {
   }
 
   rowNum = getRowNum(payload.parentID, payload.childKey)
-  Logger.log("rowNum", rowNum)
-  // insertRecord(payload.value, rowNum)
+
+  // TODO
+  // not always insert
+  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  sheet.insertRowAfter(rowNum)
+
+  insertRecord(payload.value, rowNum+1)
 }
 
 function getRowNum(parentID, childName) {
   // 1. get parent row
   // 2. get last child of the parent, e.g. neighbor
   // 3. get last row of the farthest descendent
-  Logger.log("getRowNum: %s %s", parentID, childName)
+  // Logger.log("getRowNum: %s %s", parentID, childName)
 
   const parentKey = parents[childName].parentKey
   const parentBounds = getLevelBounds(parentKey, parentID)
-  Logger.log("parentKey: %s", parentKey)
-  Logger.log("parentBounds: %s", parentBounds)
+  // Logger.log("parentKey: %s", parentKey)
+  // Logger.log("parentBounds: %s", parentBounds)
 
   const upperBound = parentBounds[0]
   const lowerBound = parentBounds[1]
@@ -102,29 +107,24 @@ function getRowNum(parentID, childName) {
   if (child == null) {
     return null
   }
-  Logger.log("child: %s", child)
+  // Logger.log("child: %s", child)
   const childHeaderCell = getHeaderCell(child.key)
-  Logger.log("childHeaderCell: %s", childHeaderCell)
+  // Logger.log("childHeaderCell: %s", childHeaderCell)
   const lastChildCell = getLastChildCell(parentBounds, childHeaderCell)
-  Logger.log("lastChildCell: %s", lastChildCell)
+  // Logger.log("lastChildCell: %s", lastChildCell)
   if (lastChildCell == null) {
-    Logger.log("go here?")
+    // Logger.log("go here?")
     return upperBound+1
   }
 
-  Logger.log("children: %s", children[lastChildCell.headerCell.Key][0])
+  // Logger.log("children: %s", children[lastChildCell.headerCell.Key][0])
   rowNum = getRowNum(lastChildCell.value, children[lastChildCell.headerCell.GroupKey][0].name)
-  Logger.log("rowNum: %s", rowNum)
+  // Logger.log("rowNum: %s", rowNum)
   if (rowNum == null) {
     return lastChildCell.rowNum
   }
 
   return rowNum
-
-  // let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-  // sheet.insertRowAfter(lastChildCell.RowNum)
-
-  return lastChildCell.rowNum+1
 }
 
 function getLastChildCell(parentBounds, childHeaderCell) {
@@ -230,14 +230,15 @@ function insertRecord(payload, rowNum) {
   fillSheet(payload, headerCells, rowNum);
 }
 
-function fillSheet(payload, headerCells, rowNum = 0) {
+function fillSheet(payload, headers, rowNum) {
+  Logger.log("fillSheet headers:", headers)
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-  if (rowNum === 0) {
-    rowNum = sheet.getLastRow() + 1;
-  }
 
   Object.entries(payload).forEach(([k, v]) => {
-    const cell = headerCells[k];
+    Logger.log("k: %s", k)
+    const cell = headers[k];
+    Logger.log("cell: %s", cell)
+    Logger.log("cell.isLeaf(): %s", cell.isLeaf())
     if (cell.isLeaf()) {
       sheet.getRange(rowNum, cell.Range[0], 1, 1).setValues([[payload[k]]]);
     } else {
@@ -269,7 +270,7 @@ function getHeaderCells() {
       if (!(topLevel[j] == "" || i == j)) {
         break;
       }
-      values[lowLevel[j]] = new HeaderCell(lowLevel[j], [j + 1, j + 1], "", topLevel[i]);
+      values[lowLevel[j]] = new HeaderCell(lowLevel[j], [j + 1, j + 1], {}, topLevel[i]);
       r = j;
     }
 
