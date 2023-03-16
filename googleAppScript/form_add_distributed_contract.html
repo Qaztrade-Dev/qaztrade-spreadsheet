@@ -28,7 +28,7 @@
             text-align: right;
         }
 
-        input {
+        input, select {
             font: 1em sans-serif;
             width: 100%;
             box-sizing: border-box;
@@ -64,40 +64,27 @@
     <script>
         const requestSkel = {
             "parentID": null,
-            "childKey": "№",
+            "childKey": "Дистрибьюторский договор",
             "value": {}
         }
 
+        const parentSkel = [
+            {
+                "name": "Компания №",
+                "input": {
+                    "tag": "select", 
+                    "options": ["1", "2", "3"],
+                },
+                "key": "parentID"
+            }
+        ]
+
         const inputSkel = [
             {
-                "name": "№",
-                "input": { "tag": "input", "attrs": {"type": "text"} }
-            },
-            {
-                "name": "Производитель/дочерняя компания/дистрибьютор/СПК",
-                "input": { "tag": "input", "attrs": {"type": "text"} }
-            },
-            {
-                "name": "подтверждающий документ",
+                "name": "Дистрибьюторский договор",
                 "inputs": [
                     {
-                        "name": "производитель",
-                        "input": { "tag": "input", "attrs": {"type": "text"} }
-                    },
-                    {
-                        "name": "наименование",
-                        "input": { "tag": "input", "attrs": {"type": "text"} }
-                    },
-                    {
                         "name": "№",
-                        "input": { "tag": "input", "attrs": {"type": "text"} }
-                    },
-                    {
-                        "name": "наименование товара",
-                        "input": { "tag": "input", "attrs": {"type": "text"} }
-                    },
-                    {
-                        "name": "ТН ВЭД (6 знаков)",
                         "input": { "tag": "input", "attrs": {"type": "text"} }
                     },
                     {
@@ -105,23 +92,20 @@
                         "input": { "tag": "input", "attrs": {"type": "text"} }
                     },
                     {
-                        "name": "срок",
+                        "name": "условия",
                         "input": { "tag": "input", "attrs": {"type": "text"} }
-                    },
-                    {
-                        "name": "подтверждение на сайте уполномоченного органа",
-                        "input": { "tag": "input", "attrs": {"type": "text"} }
-                    },
+                    }
                 ]
             }
         ]
-        
 
         const form = document.querySelector("#form")
         const firstUl = document.querySelector("#form ul")
         const submitButton = document.querySelector("#submit")
 
+        populateForm(firstUl, parentSkel, "");
         populateForm(firstUl, inputSkel, "");
+        setParentValues()
 
         form.addEventListener('submit', e => {
             submitButton.disabled = true
@@ -147,6 +131,21 @@
         function accessTokenHandler(data) {
             document.querySelector("#name").value = data
             console.log(data)
+        }
+
+        function setParentValues() {
+            const parentValues = JSON.parse('<?= parentValues ?>')
+            const selects = document.getElementsByName(".parentID")
+            if (selects.length == 0) {
+                return
+            }
+            const select = selects[0]
+
+            while (select.hasChildNodes()) {
+                select.removeChild(select.firstChild);
+            }
+
+            setOptions(select, parentValues)
         }
 
         function populateForm(parent, payload, prefix) {
@@ -214,7 +213,6 @@
         function createNestedJSON(value) {
             result = {}
             Object.entries(value).forEach(([key, value]) => {
-                console.log(key, value)
                 result = setNestedKey(result, key, value)
             })
             return result

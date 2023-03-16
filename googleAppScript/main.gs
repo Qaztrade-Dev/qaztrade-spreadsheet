@@ -4,8 +4,8 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("QazTrade")
     .addItem("Меню", "sideMenu")
-    .addItem("Добавить запись", "formAdd")
-    .addItem("Изменить запись", "formEdit")
+    .addItem("Добавить компанию", "formAddCompany")
+    .addItem("Добавить дистрибьюторский договор", "formAddDistributedContract")
     .addToUi();
 
   scriptProp.setProperty('key', SpreadsheetApp.getActiveSpreadsheet().getId())
@@ -32,6 +32,13 @@ function formEdit() {
 function formAddCompany() {
     const html = HtmlService.createHtmlOutputFromFile("form_add_company");
     SpreadsheetApp.getUi().showModalDialog(html, "Добавить компанию");
+}
+
+function formAddDistributedContract() {
+    const htmlTemplate = HtmlService.createTemplateFromFile("form_add_distributed_contract");
+    htmlTemplate.parentValues = JSON.stringify(getParentValues("Дистрибьюторский договор"))
+
+    SpreadsheetApp.getUi().showModalDialog(htmlTemplate.evaluate(), "Добавить дистрибьюторский договор");
 }
 
 function getSelectedRecord() {

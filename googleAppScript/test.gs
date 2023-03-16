@@ -60,6 +60,8 @@ const children = {
 const headerCells = getHeaderCells();
 
 function myFunc() {
+  
+  Logger.log(values)
   // payload = {
   //   "parentID": null,
   //   "childKey": "№",
@@ -89,25 +91,33 @@ function myFunc() {
   //     }
   //   }
   // }
-  payload = {
-    "parentID": "2",
-    "childKey": "контракт на поставку",
-    "value": {
-      "контракт на поставку": {
-        "Покупатель": "Артем",
-        "№": "7",
-        "дата": "23.09.2019",
-        "срок": "23.09.2022",
-        "наименование товара": "Бетон",
-        "ТН ВЭД (6 знаков)": "234542",
-        "грузополучатель": "Али",
-        "условия поставки": "любовь"
-      }
-    }
-  }
+  // payload = {
+  //   "parentID": "2",
+  //   "childKey": "контракт на поставку",
+  //   "value": {
+  //     "контракт на поставку": {
+  //       "Покупатель": "Артем",
+  //       "№": "7",
+  //       "дата": "23.09.2019",
+  //       "срок": "23.09.2022",
+  //       "наименование товара": "Бетон",
+  //       "ТН ВЭД (6 знаков)": "234542",
+  //       "грузополучатель": "Али",
+  //       "условия поставки": "любовь"
+  //     }
+  //   }
+  // }
+}
 
+function getParentValues(childKey) {
+  const parentHeaderCell = getHeaderCell(parents[childKey].parentKey)
+  const values = getLevelValues(parentHeaderCell)
+  return values
+}
+
+function sumbitRow(payload) {
   let [rowNum, mustInsertRow] = getRowNum(payload.parentID, payload.childKey)
-  Logger.log(rowNum, mustInsertRow)
+
   if (mustInsertRow) {
     let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
     sheet.insertRowAfter(rowNum)
@@ -341,6 +351,26 @@ function getColumnNum(column /* A,B,C,...,AA*/) {
   }
 
   return result;
+}
+
+function getLevelValues(headerCell) {
+  const upperBound = 6
+  const columnNum = headerCell.Range[0]
+
+  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  let rows = sheet.getRange(upperBound, columnNum, sheet.getMaxRows(), 1).getValues()
+  
+  values = []
+  for (i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    const value = row[0].toString()
+    if (value === '') {
+      continue
+    }
+    values.push(value)
+  }
+
+  return values
 }
 
 
