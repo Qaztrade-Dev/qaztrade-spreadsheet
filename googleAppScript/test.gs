@@ -279,6 +279,7 @@ function fillSheet(payload, headers, rowNum) {
     if (cell.isLeaf()) {
       // TODO
       // use https://developers.google.com/sheets/api/guides/batchupdate
+      // use https://developers.google.com/apps-script/advanced/sheets
       sheet.getRange(rowNum, cell.Range[0], 1, 1).setValues([[payload[k]]]);
     } else {
       fillSheet(payload[k], cell.Values, rowNum);
