@@ -95,7 +95,7 @@ function myFunc() {
     "value": {
       "контракт на поставку": {
         "Покупатель": "Артем",
-        "№": "4",
+        "№": "7",
         "дата": "23.09.2019",
         "срок": "23.09.2022",
         "наименование товара": "Бетон",
@@ -277,6 +277,8 @@ function fillSheet(payload, headers, rowNum) {
     // Logger.log("cell: %s", cell)
     // Logger.log("cell.isLeaf(): %s", cell.isLeaf())
     if (cell.isLeaf()) {
+      // TODO
+      // use https://developers.google.com/sheets/api/guides/batchupdate
       sheet.getRange(rowNum, cell.Range[0], 1, 1).setValues([[payload[k]]]);
     } else {
       fillSheet(payload[k], cell.Values, rowNum);
