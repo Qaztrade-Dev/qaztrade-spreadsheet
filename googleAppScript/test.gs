@@ -60,33 +60,61 @@ const children = {
 const headerCells = getHeaderCells();
 
 function myFunc() {
+  // payload = {
+  //   "parentID": null,
+  //   "childKey": "№",
+  //   "value": {
+  //     "№": "2",
+  //     "Производитель/дочерняя компания/дистрибьютор/СПК": "Doodocs",
+  //     "подтверждающий документ": {
+  //       "производитель": "Doodocs",
+  //       "наименование": "Дудокс",
+  //       "№": "3",
+  //       "наименование товара": "Подписи",
+  //       "ТН ВЭД (6 знаков)": "120934",
+  //       "дата": "12.09.2019",
+  //       "срок": "123",
+  //       "подтверждение на сайте уполномоченного органа": "http://google.com",
+  //     },
+  //   }
+  // }
+  // payload = {
+  //   "parentID": "2",
+  //   "childKey": "Дистрибьюторский договор",
+  //   "value": {
+  //     "Дистрибьюторский договор": {
+  //       "№": "5",
+  //       "дата": "12.07.1997",
+  //       "условия": "Салам всем!"
+  //     }
+  //   }
+  // }
   payload = {
-    "parentID": null,
-    "childKey": "№",
+    "parentID": "2",
+    "childKey": "контракт на поставку",
     "value": {
-      "№": "2",
-      "Производитель/дочерняя компания/дистрибьютор/СПК": "Doodocs",
-      "подтверждающий документ": {
-        "производитель": "Doodocs",
-        "наименование": "Дудокс",
-        "№": "3",
-        "наименование товара": "Подписи",
-        "ТН ВЭД (6 знаков)": "120934",
-        "дата": "12.09.2019",
-        "срок": "123",
-        "подтверждение на сайте уполномоченного органа": "http://google.com",
-      },
+      "контракт на поставку": {
+        "Покупатель": "Артем",
+        "№": "4",
+        "дата": "23.09.2019",
+        "срок": "23.09.2022",
+        "наименование товара": "Бетон",
+        "ТН ВЭД (6 знаков)": "234542",
+        "грузополучатель": "Али",
+        "условия поставки": "любовь"
+      }
     }
   }
 
-  rowNum = getRowNum(payload.parentID, payload.childKey)
+  let [rowNum, mustInsertRow] = getRowNum(payload.parentID, payload.childKey)
+  Logger.log(rowNum, mustInsertRow)
+  if (mustInsertRow) {
+    let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+    sheet.insertRowAfter(rowNum)
+    rowNum += 1
+  }
 
-  // TODO
-  // not always insert
-  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-  sheet.insertRowAfter(rowNum)
-
-  insertRecord(payload.value, rowNum+1)
+  insertRecord(payload.value, rowNum)
 }
 
 function getRowNum(parentID, childName) {
@@ -96,6 +124,7 @@ function getRowNum(parentID, childName) {
   // Logger.log("getRowNum: %s %s", parentID, childName)
 
   const parentKey = parents[childName].parentKey
+  const parentName = parents[childName].parent
   const parentBounds = getLevelBounds(parentKey, parentID)
   // Logger.log("parentKey: %s", parentKey)
   // Logger.log("parentBounds: %s", parentBounds)
@@ -103,28 +132,33 @@ function getRowNum(parentID, childName) {
   const upperBound = parentBounds[0]
   const lowerBound = parentBounds[1]
   
-  const child = getChild(parentKey, childName)
+  const child = getChild(parentName, childName)
   if (child == null) {
-    return null
+    Logger.log("here?")
+    return [upperBound+1, false]
   }
-  // Logger.log("child: %s", child)
+  Logger.log("child: %s", child)
   const childHeaderCell = getHeaderCell(child.key)
-  // Logger.log("childHeaderCell: %s", childHeaderCell)
+  Logger.log("childHeaderCell: %s", childHeaderCell)
   const lastChildCell = getLastChildCell(parentBounds, childHeaderCell)
-  // Logger.log("lastChildCell: %s", lastChildCell)
+  Logger.log("lastChildCell: %s", lastChildCell)
   if (lastChildCell == null) {
     // Logger.log("go here?")
-    return upperBound+1
+    return [upperBound+1, false]
   }
 
   // Logger.log("children: %s", children[lastChildCell.headerCell.Key][0])
-  rowNum = getRowNum(lastChildCell.value, children[lastChildCell.headerCell.GroupKey][0].name)
-  // Logger.log("rowNum: %s", rowNum)
-  if (rowNum == null) {
-    return lastChildCell.rowNum
+  if (children[lastChildCell.headerCell.GroupKey].length == 0) {
+    return [lastChildCell.rowNum, true]
   }
 
-  return rowNum
+  let [rowNum, _] = getRowNum(lastChildCell.value, children[lastChildCell.headerCell.GroupKey][0].name)
+  // Logger.log("rowNum: %s", rowNum)
+  if (rowNum == null) {
+    return [lastChildCell.rowNum, true]
+  }
+
+  return [rowNum, true]
 }
 
 function getLastChildCell(parentBounds, childHeaderCell) {
@@ -154,7 +188,9 @@ function getLastChildCell(parentBounds, childHeaderCell) {
 }
 
 function getChild(parentKey, childName) {
+  Logger.log(parentKey)
   if (!(parentKey in children)) {
+    Logger.log("!(parentKey in children)")
     return null
   }
 
@@ -164,6 +200,7 @@ function getChild(parentKey, childName) {
       return child
     }
   }
+  Logger.log("not found")
   return null
 }
 
@@ -231,14 +268,14 @@ function insertRecord(payload, rowNum) {
 }
 
 function fillSheet(payload, headers, rowNum) {
-  Logger.log("fillSheet headers:", headers)
+  // Logger.log("fillSheet headers: %s", headers)
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
 
   Object.entries(payload).forEach(([k, v]) => {
-    Logger.log("k: %s", k)
+    // Logger.log("k: %s", k)
     const cell = headers[k];
-    Logger.log("cell: %s", cell)
-    Logger.log("cell.isLeaf(): %s", cell.isLeaf())
+    // Logger.log("cell: %s", cell)
+    // Logger.log("cell.isLeaf(): %s", cell.isLeaf())
     if (cell.isLeaf()) {
       sheet.getRange(rowNum, cell.Range[0], 1, 1).setValues([[payload[k]]]);
     } else {
