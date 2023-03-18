@@ -37,7 +37,7 @@ func main() {
 		ParentID: "null",
 		ChildKey: "№",
 		Value: PayloadValue{
-			"№": "11",
+			"№": "13",
 			"Производитель/дочерняя компания/дистрибьютор/СПК": "Aviata1",
 			"подтверждающий документ": PayloadValue{
 				"производитель":       "Doodocs",
@@ -301,13 +301,7 @@ func (c *SheetsClient) GetNodeBounds(spreadsheetID, nodeKey, nodeID string, head
 
 	for i := range sheetRange.Values {
 		fmt.Printf("i=%v, sheetRange.Values[i]=%#v\n", i, sheetRange.Values[i])
-		row := sheetRange.Values[i]
-
-		if len(row) == 0 {
-			continue
-		}
-
-		value := strings.TrimSpace(row[0].(string))
+		value := RowToString(sheetRange.Values[i])
 
 		if value == nodeID {
 			left = i
@@ -317,13 +311,7 @@ func (c *SheetsClient) GetNodeBounds(spreadsheetID, nodeKey, nodeID string, head
 	}
 
 	for i := left + 1; i < len(sheetRange.Values); i++ {
-		row := sheetRange.Values[i]
-		if len(row) == 0 {
-			continue
-		}
-
-		value := strings.TrimSpace(row[0].(string))
-
+		value := RowToString(sheetRange.Values[i])
 		if value != "" {
 			break
 		}
@@ -393,11 +381,7 @@ func (c *SheetsClient) GetLastChildCell(spreadsheetID string, parentBounds *Boun
 	)
 
 	for i, row := range sheetRange.Values {
-		if len(row) == 0 {
-			continue
-		}
-
-		value := strings.TrimSpace(row[0].(string))
+		value := RowToString(row)
 		if i == 0 && value == "" {
 			return nil, nil
 		}
@@ -452,12 +436,12 @@ func (c *SheetsClient) GetRowNum(ctx context.Context, spreadsheetID, parentID, c
 		return lastChildCell.RowNum, true, nil
 	}
 
-	rowNum, mustInsert, err := c.GetRowNum(ctx, spreadsheetID, lastChildCell.Value, grandChildNode.Name, headerCellMap)
+	rowNum, _, err := c.GetRowNum(ctx, spreadsheetID, lastChildCell.Value, grandChildNode.Name, headerCellMap)
 	if err != nil {
 		return 0, false, err
 	}
 
-	return rowNum, mustInsert, nil
+	return rowNum, true, nil
 }
 
 func (c *SheetsClient) SubmitRow(ctx context.Context, spreadsheetID string, payload *Payload, headerCellMap HeaderCellMap) error {
@@ -468,16 +452,16 @@ func (c *SheetsClient) SubmitRow(ctx context.Context, spreadsheetID string, payl
 
 	fmt.Printf("SubmitRow. rowNum=%v mustInsertRow=%v\n", rowNum, mustInsertRow)
 
-	// if mustInsertRow {
-	// 	if err := c.insertRowAfter(ctx, spreadsheetID, rowNum); err != nil {
-	// 		return err
-	// 	}
-	// }
+	if mustInsertRow {
+		if err := c.insertRowAfter(ctx, spreadsheetID, rowNum); err != nil {
+			return err
+		}
+	}
 
-	// err = c.FillRecord(spreadsheetID, payload.Value, headerCellMap, rowNum)
-	// if err != nil {
-	// 	return err
-	// }
+	err = c.FillRecord(spreadsheetID, payload.Value, headerCellMap, rowNum)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -528,4 +512,12 @@ func GetColumnNum(column string) int {
 	}
 
 	return result
+}
+
+func RowToString(row []interface{}) string {
+	if len(row) == 0 {
+		return ""
+	}
+
+	return strings.TrimSpace(row[0].(string))
 }
