@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
+	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
 	"github.com/go-kit/kit/endpoint"
 )
 
@@ -18,10 +19,10 @@ type submitRecordResponse struct {
 
 func (r *submitRecordResponse) error() error { return r.Err }
 
-func makeSubmitRecordEndpoint(s Service) endpoint.Endpoint {
+func makeSubmitRecordEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(submitRecordRequest)
-		err := s.SubmitRecord(ctx, &SubmitRecordRequest{
+		err := s.SubmitRecord(ctx, &service.SubmitRecordRequest{
 			SpreadsheetID: req.SpreadsheetID,
 			Payload:       req.Payload,
 		})

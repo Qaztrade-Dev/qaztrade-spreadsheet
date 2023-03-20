@@ -3,54 +3,38 @@ package sheets
 import (
 	"context"
 
-	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
-	"github.com/pkg/errors"
+	"github.com/doodocs/qaztrade/backend/internal/sheets/adapters"
+	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
 )
 
-type Service interface {
-	SubmitRecord(ctx context.Context, req *SubmitRecordRequest) error
-}
-
-type SubmitRecordRequest struct {
-	SpreadsheetID string
-	Payload       *domain.Payload
-}
-
-type service struct {
-	sheetsRepo domain.SheetsRepository
-}
-
-func NewService(sheetsRepo domain.SheetsRepository) Service {
-	return &service{
-		sheetsRepo: sheetsRepo,
-	}
-}
-
-func (s *service) SubmitRecord(ctx context.Context, req *SubmitRecordRequest) error {
-	if err := req.validate(); err != nil {
-		return err
+func MakeService(ctx context.Context, opts ...Option) service.Service {
+	deps := &dependencies{}
+	deps.setDefaults()
+	for _, opt := range opts {
+		opt(deps)
 	}
 
-	if err := s.sheetsRepo.InsertRecord(ctx, req.SpreadsheetID, req.Payload); err != nil {
-		return err
+	sheetsRepo, err := adapters.NewSheetsClient(ctx, deps.credentials)
+	if err != nil {
+		panic(err)
 	}
 
-	return nil
+	svc := service.NewService(sheetsRepo)
+	return svc
 }
 
-var (
-	ErrorSpreadsheetID = errors.New("empty SpreadsheetID")
-	ErrorPayload       = errors.New("empty Payload")
-)
+type Option func(*dependencies)
 
-func (r *SubmitRecordRequest) validate() error {
-	if r.SpreadsheetID == "" {
-		return ErrorSpreadsheetID
+type dependencies struct {
+	credentials []byte
+}
+
+func (d *dependencies) setDefaults() {
+	// pass
+}
+
+func WithSheetsCredentials(credentials []byte) Option {
+	return func(d *dependencies) {
+		d.credentials = credentials
 	}
-
-	if r.Payload == nil {
-		return ErrorPayload
-	}
-
-	return nil
 }

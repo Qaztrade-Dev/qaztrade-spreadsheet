@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
+	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
 	"github.com/go-kit/kit/transport"
 	"github.com/gorilla/mux"
 
@@ -13,14 +14,14 @@ import (
 	kitlog "github.com/go-kit/log"
 )
 
-func MakeHandler(bs Service, logger kitlog.Logger) http.Handler {
+func MakeHandler(svc service.Service, logger kitlog.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
 	submitRecordHandler := kithttp.NewServer(
-		makeSubmitRecordEndpoint(bs),
+		makeSubmitRecordEndpoint(svc),
 		decodeSubmitRecordRequest,
 		encodeResponse,
 		opts...,

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
+	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
 
@@ -17,10 +18,15 @@ type SheetsClient struct {
 
 var _ domain.SheetsRepository = (*SheetsClient)(nil)
 
-func NewSheetsClient(service *sheets.Service) *SheetsClient {
+func NewSheetsClient(ctx context.Context, credentialsJson []byte) (*SheetsClient, error) {
+	service, err := sheets.NewService(ctx, option.WithCredentialsJSON(credentialsJson))
+	if err != nil {
+		return nil, err
+	}
+
 	return &SheetsClient{
 		service: service,
-	}
+	}, nil
 }
 
 func (c *SheetsClient) InsertRecord(ctx context.Context, spreadsheetID string, payload *domain.Payload) error {
