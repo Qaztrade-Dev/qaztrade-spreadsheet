@@ -124,6 +124,10 @@ func (c *SpreadsheetClient) FillRecord(ctx context.Context, payload PayloadValue
 		}
 	}
 
+	if len(batch) == 0 {
+		return nil
+	}
+
 	requests := make([]*sheets.Request, 0, len(batch))
 	for i := range batch {
 		requests = append(requests, batch[i].Encode())
@@ -165,7 +169,7 @@ func (r *UpdateCellRequest) Encode() *sheets.Request {
 
 const ParentKeyRoot = "root"
 
-func (c *SpreadsheetClient) GetNodeBounds(ctx context.Context, nodeKey, nodeID string) (*Bound, error) {
+func (c *SpreadsheetClient) GetNodeBounds(ctx context.Context, nodeKey, nodeID string, parentBound ...*Bound) (*Bound, error) {
 	fmt.Printf("GetNodeBounds. nodeKey=%v, nodeID=%v\n", nodeKey, nodeID)
 	if nodeKey == ParentKeyRoot {
 		sheetRange, err := c.service.Spreadsheets.Values.Get(c.spreadsheetID, "A6:A").
@@ -183,11 +187,19 @@ func (c *SpreadsheetClient) GetNodeBounds(ctx context.Context, nodeKey, nodeID s
 	var (
 		parentHeaderCell = c.GetHeaderCell(nodeKey)
 		columnA1         = EncodeColumn(parentHeaderCell.Range.Left)
+		range_           = columnA1 + ":" + columnA1
+
+		left   = 0
+		right  = 0
+		offset = 0
 	)
 
-	fmt.Println(columnA1 + ":" + columnA1)
+	if len(parentBound) > 0 {
+		range_ = parentBound[0].EncodeRange(parentHeaderCell.Range.Left)
+		offset = parentBound[0].Top
+	}
 
-	sheetRange, err := c.service.Spreadsheets.Values.Get(c.spreadsheetID, columnA1+":"+columnA1).
+	sheetRange, err := c.service.Spreadsheets.Values.Get(c.spreadsheetID, range_).
 		Context(ctx).
 		Do()
 	fmt.Println("Get err", err)
@@ -195,13 +207,8 @@ func (c *SpreadsheetClient) GetNodeBounds(ctx context.Context, nodeKey, nodeID s
 		return nil, err
 	}
 
-	var (
-		left  = 0
-		right = 0
-	)
-
 	for i := range sheetRange.Values {
-		fmt.Printf("i=%v, sheetRange.Values[i]=%#v\n", i, sheetRange.Values[i])
+		fmt.Printf("left: i=%v, sheetRange.Values[i]=%#v\n", i, sheetRange.Values[i])
 		value := DecodeRow(sheetRange.Values[i])
 
 		if value == nodeID {
@@ -212,6 +219,7 @@ func (c *SpreadsheetClient) GetNodeBounds(ctx context.Context, nodeKey, nodeID s
 	}
 
 	for i := left + 1; i < len(sheetRange.Values); i++ {
+		fmt.Printf("right: i=%v, sheetRange.Values[i]=%#v\n", i, sheetRange.Values[i])
 		value := DecodeRow(sheetRange.Values[i])
 		if value != "" {
 			break
@@ -220,7 +228,7 @@ func (c *SpreadsheetClient) GetNodeBounds(ctx context.Context, nodeKey, nodeID s
 		right = i
 	}
 
-	result := &Bound{Top: left, Bottom: right}
+	result := &Bound{Top: left + offset, Bottom: right + offset}
 	fmt.Printf("%#v\n", result)
 
 	return result, nil
@@ -247,6 +255,7 @@ var (
 )
 
 func (c *SpreadsheetClient) GetChildNode(parentKey, childName string) (*Node, error) {
+	fmt.Printf("GetChildNode. parentKey=%v, childName=%v\n", parentKey, childName)
 	if _, ok := Children[parentKey]; !ok {
 		return nil, ErrorChildNotFound
 	}
@@ -304,11 +313,14 @@ func (c *SpreadsheetClient) GetLastChildCell(ctx context.Context, parentBounds *
 // 1. get parent row
 // 2. get last child of the parent, e.g. neighbor
 // 3. get last row of the farthest descendent
-func (c *SpreadsheetClient) GetRowNum(ctx context.Context, parentID, childName string) (int, bool, error) {
+func (c *SpreadsheetClient) GetRowNum(ctx context.Context, parentID, childName string, bounds ...*Bound) (int, bool, error) {
 	fmt.Printf("GetRowNum. parentID:%v, childName:%v\n", parentID, childName)
-	var parentKey = Parents[childName].Key
+	var (
+		parentKey  = Parents[childName].Key
+		parentName = Parents[childName].Name
+	)
 
-	parentBounds, err := c.GetNodeBounds(ctx, parentKey, parentID)
+	parentBounds, err := c.GetNodeBounds(ctx, parentKey, parentID, bounds...)
 	fmt.Printf("parentBounds: %#v\n", parentBounds)
 	if err != nil {
 		return 0, false, err
@@ -316,7 +328,7 @@ func (c *SpreadsheetClient) GetRowNum(ctx context.Context, parentID, childName s
 
 	var upperBound = parentBounds.Top
 
-	child, err := c.GetChildNode(parentKey, childName)
+	child, err := c.GetChildNode(parentName, childName)
 	fmt.Printf("child: %#v\n", child)
 	if err != nil {
 		return 0, false, err
@@ -339,7 +351,7 @@ func (c *SpreadsheetClient) GetRowNum(ctx context.Context, parentID, childName s
 		return lastChildCell.RowNum, true, nil
 	}
 
-	rowNum, _, err := c.GetRowNum(ctx, lastChildCell.Value, grandChildNode.Name)
+	rowNum, _, err := c.GetRowNum(ctx, lastChildCell.Value, grandChildNode.Name, parentBounds)
 	if err != nil {
 		return 0, false, err
 	}
