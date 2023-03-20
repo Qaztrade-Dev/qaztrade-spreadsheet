@@ -3,6 +3,9 @@ module github.com/doodocs/qaztrade/backend
 go 1.19
 
 require (
+	github.com/go-kit/kit v0.12.0
+	github.com/go-kit/log v0.2.0
+	github.com/gorilla/mux v1.8.0
 	github.com/pkg/errors v0.9.1
 	google.golang.org/api v0.114.0
 )
@@ -10,7 +13,8 @@ require (
 require (
 	cloud.google.com/go/compute v1.18.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
-	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
+	github.com/go-logfmt/logfmt v0.5.1 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect

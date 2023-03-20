@@ -1,4 +1,4 @@
-package spreadsheets
+package adapters
 
 type HeaderCellMap map[string]*HeaderCell
 
@@ -63,42 +63,3 @@ func NewCell(value string, rowNum, columnNum int, headerCell *HeaderCell) *Cell 
 		HeaderCell: headerCell,
 	}
 }
-
-type Relations map[string]*Node
-
-type Node struct {
-	Name string
-	Key  string
-}
-
-var (
-	Parents = Relations{
-		"№": &Node{
-			Name: "root",
-			Key:  "root",
-		},
-		"Дистрибьюторский договор": &Node{
-			Name: "№",
-			Key:  "№",
-		},
-		"контракт на поставку": &Node{
-			Name: "Дистрибьюторский договор",
-			Key:  "Дистрибьюторский договор.№",
-		},
-	}
-
-	Children = Relations{
-		"root": &Node{
-			Name: "№",
-			Key:  "№",
-		},
-		"№": &Node{
-			Name: "Дистрибьюторский договор",
-			Key:  "Дистрибьюторский договор.№",
-		},
-		"Дистрибьюторский договор": &Node{
-			Name: "контракт на поставку",
-			Key:  "контракт на поставку.№",
-		},
-	}
-)
