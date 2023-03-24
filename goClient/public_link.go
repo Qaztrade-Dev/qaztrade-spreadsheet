@@ -29,15 +29,15 @@ func PublicLink() {
 	)
 
 	permission := &drive.Permission{
-		Type:     "anyone",
-		Role:     "writer",
-		WithLink: true,
+		Type: "anyone",
+		Role: "writer",
 	}
-	res, err := srv.Permissions.Insert(fileID, permission).Do()
+	_, err = srv.Permissions.Insert(fileID, permission).Do()
 	if err != nil {
 		log.Fatalf("Failed to create permission: %v", err)
 	}
-	fmt.Printf("%#v\n", res)
 
 	fmt.Printf("Added owner permission to file: %s\n", fileID)
+	url := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/edit?usp=sharing", fileID)
+	fmt.Println(url)
 }

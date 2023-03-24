@@ -56,7 +56,7 @@ func decodeSubmitRecordRequest(_ context.Context, r *http.Request) (interface{},
 		ChildKey string                 `json:"childKey"`
 		Value    map[string]interface{} `json:"value"`
 	}
-	spreadsheetID := "1bv_mj8-xnNzBGYmF2YqbEwNPz2IyOuZVaD4E4203trc"
+	spreadsheetID := "1KL-lrhs-Wu9kRAppBxAHUUFr7OCfNYla8Z7W-0tX4Mo"
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, err

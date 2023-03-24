@@ -71,7 +71,7 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func main() {
+func CopyTemplate() {
 	ctx := context.Background()
 	b, err := os.ReadFile("client_secret.json")
 	if err != nil {
@@ -96,7 +96,7 @@ func main() {
 	)
 
 	// Replace with the new name for the copied file.
-	newFileName := "COPIED_SPREADSHEET_NAME"
+	newFileName := "COPIED_SPREADSHEET_NAME1"
 
 	// Call the Files.Copy method to create a copy of the spreadsheet file.
 	copy := &drive.File{
@@ -113,4 +113,8 @@ func main() {
 	}
 
 	fmt.Printf("Copied file ID: %s\n", copiedFile.Id)
+}
+
+func main() {
+	CopyTemplate()
 }
