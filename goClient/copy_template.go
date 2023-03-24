@@ -14,6 +14,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v2"
 	"google.golang.org/api/option"
+	"google.golang.org/api/sheets/v4"
 )
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -79,13 +80,18 @@ func CopyTemplate() {
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, drive.DriveScope)
+	config, err := google.ConfigFromJSON(b, drive.DriveScope, sheets.SpreadsheetsScope)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
 	client := getClient(config)
 
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		log.Fatalf("Unable to retrieve Sheets client: %v", err)
+	}
+
+	spreadsheetsSrv, err := sheets.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Sheets client: %v", err)
 	}
@@ -113,9 +119,53 @@ func CopyTemplate() {
 	}
 
 	fmt.Printf("Copied file ID: %s\n", copiedFile.Id)
+
+	// Call the Sheets API to retrieve the spreadsheet.
+	spreadsheet, err := spreadsheetsSrv.Spreadsheets.Get(copiedFile.Id).Do()
+	if err != nil {
+		log.Fatalf("Failed to retrieve spreadsheet: %v", err)
+	}
+
+	// Loop through each sheet in the spreadsheet.
+	for _, sheet := range spreadsheet.Sheets {
+		// Loop through each protected range in the sheet.
+		for _, protectedRange := range sheet.ProtectedRanges {
+			AddServiceAccount(spreadsheetsSrv, copiedFile.Id, protectedRange.ProtectedRangeId)
+		}
+	}
 }
 
 func main() {
-	// CopyTemplate()
-	ProtectedRange()
+	CopyTemplate()
+}
+
+func AddServiceAccount(srv *sheets.Service, spreadsheetID string, protectedRangeId int64) {
+	// Replace with the ID of the protected range to update.
+
+	// Replace with the email address of the user to add to the protected range.
+	newUserEmail := "sheets@secret-beacon-380907.iam.gserviceaccount.com"
+
+	// Define the new editors to be added to the protected range.
+	newEditors := &sheets.Editors{
+		Users: []string{newUserEmail},
+	}
+
+	// Call the Sheets API to modify the protected range's editors.
+	requests := []*sheets.Request{
+		{
+			UpdateProtectedRange: &sheets.UpdateProtectedRangeRequest{
+				ProtectedRange: &sheets.ProtectedRange{
+					ProtectedRangeId: protectedRangeId,
+					Editors:          newEditors,
+				},
+				Fields: "editors",
+			},
+		},
+	}
+	_, err := srv.Spreadsheets.BatchUpdate(spreadsheetID, &sheets.BatchUpdateSpreadsheetRequest{
+		Requests: requests,
+	}).Do()
+	if err != nil {
+		log.Fatalf("Failed to update protected range: %v", err)
+	}
 }
