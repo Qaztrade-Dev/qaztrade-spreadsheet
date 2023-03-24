@@ -52,24 +52,22 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 
 func decodeSubmitRecordRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
-		SpreadsheetID string `json:"spreadsheet_id"`
-		Payload       struct {
-			ParentID string                 `json:"parent_id"`
-			ChildKey string                 `json:"child_key"`
-			Value    map[string]interface{} `json:"value"`
-		} `json:"payload"`
+		ParentID string                 `json:"parentID"`
+		ChildKey string                 `json:"childKey"`
+		Value    map[string]interface{} `json:"value"`
 	}
+	spreadsheetID := "1bv_mj8-xnNzBGYmF2YqbEwNPz2IyOuZVaD4E4203trc"
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, err
 	}
 
 	return submitRecordRequest{
-		SpreadsheetID: body.SpreadsheetID,
+		SpreadsheetID: spreadsheetID,
 		Payload: &domain.Payload{
-			ParentID: body.Payload.ParentID,
-			ChildKey: body.Payload.ChildKey,
-			Value:    domain.PayloadValue(body.Payload.Value),
+			ParentID: body.ParentID,
+			ChildKey: body.ChildKey,
+			Value:    domain.PayloadValue(body.Value),
 		},
 	}, nil
 }

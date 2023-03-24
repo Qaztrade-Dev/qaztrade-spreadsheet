@@ -1,325 +1,87 @@
 class HeaderCell {
-  constructor(Key, Range, Values, GroupKey = '') {
-    this.Key = Key;
-    this.Range = Range;
-    this.Values = Values;
-    this.GroupKey = GroupKey;
-  }
-
-  isLeaf() {
-    return Object.keys(this.Values).length === 0;
-  }
-}
-
-class Cell {
-  constructor(value, rowNum, columnNum, headerCell) {
-    this.value = value
-    this.rowNum = rowNum
-    this.columnNum = columnNum
-    this.headerCell = headerCell
+  constructor(key, range, values, groupKey = '') {
+    this.key = key;
+    this.range = range;
+    this.values = values;
+    this.groupKey = groupKey;
   }
 }
 
 const parents = {
-  "№": {
-      "parent": "root",
-      "parentKey": "root"
+  '№': {
+    parent: 'root',
+    parentKey: 'root',
   },
-  "Дистрибьюторский договор": {
-      "parent": "№",
-      "parentKey": "№",
+  'Дистрибьюторский договор': {
+    parent: '№',
+    parentKey: '№',
   },
-  "контракт на поставку": {
-      "parent": "Дистрибьюторский договор",
-      "parentKey": "Дистрибьюторский договор.№",
+  'контракт на поставку': {
+    parent: 'Дистрибьюторский договор',
+    parentKey: 'Дистрибьюторский договор.№',
   },
-}
-
-const children = {
-  "root": [
-    {
-        "name": "№",
-        "key": "№",
-    }
-  ],
-  "№": [
-      {
-          "name": "Дистрибьюторский договор",
-          "key": "Дистрибьюторский договор.№",
-      }
-  ],
-  "Дистрибьюторский договор": [
-      {
-          "name": "контракт на поставку",
-          "key": "контракт на поставку.№",
-      }
-  ],
-  "контракт на поставку": [],
-}
+};
 
 const headerCells = getHeaderCells();
 
-function myFunc() {
-  
-  Logger.log(values)
-  // payload = {
-  //   "parentID": null,
-  //   "childKey": "№",
-  //   "value": {
-  //     "№": "2",
-  //     "Производитель/дочерняя компания/дистрибьютор/СПК": "Doodocs",
-  //     "подтверждающий документ": {
-  //       "производитель": "Doodocs",
-  //       "наименование": "Дудокс",
-  //       "№": "3",
-  //       "наименование товара": "Подписи",
-  //       "ТН ВЭД (6 знаков)": "120934",
-  //       "дата": "12.09.2019",
-  //       "срок": "123",
-  //       "подтверждение на сайте уполномоченного органа": "http://google.com",
-  //     },
-  //   }
-  // }
-  // payload = {
-  //   "parentID": "2",
-  //   "childKey": "Дистрибьюторский договор",
-  //   "value": {
-  //     "Дистрибьюторский договор": {
-  //       "№": "5",
-  //       "дата": "12.07.1997",
-  //       "условия": "Салам всем!"
-  //     }
-  //   }
-  // }
-  // payload = {
-  //   "parentID": "2",
-  //   "childKey": "контракт на поставку",
-  //   "value": {
-  //     "контракт на поставку": {
-  //       "Покупатель": "Артем",
-  //       "№": "7",
-  //       "дата": "23.09.2019",
-  //       "срок": "23.09.2022",
-  //       "наименование товара": "Бетон",
-  //       "ТН ВЭД (6 знаков)": "234542",
-  //       "грузополучатель": "Али",
-  //       "условия поставки": "любовь"
-  //     }
-  //   }
-  // }
+function my() {
+  childKey = 'Дистрибьюторский договор'
+
+  a = getParentValues('Дистрибьюторский договор')
+  Logger.log(a)
 }
 
 function getParentValues(childKey) {
-  const parentHeaderCell = getHeaderCell(parents[childKey].parentKey)
-  const values = getLevelValues(parentHeaderCell)
-  return values
-}
-
-function sumbitRow(payload) {
-  let [rowNum, mustInsertRow] = getRowNum(payload.parentID, payload.childKey)
-
-  if (mustInsertRow) {
-    let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-    sheet.insertRowAfter(rowNum)
-    rowNum += 1
-  }
-
-  insertRecord(payload.value, rowNum)
-}
-
-function getRowNum(parentID, childName) {
-  // 1. get parent row
-  // 2. get last child of the parent, e.g. neighbor
-  // 3. get last row of the farthest descendent
-  // Logger.log("getRowNum: %s %s", parentID, childName)
-
-  const parentKey = parents[childName].parentKey
-  const parentName = parents[childName].parent
-  const parentBounds = getLevelBounds(parentKey, parentID)
-  // Logger.log("parentKey: %s", parentKey)
-  // Logger.log("parentBounds: %s", parentBounds)
-
-  const upperBound = parentBounds[0]
-  const lowerBound = parentBounds[1]
+  const parentHeaderCell = getHeaderCell(parents[childKey].parentKey);
+  const values = getLevelValues(parentHeaderCell);
   
-  const child = getChild(parentName, childName)
-  if (child == null) {
-    Logger.log("here?")
-    return [upperBound+1, false]
-  }
-  Logger.log("child: %s", child)
-  const childHeaderCell = getHeaderCell(child.key)
-  Logger.log("childHeaderCell: %s", childHeaderCell)
-  const lastChildCell = getLastChildCell(parentBounds, childHeaderCell)
-  Logger.log("lastChildCell: %s", lastChildCell)
-  if (lastChildCell == null) {
-    // Logger.log("go here?")
-    return [upperBound+1, false]
-  }
-
-  // Logger.log("children: %s", children[lastChildCell.headerCell.Key][0])
-  if (children[lastChildCell.headerCell.GroupKey].length == 0) {
-    return [lastChildCell.rowNum, true]
-  }
-
-  let [rowNum, _] = getRowNum(lastChildCell.value, children[lastChildCell.headerCell.GroupKey][0].name)
-  // Logger.log("rowNum: %s", rowNum)
-  if (rowNum == null) {
-    return [lastChildCell.rowNum, true]
-  }
-
-  return [rowNum, true]
-}
-
-function getLastChildCell(parentBounds, childHeaderCell) {
-  const upperBound = parentBounds[0]+1
-  const lowerBound = parentBounds[1]+1
-  const columnNum = childHeaderCell.Range[0]
-
-  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-  let rows = sheet.getRange(upperBound, columnNum, (lowerBound-upperBound)+1, 1).getValues()
-  
-  let lastIdx = 0
-  let lastValue = ''
-
-  for (i = 0; i < rows.length; i++) {
-    const row = rows[i]
-    const value = row[0]
-    if (i == 0 && value === '') {
-      return null
+  const filteredValues = values.reduce((nonEmptyStrings, str) => {
+    if (typeof str === 'string' && str.trim() !== '') {
+      nonEmptyStrings.push(str);
     }
-    if (value !== '') {
-      lastIdx = i
-      lastValue = value
-    }
-  }
+    return nonEmptyStrings;
+  }, []);
 
-  return new Cell(lastValue.toString(), upperBound+lastIdx, columnNum, childHeaderCell)
-}
-
-function getChild(parentKey, childName) {
-  Logger.log(parentKey)
-  if (!(parentKey in children)) {
-    Logger.log("!(parentKey in children)")
-    return null
-  }
-
-  for (i = 0; i < children[parentKey].length; i++) {
-    const child = children[parentKey][i]
-    if (child.name === childName) {
-      return child
-    }
-  }
-  Logger.log("not found")
-  return null
-}
-
-function getLevelBounds(parentKey, parentID) {
-  // Logger.log("getLevelBounds: %s %s", parentKey, parentID)
-  if (parentKey === "root") {
-    // Logger.log("root getLevelBounds")
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-    var range = sheet.getRange("A6:A");
-    return [5, 5+range.getValues().length-1]
-  }
-
-  let cell = getHeaderCell(parentKey)
-  // Logger.log("cell: %s", cell)
-
-  let columnA1 = encodeAlphabet(cell.Range[0])
-  // Logger.log("columnA1: %s", columnA1)
-  
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-  var range = sheet.getRange(columnA1+":"+columnA1);
-
-  const rows = range.getValues()
-  let l = 0;
-  for (i = 0; i < rows.length; i++) {
-    const row = rows[i]
-    const rowValue = row[0]
-
-    let value = rowValue
-    if (typeof value === "number") {
-      value = value.toString()
-    }
-
-    if (value === parentID) {
-      l = i;
-      break;
-    }
-  }
-
-  let r = l;
-  for (i = l+1; i < rows.length; i++) {
-    const rowValue = rows[i][0]
-    if (rowValue !== '') {
-      break;
-    }
-    r = i
-  }
-
-  return [l, r];
+  return filteredValues;
 }
 
 function getHeaderCell(cellKey) {
   const keys = cellKey.split('.');
-  let cell;
+  let cell = headerCells[keys[0]];
 
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i]
-    cell = (cell instanceof HeaderCell) ? cell.Values[key] : headerCells[key]
+  for (let i = 1; i < keys.length; i++) {
+    const key = keys[i];
+    cell = cell.values[key];
   }
 
   return cell;
 }
 
-function insertRecord(payload, rowNum) {
-  fillSheet(payload, headerCells, rowNum);
-}
-
-function fillSheet(payload, headers, rowNum) {
-  // Logger.log("fillSheet headers: %s", headers)
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-
-  Object.entries(payload).forEach(([k, v]) => {
-    // Logger.log("k: %s", k)
-    const cell = headers[k];
-    // Logger.log("cell: %s", cell)
-    // Logger.log("cell.isLeaf(): %s", cell.isLeaf())
-    if (cell.isLeaf()) {
-      // TODO
-      // use https://developers.google.com/sheets/api/guides/batchupdate
-      // use https://developers.google.com/apps-script/advanced/sheets
-      sheet.getRange(rowNum, cell.Range[0], 1, 1).setValues([[payload[k]]]);
-    } else {
-      fillSheet(payload[k], cell.Values, rowNum);
-    }
-  });
-}
-
 function getHeaderCells() {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet();
-  var headerValues = sheet.getRangeByName("Header").getValues();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet();
+  const headerValues = sheet.getRangeByName('Header').getValues();
 
-  topLevel = headerValues[0];
-  lowLevel = headerValues[1];
+  const topLevel = headerValues[0];
+  const lowLevel = headerValues[1];
 
-  cellMap = {};
-  for (i = 0; i < topLevel.length; i++) {
-    if (topLevel[i] === "") {
+  const cellMap = {};
+  for (let i = 0; i < topLevel.length; i++) {
+    if (topLevel[i] === '') {
       continue;
     }
 
-    values = {};
-    r = i;
+    const values = {};
+    let r = i;
 
-    for (j = i; j < lowLevel.length; j++) {
-      if (lowLevel[j] == "") {
+    for (let j = i; j < lowLevel.length; j++) {
+      if (lowLevel[j] == '') {
         break;
       }
-      if (!(topLevel[j] == "" || i == j)) {
+
+      if (!(topLevel[j] == '' || i == j)) {
         break;
       }
+
       values[lowLevel[j]] = new HeaderCell(lowLevel[j], [j + 1, j + 1], {}, topLevel[i]);
       r = j;
     }
@@ -330,72 +92,21 @@ function getHeaderCells() {
   return cellMap;
 }
 
-function encodeAlphabet(num) {
-  let result = "";
-  while (num > 0) {
-    let remainder = (num - 1) % 26;
-    result = String.fromCharCode(65 + remainder) + result;
-    num = Math.floor((num - 1) / 26);
-  }
-  return result;
-}
-
-function getColumnNum(column /* A,B,C,...,AA*/) {
-  column = column.replace(/\d+/g, '');
-  
-  var result = 0;
-
-  for (var i = 0; i < column.length; i++) {
-      result *= 26;
-      result += column.charAt(i).charCodeAt()  - 'A'.charCodeAt() + 1;
-  }
-
-  return result;
-}
-
 function getLevelValues(headerCell) {
-  const upperBound = 6
-  const columnNum = headerCell.Range[0]
+  const upperBound = 6;
+  const columnNum = headerCell.range[0];
 
-  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-  let rows = sheet.getRange(upperBound, columnNum, sheet.getMaxRows(), 1).getValues()
-  
-  values = []
-  for (i = 0; i < rows.length; i++) {
-    const row = rows[i]
-    const value = row[0].toString()
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const rows = sheet.getRange(upperBound, columnNum, sheet.getMaxRows(), 1).getValues();
+
+  const values = [];
+  for (let i = 0; i < rows.length; i++) {
+    const value = rows[i][0].toString();
     if (value === '') {
-      continue
+      continue;
     }
-    values.push(value)
+    values.push(value);
   }
 
-  return values
+  return values;
 }
-
-
-// input = {
-    // "№": "1",
-    // "Производитель/дочерняя компания/дистрибьютор/СПК": "Doodocs",
-    // "подтверждающий документ": {
-    //   "производитель": "Doodocs",
-    //   "наименование": "Дудокс",
-    //   "№": "3",
-    //   "наименование товара": "Подписи",
-    //   "ТН ВЭД (6 знаков)": "120934",
-    //   "дата": "12.09.2019",
-    //   "срок": "123",
-    //   "подтверждение на сайте уполномоченного органа": "http://google.com",
-    // },
-  // };
-  // payload = {
-  //   "parentID": "1",
-  //   "childKey": "Дистрибьюторский договор",
-  //   "value": {
-  //     "Дистрибьюторский договор": {
-  //       "№": "1",
-  //       "дата": "12.07.1997",
-  //       "условия": "Салам всем!"
-  //     }
-  //   }
-  // }

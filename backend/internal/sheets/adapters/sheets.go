@@ -128,7 +128,8 @@ func (c *SpreadsheetClient) FillRecord(ctx context.Context, payload domain.Paylo
 				Value:       payload[key].(string),
 			})
 		} else {
-			if err := c.FillRecord(ctx, payload[key].(domain.PayloadValue), cell.Values, rowNum); err != nil {
+			childPayload := domain.PayloadValue(payload[key].(map[string]interface{}))
+			if err := c.FillRecord(ctx, childPayload, cell.Values, rowNum); err != nil {
 				return err
 			}
 		}

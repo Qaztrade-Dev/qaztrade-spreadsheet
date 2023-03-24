@@ -28,7 +28,8 @@
             text-align: right;
         }
 
-        input, select {
+        input,
+        select {
             font: 1em sans-serif;
             width: 100%;
             box-sizing: border-box;
@@ -63,176 +64,177 @@
 
     <script>
         const requestSkel = {
-            "parentID": null,
-            "childKey": "Дистрибьюторский договор",
-            "value": {}
-        }
+            parentID: null,
+            childKey: 'Дистрибьюторский договор',
+            value: {}
+        };
 
         const parentSkel = [
             {
-                "name": "Компания №",
-                "input": {
-                    "tag": "select", 
-                    "options": ["1", "2", "3"],
+                name: 'Компания №',
+                input: {
+                    tag: 'select',
+                    options: ['1', '2', '3'],
                 },
-                "key": "parentID"
-            }
-        ]
+                key: 'parentID',
+            },
+        ];
 
         const inputSkel = [
             {
-                "name": "Дистрибьюторский договор",
-                "inputs": [
+                name: 'Дистрибьюторский договор',
+                inputs: [
                     {
-                        "name": "№",
-                        "input": { "tag": "input", "attrs": {"type": "text"} }
+                        name: '№',
+                        input: { tag: 'input', attrs: { type: 'text' } },
                     },
                     {
-                        "name": "дата",
-                        "input": { "tag": "input", "attrs": {"type": "text"} }
+                        name: 'дата',
+                        input: { tag: 'input', attrs: { type: 'text' } },
                     },
                     {
-                        "name": "условия",
-                        "input": { "tag": "input", "attrs": {"type": "text"} }
-                    }
-                ]
+                        name: 'условия',
+                        input: { tag: 'input', attrs: { type: 'text' } },
+                    },
+                ],
+            },
+        ];
+
+        const form = document.querySelector('#form');
+        const firstUl = document.querySelector('#form ul');
+        const submitButton = document.querySelector('#submit');
+
+        populateForm(firstUl, parentSkel, '');
+        populateForm(firstUl, inputSkel, '');
+        setParentValues();
+
+        form.addEventListener('submit', (e) => {
+            submitButton.disabled = true;
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const jsonBody = Object.fromEntries(formData);
+            const reqJSON = createNestedJSON(jsonBody);
+
+            if ('parentID' in reqJSON) {
+                requestSkel.parentID = reqJSON.parentID;
+                delete reqJSON.parentID;
             }
-        ]
 
-        const form = document.querySelector("#form")
-        const firstUl = document.querySelector("#form ul")
-        const submitButton = document.querySelector("#submit")
-
-        populateForm(firstUl, parentSkel, "");
-        populateForm(firstUl, inputSkel, "");
-        setParentValues()
-
-        form.addEventListener('submit', e => {
-            submitButton.disabled = true
-            e.preventDefault()
-
-            const formData = new FormData(form)
-            const jsonBody = Object.fromEntries(formData)
-            const reqJSON = createNestedJSON(jsonBody)
-
-            if ("parentID" in reqJSON) {
-                requestSkel.parentID = reqJSON.parentID
-                delete reqJSON.parentID
-            }
-
-            requestSkel.value = reqJSON
-            google.script.run.withSuccessHandler(formSubmittedHandler).sumbitRow(requestSkel)
-        })
-
-        function formSubmittedHandler() {
-            submitButton.disabled = false
-        }
-
-        function accessTokenHandler(data) {
-            document.querySelector("#name").value = data
-            console.log(data)
-        }
+            requestSkel.value = reqJSON;
+            fetch('http://localhost:8082/sheets/records', {
+                method: 'POST',
+                body: JSON.stringify(requestSkel),
+            })
+            .then((res) => {
+                console.log(res);
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+            });
+        });
 
         function setParentValues() {
-            const parentValues = JSON.parse('<?= parentValues ?>')
-            const selects = document.getElementsByName(".parentID")
-            if (selects.length == 0) {
-                return
-            }
-            const select = selects[0]
+            const parentValues = JSON.parse('<?= parentValues ?>');
+            const select = document.querySelector('[name=".parentID"]');
 
-            while (select.hasChildNodes()) {
-                select.removeChild(select.firstChild);
+            if (!select) {
+                return;
             }
 
-            setOptions(select, parentValues)
+            select.innerHTML = '';
+            setOptions(select, parentValues);
         }
 
         function populateForm(parent, payload, prefix) {
-            for (elem of payload) {
-                if ("inputs" in elem) {
-                    var label = document.createElement("p")
-                    label.innerText = elem.name
+            for (const elem of payload) {
+                if ('inputs' in elem) {
+                    const label = document.createElement('p');
+                    label.innerText = elem.name;
 
-                    var ul = document.createElement("ul")
+                    const ul = document.createElement('ul');
 
-                    parent.appendChild(label)
-                    parent.appendChild(ul)
-                    populateForm(ul, elem.inputs, prefix + "." + elem.name)
+                    parent.appendChild(label);
+                    parent.appendChild(ul);
+                    populateForm(ul, elem.inputs, `${prefix}.${elem.name}`);
                 } else {
-                    var li = document.createElement("li")
+                    const li = document.createElement('li');
 
-                    var label = document.createElement("label")
-                    label.setAttribute("for", prefix + "." + elem.name)
-                    label.innerText = elem.name
+                    const label = document.createElement('label');
+                    label.setAttribute('for', `${prefix}.${elem.name}`);
+                    label.innerText = elem.name;
 
-                    var input = document.createElement(elem.input.tag)
-                    setAttributes(input, elem.input.attrs)
-                    setOptions(input, elem.input.options)
+                    const input = document.createElement(elem.input.tag);
+                    setAttributes(input, elem.input.attrs);
+                    setOptions(input, elem.input.options);
 
-                    input.setAttribute("id", prefix + "." + elem.name);
+                    input.setAttribute('id', `${prefix}.${elem.name}`);
 
-                    let inputName = elem.name
-                    if ("key" in elem) {
-                        inputName = elem.key
-                    }
-                    input.setAttribute("name", prefix + "." + inputName);
+                    const inputName = elem.key ?? elem.name;
+                    input.setAttribute('name', `${prefix}.${inputName}`);
 
-                    li.appendChild(label)
-                    li.appendChild(input)
+                    li.appendChild(label);
+                    li.appendChild(input);
 
-                    parent.appendChild(li)
+                    parent.appendChild(li);
                 }
             }
         }
 
         function setAttributes(el, attrs) {
-            if (attrs === undefined) {
-                return
+            if (!attrs) {
+                return;
             }
 
-            for(var key in attrs) {
-                el.setAttribute(key, attrs[key]);
+            for (const [key, value] of Object.entries(attrs)) {
+                el.setAttribute(key, value);
             }
         }
 
         function setOptions(el, options) {
-            if (options === undefined) {
-                return
+            if (!options) {
+                return;
             }
-            
-            for(option of options) {
-                var optionElem = document.createElement("option")
-                    optionElem.setAttribute("value", option)
-                    optionElem.innerText = option
-                
-                el.appendChild(optionElem)
+
+            for (const option of options) {
+                const optionElem = document.createElement('option');
+                optionElem.setAttribute('value', option);
+                optionElem.innerText = option;
+
+                el.appendChild(optionElem);
             }
         }
 
         function createNestedJSON(value) {
-            result = {}
-            Object.entries(value).forEach(([key, value]) => {
-                result = setNestedKey(result, key, value)
-            })
-            return result
+            return Object.entries(value).reduce((result, [key, value]) => {
+                setNestedKey(result, key, value);
+                return result;
+            }, {});
         }
 
         function setNestedKey(obj, k, v) {
             const keys = k.split('.');
 
             let temp = obj;
-            for (let i = 0; i < keys.length; i++) {
-                const key = keys[i];
-                if (key === '') continue
-                if (!(key in temp)) {
-                    temp[key] = (i === keys.length - 1) ? v : {};
+            for (const key of keys) {
+                if (!key) {
+                    continue;
                 }
+                if (!(key in temp)) {
+                    temp[key] = {};
+                }
+
+                if (key === keys[keys.length - 1]) {
+                    temp[key] = v;
+                }
+
                 temp = temp[key];
+
             }
 
             return obj;
         }
+
     </script>
 </body>
 
