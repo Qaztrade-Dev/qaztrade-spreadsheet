@@ -116,5 +116,6 @@ func CopyTemplate() {
 }
 
 func main() {
-	CopyTemplate()
+	// CopyTemplate()
+	ProtectedRange()
 }
