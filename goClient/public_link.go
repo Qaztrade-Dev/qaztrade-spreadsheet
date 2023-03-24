@@ -14,7 +14,7 @@ import (
 //go:embed credentials.json
 var credentials []byte
 
-func main() {
+func PublicLink() {
 	ctx := context.Background()
 
 	srv, err := drive.NewService(ctx, option.WithCredentialsJSON(credentials))
