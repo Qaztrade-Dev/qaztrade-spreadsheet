@@ -51,4 +51,5 @@ type PayloadValue map[string]interface{}
 
 type SheetsRepository interface {
 	InsertRecord(ctx context.Context, spreadsheetID string, payload *Payload) error
+	UpdateApplication(ctx context.Context, spreadsheetID string, application *Application) error
 }

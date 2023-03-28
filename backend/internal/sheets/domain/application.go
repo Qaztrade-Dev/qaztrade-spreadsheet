@@ -26,4 +26,6 @@ type Application struct {
 	ContEmail          string
 	Country            string
 	CodeTnved          string
+
+	Token string
 }

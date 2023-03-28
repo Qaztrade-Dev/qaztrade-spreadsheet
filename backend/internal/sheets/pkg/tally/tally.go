@@ -26,7 +26,7 @@ type tallyResponse struct {
 	Data tallyResponseData `json:"data"`
 }
 
-func Encode(jsonBytes []byte) (*domain.Application, error) {
+func Decode(jsonBytes []byte) (*domain.Application, error) {
 	var (
 		response tallyResponse
 		appl     domain.Application
@@ -63,6 +63,7 @@ func Encode(jsonBytes []byte) (*domain.Application, error) {
 		"Эл. адрес конт. лица":        &appl.ContEmail,
 		"Страна происхождения товара": &appl.Country,
 		"Код ТНВЭД (6 знаков)":        &appl.CodeTnved,
+		"token":                       &appl.Token,
 	}
 	for _, field := range response.Data.Fields {
 		ptr, ok := mapping[field.Label]

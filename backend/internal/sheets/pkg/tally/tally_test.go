@@ -220,7 +220,7 @@ func TestEncode(t *testing.T) {
 		}
 	)
 
-	appl, err := Encode(jsonBytes)
+	appl, err := Decode(jsonBytes)
 	require.Nil(t, err)
 	require.Equal(t, expAppl, appl)
 }

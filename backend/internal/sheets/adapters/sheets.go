@@ -396,6 +396,18 @@ func (c *SpreadsheetClient) InsertRecord(ctx context.Context, payload *domain.Pa
 	return nil
 }
 
+func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID string, application *domain.Application) error {
+	a := &sheets.BatchUpdateValuesRequest{
+		ValueInputOption: "RAW",
+		Data: []*sheets.ValueRange{
+			{
+				Range:  namedRange,
+				Values: values,
+			},
+		},
+	}
+}
+
 func (c *SpreadsheetClient) insertRowAfter(ctx context.Context, rowIndex int) error {
 	request := &sheets.Request{
 		InsertDimension: &sheets.InsertDimensionRequest{

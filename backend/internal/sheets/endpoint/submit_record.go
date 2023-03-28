@@ -1,4 +1,4 @@
-package sheets
+package endpoint
 
 import (
 	"context"
@@ -8,24 +8,24 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
-type submitRecordRequest struct {
+type SubmitRecordRequest struct {
 	SpreadsheetID string
 	Payload       *domain.Payload
 }
 
-type submitRecordResponse struct {
+type SubmitRecordResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r *submitRecordResponse) error() error { return r.Err }
+func (r *SubmitRecordResponse) Error() error { return r.Err }
 
-func makeSubmitRecordEndpoint(s service.Service) endpoint.Endpoint {
+func MakeSubmitRecordEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(submitRecordRequest)
+		req := request.(SubmitRecordRequest)
 		err := s.SubmitRecord(ctx, &service.SubmitRecordRequest{
 			SpreadsheetID: req.SpreadsheetID,
 			Payload:       req.Payload,
 		})
-		return submitRecordResponse{Err: err}, nil
+		return SubmitRecordResponse{Err: err}, nil
 	}
 }
