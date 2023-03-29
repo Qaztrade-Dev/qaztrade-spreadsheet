@@ -11,6 +11,7 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/internal/sheets"
+	"github.com/doodocs/qaztrade/backend/internal/sheets/pkg/jwt"
 	"github.com/go-kit/log"
 )
 
@@ -23,9 +24,10 @@ const (
 
 func main() {
 	var (
-		ctx  = context.Background()
-		port = getenv("PORT", defaultPort)
-		addr = ":" + port
+		ctx       = context.Background()
+		port      = getenv("PORT", defaultPort)
+		jwtsecret = getenv("JWT_SECRET", "qaztradesecret")
+		addr      = ":" + port
 	)
 
 	var logger log.Logger
@@ -39,11 +41,12 @@ func main() {
 	)
 
 	var (
+		jwtcli     = jwt.NewClient(jwtsecret)
 		httpLogger = log.With(logger, "component", "http")
 		mux        = http.NewServeMux()
 	)
 
-	mux.Handle("/sheets/records", sheets.MakeHandler(sheetsService, httpLogger))
+	mux.Handle("/sheets/", sheets.MakeHandler(sheetsService, jwtcli, httpLogger))
 
 	http.Handle("/", common.AccessControl(mux))
 

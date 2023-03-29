@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/endpoint"
+	"github.com/doodocs/qaztrade/backend/internal/sheets/pkg/jwt"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
 	sheetsTransport "github.com/doodocs/qaztrade/backend/internal/sheets/transport"
 	"github.com/go-kit/kit/transport"
@@ -15,7 +16,7 @@ import (
 	kitlog "github.com/go-kit/log"
 )
 
-func MakeHandler(svc service.Service, logger kitlog.Logger) http.Handler {
+func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) http.Handler {
 	var (
 		opts = []kithttp.ServerOption{
 			kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
@@ -27,11 +28,16 @@ func MakeHandler(svc service.Service, logger kitlog.Logger) http.Handler {
 			sheetsTransport.DecodeSubmitRecordRequest, encodeResponse,
 			opts...,
 		)
+		submitApplicationHandler = kithttp.NewServer(
+			endpoint.MakeSubmitApplicationEndpoint(svc, jwtcli),
+			sheetsTransport.DecodeSubmitApplicationRequest, encodeResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
 	r.Handle("/sheets/records", submitRecordHandler).Methods("POST")
-	r.Handle("/sheets/application", submitRecordHandler).Methods("POST")
+	r.Handle("/sheets/application", submitApplicationHandler).Methods("POST")
 
 	return r
 }

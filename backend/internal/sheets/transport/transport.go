@@ -44,12 +44,7 @@ func DecodeSubmitApplicationRequest(_ context.Context, r *http.Request) (interfa
 		return nil, err
 	}
 
-	// TODO
-	// parse spreadsheetID from jwt
-	spreadsheetID := "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
-
 	return endpoint.SubmitApplicationRequest{
-		SpreadsheetID: spreadsheetID,
-		Application:   application,
+		Application: application,
 	}, nil
 }

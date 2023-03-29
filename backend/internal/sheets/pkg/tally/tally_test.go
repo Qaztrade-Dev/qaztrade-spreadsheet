@@ -185,6 +185,12 @@ func TestEncode(t *testing.T) {
 				  "label": "Код ТНВЭД (6 знаков)",
 				  "type": "INPUT_TEXT",
 				  "value": "123123"
+				},
+				{
+					"key": "question_wMpeVk",
+					"label": "token",
+					"type": "INPUT_TEXT",
+					"value": "token-1"
 				}
 			  ]
 			}
@@ -217,6 +223,7 @@ func TestEncode(t *testing.T) {
 			ContEmail:          "a@gmail.com",
 			Country:            "Казахстан",
 			CodeTnved:          "123123",
+			Token:              "token-1",
 		}
 	)
 

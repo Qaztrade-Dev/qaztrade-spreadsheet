@@ -169,3 +169,34 @@ func AddServiceAccount(srv *sheets.Service, spreadsheetID string, protectedRange
 		log.Fatalf("Failed to update protected range: %v", err)
 	}
 }
+
+/*
+
+	_, err := c.service.Spreadsheets.BatchUpdate(spreadsheetID, &sheets.BatchUpdateSpreadsheetRequest{
+		Requests: []*sheets.Request{
+			{
+				CreateDeveloperMetadata: &sheets.CreateDeveloperMetadataRequest{
+					DeveloperMetadata: &sheets.DeveloperMetadata{
+						Location: &sheets.DeveloperMetadataLocation{
+							Spreadsheet: true,
+						},
+						Visibility:    "DOCUMENT",
+						MetadataKey:   "token",
+						MetadataValue: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzaWQiOiIxSTd0WUFoVWpQSkdhTVU3X1hiaEMwOHJRdzU1SVJjN2JFdGcxbWdtUlBLZyJ9.7yAZuGAm7_WSkGJURMSn5aS8UacVAY-CPx-vOO0rPDE",
+					},
+				},
+			},
+		},
+	}).Do()
+
+	resp, err := c.service.Spreadsheets.DeveloperMetadata.Search(spreadsheetID, &sheets.SearchDeveloperMetadataRequest{
+		DataFilters: []*sheets.DataFilter{
+			{
+				DeveloperMetadataLookup: &sheets.DeveloperMetadataLookup{
+					MetadataKey: "token",
+				},
+			},
+		},
+	}).Do()
+
+*/

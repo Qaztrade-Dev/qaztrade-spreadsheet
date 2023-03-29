@@ -65,6 +65,7 @@ func Decode(jsonBytes []byte) (*domain.Application, error) {
 		"Код ТНВЭД (6 знаков)":        &appl.CodeTnved,
 		"token":                       &appl.Token,
 	}
+
 	for _, field := range response.Data.Fields {
 		ptr, ok := mapping[field.Label]
 		if !ok {

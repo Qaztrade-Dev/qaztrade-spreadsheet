@@ -38,6 +38,59 @@ func (c *SheetsClient) InsertRecord(ctx context.Context, spreadsheetID string, p
 	return spreadsheetClient.InsertRecord(ctx, payload)
 }
 
+func (c *SheetsClient) UpdateApplication(ctx context.Context, spreadsheetID string, application *domain.Application) error {
+	var mappings = []struct {
+		Range string
+		Value string
+	}{
+		{Range: "from", Value: application.From},
+		{Range: "gov_reg", Value: application.GovReg},
+		{Range: "fact_addr", Value: application.FactAddr},
+		{Range: "bin", Value: application.Bin},
+		{Range: "industry", Value: application.Industry},
+		{Range: "activity", Value: application.Activity},
+		{Range: "emp_count", Value: application.EmpCount},
+		{Range: "manufacturer", Value: application.Manufacturer},
+		{Range: "item", Value: application.Item},
+		{Range: "item_volume", Value: application.ItemVolume},
+		{Range: "fact_volume_earnings", Value: application.FactVolumeEarnings},
+		{Range: "fact_workload", Value: application.FactWorkload},
+		{Range: "chief_lastname", Value: application.ChiefLastname},
+		{Range: "chief_firstname", Value: application.ChiefFirstname},
+		{Range: "chief_middlename", Value: application.ChiefMiddlename},
+		{Range: "chief_position", Value: application.ChiefPosition},
+		{Range: "chief_phone", Value: application.ChiefPhone},
+		{Range: "cont_lastname", Value: application.ContLastname},
+		{Range: "cont_firstname", Value: application.ContFirstname},
+		{Range: "cont_middlename", Value: application.ContMiddlename},
+		{Range: "cont_position", Value: application.ContPosition},
+		{Range: "cont_phone", Value: application.ContPhone},
+		{Range: "cont_email", Value: application.ContEmail},
+		{Range: "country", Value: application.Country},
+		{Range: "code_tnved", Value: application.CodeTnved},
+	}
+
+	data := make([]*sheets.ValueRange, 0, len(mappings))
+	for i := range mappings {
+		data = append(data, &sheets.ValueRange{
+			Range:  mappings[i].Range,
+			Values: [][]interface{}{{mappings[i].Value}},
+		})
+	}
+
+	updateValuesRequest := &sheets.BatchUpdateValuesRequest{
+		ValueInputOption: "RAW",
+		Data:             data,
+	}
+
+	_, err := c.service.Spreadsheets.Values.BatchUpdate(spreadsheetID, updateValuesRequest).Do()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type SpreadsheetClient struct {
 	service       *sheets.Service
 	spreadsheetID string
@@ -394,18 +447,6 @@ func (c *SpreadsheetClient) InsertRecord(ctx context.Context, payload *domain.Pa
 	}
 
 	return nil
-}
-
-func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID string, application *domain.Application) error {
-	a := &sheets.BatchUpdateValuesRequest{
-		ValueInputOption: "RAW",
-		Data: []*sheets.ValueRange{
-			{
-				Range:  namedRange,
-				Values: values,
-			},
-		},
-	}
 }
 
 func (c *SpreadsheetClient) insertRowAfter(ctx context.Context, rowIndex int) error {

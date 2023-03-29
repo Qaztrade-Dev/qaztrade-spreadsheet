@@ -71,3 +71,47 @@ func TestSubmitChild(t *testing.T) {
 		t.Fatal("InsertRecord error:", err)
 	}
 }
+
+func TestUpdateApplication(t *testing.T) {
+	var (
+		ctx           = context.Background()
+		spreadsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		appl          = &domain.Application{
+			From:               "Kaspi Ltd.",
+			GovReg:             "11111111",
+			FactAddr:           "Алматы",
+			Bin:                "950223347566",
+			Industry:           "Информационные технологии",
+			Activity:           "ЭДО",
+			EmpCount:           "1-5",
+			Manufacturer:       "Doodocs",
+			Item:               "Подписка",
+			ItemVolume:         "200",
+			FactVolumeEarnings: "35000000",
+			FactWorkload:       "100",
+			ChiefLastname:      "Давлетов",
+			ChiefFirstname:     "Дагар",
+			ChiefMiddlename:    "Гусманович",
+			ChiefPosition:      "Директор",
+			ChiefPhone:         "+77777777774",
+			ContLastname:       "Тлекбаи",
+			ContFirstname:      "Али",
+			ContMiddlename:     "Кайратулы",
+			ContPosition:       "Разработчик",
+			ContPhone:          "+77777777777",
+			ContEmail:          "a@gmail.com",
+			Country:            "Казахстан",
+			CodeTnved:          "123123",
+		}
+	)
+
+	cli, err := NewSheetsClient(ctx, credentials)
+	if err != nil {
+		t.Fatal("NewSheetsClient error:", err)
+	}
+
+	err = cli.UpdateApplication(ctx, spreadsheetID, appl)
+	if err != nil {
+		t.Fatal("UpdateApplication error:", err)
+	}
+}
