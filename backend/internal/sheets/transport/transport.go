@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/endpoint"
@@ -17,11 +18,12 @@ func DecodeSubmitRecordRequest(_ context.Context, r *http.Request) (interface{},
 		ChildKey string                 `json:"childKey"`
 		Value    map[string]interface{} `json:"value"`
 	}
-	spreadsheetID := "1KL-lrhs-Wu9kRAppBxAHUUFr7OCfNYla8Z7W-0tX4Mo"
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, err
 	}
+
+	spreadsheetID := "1KL-lrhs-Wu9kRAppBxAHUUFr7OCfNYla8Z7W-0tX4Mo"
 
 	return endpoint.SubmitRecordRequest{
 		SpreadsheetID: spreadsheetID,
@@ -47,4 +49,31 @@ func DecodeSubmitApplicationRequest(_ context.Context, r *http.Request) (interfa
 	return endpoint.SubmitApplicationRequest{
 		Application: application,
 	}, nil
+}
+
+func DecodeAddSheetRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var body struct {
+		SheetName string `json:"sheet_name"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+
+	tokenString := extractToken(r)
+
+	return endpoint.AddSheetRequest{
+		TokenString: tokenString,
+		SheetName:   body.SheetName,
+	}, nil
+}
+
+func extractToken(r *http.Request) string {
+	authorization := r.Header.Get("Authorization")
+	if authorization == "" {
+		return ""
+	}
+
+	tokenString := strings.Split(authorization, " ")[1]
+	return tokenString
 }

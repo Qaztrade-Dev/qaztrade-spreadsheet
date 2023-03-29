@@ -91,6 +91,143 @@ func (c *SheetsClient) UpdateApplication(ctx context.Context, spreadsheetID stri
 	return nil
 }
 
+func (c *SheetsClient) AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error {
+	var (
+		originSpreadsheetID = "1YvRrTIVWz1kigSke6pN8Uz87r0fWl-kyarogwAjKx5c"
+		mappings            = map[string]int64{ // sheetName:sheetID
+			"Доставка ЖД транспортом": 0,
+		}
+		sourceSheetID = mappings[sheetName]
+	)
+
+	containsSheet, err := c.containsSheet(ctx, spreadsheetID, sheetName)
+	if err != nil {
+		return err
+	}
+
+	if containsSheet {
+		return domain.ErrorSheetPresent
+	}
+
+	sheetID, err := c.copySheet(ctx, originSpreadsheetID, spreadsheetID, sourceSheetID)
+	if err != nil {
+		return err
+	}
+
+	protectedRanges, err := c.getProtectedRanges(ctx, originSpreadsheetID, sourceSheetID)
+	if err != nil {
+		return err
+	}
+
+	if err := c.addProtectedRanges(ctx, spreadsheetID, sheetID, protectedRanges); err != nil {
+		return err
+	}
+
+	if err := c.updateSheetName(ctx, spreadsheetID, sheetID, sheetName); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *SheetsClient) containsSheet(ctx context.Context, spreadsheetID string, sheetName string) (bool, error) {
+	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
+	if err != nil {
+		return false, err
+	}
+
+	// Iterate through the sheets and check if the sheet name exists
+	for _, sheet := range spreadsheet.Sheets {
+		if sheet.Properties.Title == sheetName {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// copySheet returns sheetId
+func (c *SheetsClient) copySheet(ctx context.Context, sourceSpreadsheetID, targetSpreadsheetID string, sheetID int64) (int64, error) {
+	copyRequest := &sheets.CopySheetToAnotherSpreadsheetRequest{
+		DestinationSpreadsheetId: targetSpreadsheetID,
+	}
+
+	resp, err := c.service.Spreadsheets.Sheets.CopyTo(sourceSpreadsheetID, sheetID, copyRequest).Context(ctx).Do()
+	if err != nil {
+		return 0, err
+	}
+
+	return resp.SheetId, nil
+}
+
+func (c *SheetsClient) getProtectedRanges(ctx context.Context, spreadsheetID string, sheetID int64) ([]*sheets.ProtectedRange, error) {
+	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	var protectedRanges []*sheets.ProtectedRange
+	for _, sheet := range spreadsheet.Sheets {
+		if sheet.Properties.SheetId == sheetID {
+			protectedRanges = sheet.ProtectedRanges
+			break
+		}
+	}
+
+	return protectedRanges, nil
+}
+
+func (c *SheetsClient) addProtectedRanges(ctx context.Context, spreadsheetID string, sheetID int64, protectedRanges []*sheets.ProtectedRange) error {
+	var requests []*sheets.Request
+	for _, pr := range protectedRanges {
+		requests = append(requests, &sheets.Request{
+			AddProtectedRange: &sheets.AddProtectedRangeRequest{
+				ProtectedRange: &sheets.ProtectedRange{
+					Range: &sheets.GridRange{
+						SheetId:          sheetID,
+						StartRowIndex:    pr.Range.StartRowIndex,
+						EndRowIndex:      pr.Range.EndRowIndex,
+						StartColumnIndex: pr.Range.StartColumnIndex,
+						EndColumnIndex:   pr.Range.EndColumnIndex,
+					},
+					ProtectedRangeId:      pr.ProtectedRangeId,
+					Description:           pr.Description,
+					WarningOnly:           pr.WarningOnly,
+					RequestingUserCanEdit: pr.RequestingUserCanEdit,
+					Editors:               pr.Editors,
+				},
+			},
+		})
+	}
+
+	batchUpdateRequest := &sheets.BatchUpdateSpreadsheetRequest{Requests: requests}
+	_, err := c.service.Spreadsheets.BatchUpdate(spreadsheetID, batchUpdateRequest).Do()
+	return err
+}
+
+func (c *SheetsClient) updateSheetName(ctx context.Context, spreadsheetID string, sheetID int64, sheetName string) error {
+	updateRequest := &sheets.BatchUpdateSpreadsheetRequest{
+		Requests: []*sheets.Request{
+			{
+				UpdateSheetProperties: &sheets.UpdateSheetPropertiesRequest{
+					Properties: &sheets.SheetProperties{
+						SheetId: sheetID,
+						Title:   sheetName,
+					},
+					Fields: "title",
+				},
+			},
+		},
+	}
+
+	_, err := c.service.Spreadsheets.BatchUpdate(spreadsheetID, updateRequest).Context(ctx).Do()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type SpreadsheetClient struct {
 	service       *sheets.Service
 	spreadsheetID string

@@ -115,3 +115,21 @@ func TestUpdateApplication(t *testing.T) {
 		t.Fatal("UpdateApplication error:", err)
 	}
 }
+
+func TestAddSheet(t *testing.T) {
+	var (
+		ctx           = context.Background()
+		spreadsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		sheetName     = "Доставка ЖД транспортом"
+	)
+
+	cli, err := NewSheetsClient(ctx, credentials)
+	if err != nil {
+		t.Fatal("NewSheetsClient error:", err)
+	}
+
+	err = cli.AddSheet(ctx, spreadsheetID, sheetName)
+	if err != nil {
+		t.Fatal("AddSheet error:", err)
+	}
+}

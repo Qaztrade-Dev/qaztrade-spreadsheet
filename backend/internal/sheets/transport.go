@@ -33,9 +33,15 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 			sheetsTransport.DecodeSubmitApplicationRequest, encodeResponse,
 			opts...,
 		)
+		addSheetHandler = kithttp.NewServer(
+			endpoint.MakeAddSheetEndpoint(svc, jwtcli),
+			sheetsTransport.DecodeAddSheetRequest, encodeResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
+	r.Handle("/sheets/", addSheetHandler).Methods("POST")
 	r.Handle("/sheets/records", submitRecordHandler).Methods("POST")
 	r.Handle("/sheets/application", submitApplicationHandler).Methods("POST")
 

@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"errors"
+)
 
 type Relations map[string]*Node
 
@@ -49,7 +52,12 @@ type Payload struct {
 
 type PayloadValue map[string]interface{}
 
+var (
+	ErrorSheetPresent = errors.New("sheet already present")
+)
+
 type SheetsRepository interface {
 	InsertRecord(ctx context.Context, spreadsheetID string, payload *Payload) error
 	UpdateApplication(ctx context.Context, spreadsheetID string, application *Application) error
+	AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error
 }
