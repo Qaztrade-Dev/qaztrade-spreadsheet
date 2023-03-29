@@ -119,11 +119,13 @@ func (c *SheetsClient) AddSheet(ctx context.Context, spreadsheetID string, sheet
 		return err
 	}
 
-	if err := c.addProtectedRanges(ctx, spreadsheetID, sheetID, protectedRanges); err != nil {
-		return err
+	batchUpdate := NewBatchUpdate(c.service)
+	{
+		batchUpdate.WithProtectedRange(sheetID, protectedRanges)
+		batchUpdate.WithSheetName(sheetID, sheetName)
 	}
 
-	if err := c.updateSheetName(ctx, spreadsheetID, sheetID, sheetName); err != nil {
+	if err := batchUpdate.Do(ctx, spreadsheetID); err != nil {
 		return err
 	}
 
@@ -175,57 +177,6 @@ func (c *SheetsClient) getProtectedRanges(ctx context.Context, spreadsheetID str
 	}
 
 	return protectedRanges, nil
-}
-
-func (c *SheetsClient) addProtectedRanges(ctx context.Context, spreadsheetID string, sheetID int64, protectedRanges []*sheets.ProtectedRange) error {
-	var requests []*sheets.Request
-	for _, pr := range protectedRanges {
-		requests = append(requests, &sheets.Request{
-			AddProtectedRange: &sheets.AddProtectedRangeRequest{
-				ProtectedRange: &sheets.ProtectedRange{
-					Range: &sheets.GridRange{
-						SheetId:          sheetID,
-						StartRowIndex:    pr.Range.StartRowIndex,
-						EndRowIndex:      pr.Range.EndRowIndex,
-						StartColumnIndex: pr.Range.StartColumnIndex,
-						EndColumnIndex:   pr.Range.EndColumnIndex,
-					},
-					ProtectedRangeId:      pr.ProtectedRangeId,
-					Description:           pr.Description,
-					WarningOnly:           pr.WarningOnly,
-					RequestingUserCanEdit: pr.RequestingUserCanEdit,
-					Editors:               pr.Editors,
-				},
-			},
-		})
-	}
-
-	batchUpdateRequest := &sheets.BatchUpdateSpreadsheetRequest{Requests: requests}
-	_, err := c.service.Spreadsheets.BatchUpdate(spreadsheetID, batchUpdateRequest).Do()
-	return err
-}
-
-func (c *SheetsClient) updateSheetName(ctx context.Context, spreadsheetID string, sheetID int64, sheetName string) error {
-	updateRequest := &sheets.BatchUpdateSpreadsheetRequest{
-		Requests: []*sheets.Request{
-			{
-				UpdateSheetProperties: &sheets.UpdateSheetPropertiesRequest{
-					Properties: &sheets.SheetProperties{
-						SheetId: sheetID,
-						Title:   sheetName,
-					},
-					Fields: "title",
-				},
-			},
-		},
-	}
-
-	_, err := c.service.Spreadsheets.BatchUpdate(spreadsheetID, updateRequest).Context(ctx).Do()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 type SpreadsheetClient struct {
@@ -306,7 +257,13 @@ type UpdateCellRequest struct {
 
 // TODO
 // FillRecord construct batch
-func (c *SpreadsheetClient) FillRecord(ctx context.Context, payload domain.PayloadValue, headers HeaderCellMap, rowNum int) error {
+func (c *SpreadsheetClient) FillRecord(
+	ctx context.Context,
+	payload domain.PayloadValue,
+	headers HeaderCellMap,
+	rowNum int,
+	batchUpdate *BatchUpdate,
+) error {
 	batch := make([]*UpdateCellRequest, 0)
 
 	for key := range payload {
@@ -322,7 +279,7 @@ func (c *SpreadsheetClient) FillRecord(ctx context.Context, payload domain.Paylo
 			var m map[string]interface{} = p.(map[string]interface{})
 			var d domain.PayloadValue = domain.PayloadValue(m)
 
-			if err := c.FillRecord(ctx, d, cell.Values, rowNum); err != nil {
+			if err := c.FillRecord(ctx, d, cell.Values, rowNum, batchUpdate); err != nil {
 				return err
 			}
 		}
@@ -332,19 +289,11 @@ func (c *SpreadsheetClient) FillRecord(ctx context.Context, payload domain.Paylo
 		return nil
 	}
 
-	requests := make([]*sheets.Request, 0, len(batch))
 	for i := range batch {
-		requests = append(requests, batch[i].Encode())
+		batchUpdate.WithRequest(batch[i].Encode())
 	}
 
-	_, err := c.service.Spreadsheets.BatchUpdate(
-		c.spreadsheetID,
-		&sheets.BatchUpdateSpreadsheetRequest{
-			Requests: requests,
-		},
-	).Context(ctx).Do()
-
-	return err
+	return nil
 }
 
 func (r *UpdateCellRequest) Encode() *sheets.Request {
@@ -578,8 +527,12 @@ func (c *SpreadsheetClient) InsertRecord(ctx context.Context, payload *domain.Pa
 		rowNum += 1
 	}
 
-	err = c.FillRecord(ctx, payload.Value, c.headersMap, rowNum)
-	if err != nil {
+	batchUpdate := NewBatchUpdate(c.service)
+	if err = c.FillRecord(ctx, payload.Value, c.headersMap, rowNum, batchUpdate); err != nil {
+		return err
+	}
+
+	if err := batchUpdate.Do(ctx, c.spreadsheetID); err != nil {
 		return err
 	}
 
