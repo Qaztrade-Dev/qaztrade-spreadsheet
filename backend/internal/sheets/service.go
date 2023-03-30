@@ -14,7 +14,7 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		opt(deps)
 	}
 
-	sheetsRepo, err := adapters.NewSheetsClient(ctx, deps.credentials)
+	sheetsRepo, err := adapters.NewSpreadsheetClient(ctx, deps.credentials)
 	if err != nil {
 		panic(err)
 	}

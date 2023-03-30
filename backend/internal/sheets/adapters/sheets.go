@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
@@ -12,33 +11,32 @@ import (
 	"google.golang.org/api/sheets/v4"
 )
 
-type SheetsClient struct {
+type SpreadsheetClient struct {
 	service *sheets.Service
 }
 
-var _ domain.SheetsRepository = (*SheetsClient)(nil)
+var _ domain.SheetsRepository = (*SpreadsheetClient)(nil)
 
-func NewSheetsClient(ctx context.Context, credentialsJson []byte) (*SheetsClient, error) {
+func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte) (*SpreadsheetClient, error) {
 	service, err := sheets.NewService(ctx, option.WithCredentialsJSON(credentialsJson))
 	if err != nil {
 		return nil, err
 	}
 
-	return &SheetsClient{
+	return &SpreadsheetClient{
 		service: service,
 	}, nil
 }
 
-func (c *SheetsClient) InsertRecord(ctx context.Context, spreadsheetID string, payload *domain.Payload) error {
-	spreadsheetClient, err := c.NewSpreadsheetClient(ctx, spreadsheetID)
+func (c *SpreadsheetClient) InsertRecord(ctx context.Context, spreadsheetID, sheetName string, sheetID int64, payload *domain.Payload) error {
+	sheetClient, err := c.NewSheetClient(ctx, spreadsheetID, sheetName, sheetID)
 	if err != nil {
 		return err
 	}
-
-	return spreadsheetClient.InsertRecord(ctx, payload)
+	return sheetClient.InsertRecord(ctx, payload)
 }
 
-func (c *SheetsClient) UpdateApplication(ctx context.Context, spreadsheetID string, application *domain.Application) error {
+func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID string, application *domain.Application) error {
 	var mappings = []struct {
 		Range string
 		Value string
@@ -91,7 +89,7 @@ func (c *SheetsClient) UpdateApplication(ctx context.Context, spreadsheetID stri
 	return nil
 }
 
-func (c *SheetsClient) AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error {
+func (c *SpreadsheetClient) AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error {
 	var (
 		originSpreadsheetID = "1YvRrTIVWz1kigSke6pN8Uz87r0fWl-kyarogwAjKx5c"
 		mappings            = map[string]int64{ // sheetName:sheetID
@@ -132,7 +130,7 @@ func (c *SheetsClient) AddSheet(ctx context.Context, spreadsheetID string, sheet
 	return nil
 }
 
-func (c *SheetsClient) containsSheet(ctx context.Context, spreadsheetID string, sheetName string) (bool, error) {
+func (c *SpreadsheetClient) containsSheet(ctx context.Context, spreadsheetID string, sheetName string) (bool, error) {
 	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
 	if err != nil {
 		return false, err
@@ -149,7 +147,7 @@ func (c *SheetsClient) containsSheet(ctx context.Context, spreadsheetID string, 
 }
 
 // copySheet returns sheetId
-func (c *SheetsClient) copySheet(ctx context.Context, sourceSpreadsheetID, targetSpreadsheetID string, sheetID int64) (int64, error) {
+func (c *SpreadsheetClient) copySheet(ctx context.Context, sourceSpreadsheetID, targetSpreadsheetID string, sheetID int64) (int64, error) {
 	copyRequest := &sheets.CopySheetToAnotherSpreadsheetRequest{
 		DestinationSpreadsheetId: targetSpreadsheetID,
 	}
@@ -162,7 +160,7 @@ func (c *SheetsClient) copySheet(ctx context.Context, sourceSpreadsheetID, targe
 	return resp.SheetId, nil
 }
 
-func (c *SheetsClient) getProtectedRanges(ctx context.Context, spreadsheetID string, sheetID int64) ([]*sheets.ProtectedRange, error) {
+func (c *SpreadsheetClient) getProtectedRanges(ctx context.Context, spreadsheetID string, sheetID int64) ([]*sheets.ProtectedRange, error) {
 	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
 	if err != nil {
 		return nil, err
@@ -179,33 +177,73 @@ func (c *SheetsClient) getProtectedRanges(ctx context.Context, spreadsheetID str
 	return protectedRanges, nil
 }
 
-type SpreadsheetClient struct {
+type SheetClient struct {
 	service       *sheets.Service
 	spreadsheetID string
+	sheetName     string
+	sheetID       int64
 	headersMap    HeaderCellMap
+	data          [][]string
 }
 
-func (c *SheetsClient) NewSpreadsheetClient(ctx context.Context, spreadsheetID string) (*SpreadsheetClient, error) {
-	spreadsheetClient := &SpreadsheetClient{
+func (c *SpreadsheetClient) NewSheetClient(ctx context.Context, spreadsheetID, sheetName string, sheetID int64) (*SheetClient, error) {
+	sheetClient := &SheetClient{
 		service:       c.service,
 		spreadsheetID: spreadsheetID,
+		sheetName:     sheetName,
+		sheetID:       sheetID,
 	}
 
-	// TODO
-	// cache or reuse or hard-code
-	headersMap, err := spreadsheetClient.getHeaderCells(ctx)
+	headersMap, err := sheetClient.getHeaderCells(ctx, sheetName)
 	if err != nil {
 		return nil, err
 	}
 
-	spreadsheetClient.headersMap = headersMap
+	data, err := sheetClient.getData(ctx, sheetName)
+	if err != nil {
+		return nil, err
+	}
 
-	return spreadsheetClient, nil
+	sheetClient.headersMap = headersMap
+	sheetClient.data = data
+
+	return sheetClient, nil
 }
 
-func (c *SpreadsheetClient) getHeaderCells(ctx context.Context) (HeaderCellMap, error) {
-	sheetRange, err := c.service.Spreadsheets.Values.Get(c.spreadsheetID, "Header").
-		ValueRenderOption("FORMATTED_VALUE").
+func getSheetRangeData(sheetName string) string {
+	rangeName := fmt.Sprintf("'%s'!%s", sheetName, "data")
+
+	return rangeName
+}
+
+func (c *SheetClient) getData(ctx context.Context, sheetName string) ([][]string, error) {
+	headerRangeName := getSheetRangeData(sheetName)
+	sheetRange, err := c.service.Spreadsheets.Values.Get(c.spreadsheetID, headerRangeName).
+		Context(ctx).
+		Do()
+	if err != nil {
+		return nil, err
+	}
+
+	data := make([][]string, len(sheetRange.Values))
+	for i, row := range sheetRange.Values {
+		data[i] = make([]string, len(row))
+		for j := range row {
+			data[i][j] = strings.TrimSpace(row[j].(string))
+		}
+	}
+	return data, nil
+}
+
+func getSheetRangeHeader(sheetName string) string {
+	rangeName := fmt.Sprintf("'%s'!%s", sheetName, "header")
+
+	return rangeName
+}
+
+func (c *SheetClient) getHeaderCells(ctx context.Context, sheetName string) (HeaderCellMap, error) {
+	headerRangeName := getSheetRangeHeader(sheetName)
+	sheetRange, err := c.service.Spreadsheets.Values.Get(c.spreadsheetID, headerRangeName).
 		Context(ctx).
 		Do()
 	if err != nil {
@@ -256,8 +294,8 @@ type UpdateCellRequest struct {
 }
 
 // TODO
-// FillRecord construct batch
-func (c *SpreadsheetClient) FillRecord(
+// fillRecord construct batch
+func (c *SheetClient) fillRecord(
 	ctx context.Context,
 	payload domain.PayloadValue,
 	headers HeaderCellMap,
@@ -279,7 +317,7 @@ func (c *SpreadsheetClient) FillRecord(
 			var m map[string]interface{} = p.(map[string]interface{})
 			var d domain.PayloadValue = domain.PayloadValue(m)
 
-			if err := c.FillRecord(ctx, d, cell.Values, rowNum, batchUpdate); err != nil {
+			if err := c.fillRecord(ctx, d, cell.Values, rowNum, batchUpdate); err != nil {
 				return err
 			}
 		}
@@ -290,20 +328,21 @@ func (c *SpreadsheetClient) FillRecord(
 	}
 
 	for i := range batch {
-		batchUpdate.WithRequest(batch[i].Encode())
+		fmt.Printf("%#v\n", batch[i])
+		batchUpdate.WithRequest(batch[i].Encode(c.sheetID))
 	}
 
 	return nil
 }
 
-func (r *UpdateCellRequest) Encode() *sheets.Request {
+func (r *UpdateCellRequest) Encode(sheetID int64) *sheets.Request {
 	return &sheets.Request{
 		UpdateCells: &sheets.UpdateCellsRequest{
 			Fields: "*",
 			Start: &sheets.GridCoordinate{
 				RowIndex:    int64(r.RowIndex),
 				ColumnIndex: int64(r.ColumnIndex),
-				SheetId:     0,
+				SheetId:     sheetID,
 			},
 			Rows: []*sheets.RowData{
 				{
@@ -322,48 +361,37 @@ func (r *UpdateCellRequest) Encode() *sheets.Request {
 
 const ParentKeyRoot = "root"
 
-func (c *SpreadsheetClient) GetNodeBounds(ctx context.Context, nodeKey, nodeID string, parentBound ...*Bound) (*Bound, error) {
+func (c *SheetClient) getNodeBounds(ctx context.Context, nodeKey, nodeID string, parentBound ...*Bound) (*Bound, error) {
 	fmt.Printf("GetNodeBounds. nodeKey=%v, nodeID=%v\n", nodeKey, nodeID)
 	if nodeKey == ParentKeyRoot {
-		sheetRange, err := c.service.Spreadsheets.Values.Get(c.spreadsheetID, "A6:A").
-			ValueRenderOption("FORMATTED_VALUE").
-			Context(ctx).
-			Do()
-		if err != nil {
-			return nil, err
-		}
-
-		return &Bound{Top: 5, Bottom: 5 + len(sheetRange.Values)}, nil
+		return &Bound{Top: 0, Bottom: len(c.data) - 1}, nil
 	}
 
 	fmt.Printf("%#v\n", nodeKey)
 	var (
-		parentHeaderCell = c.GetHeaderCell(nodeKey)
-		columnA1         = EncodeColumn(parentHeaderCell.Range.Left)
-		range_           = columnA1 + ":" + columnA1
+		parentHeaderCell = c.getHeaderCell(nodeKey)
+		fromRow          = 0
+		toRow            = len(c.data) - 1
+		columnIdx        = parentHeaderCell.Range.Left
 
-		left   = 0
-		right  = 0
-		offset = 0
+		left  = 0
+		right = 0
 	)
 
 	if len(parentBound) > 0 {
-		range_ = parentBound[0].EncodeRange(parentHeaderCell.Range.Left)
-		offset = parentBound[0].Top
+		fromRow = parentBound[0].Top
+		toRow = parentBound[0].Bottom
 	}
 
-	sheetRange, err := c.service.Spreadsheets.Values.Get(c.spreadsheetID, range_).
-		Context(ctx).
-		Do()
-	fmt.Println("Get err", err)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range sheetRange.Values {
-		fmt.Printf("left: i=%v, sheetRange.Values[i]=%#v\n", i, sheetRange.Values[i])
-		value := DecodeRow(sheetRange.Values[i])
-
+	for i := fromRow; i <= toRow; i++ {
+		if i >= len(c.data) {
+			break
+		}
+		if columnIdx >= len(c.data[i]) {
+			break
+		}
+		fmt.Printf("left: i=%v, c.data[i]=%#v\n", i, c.data[i])
+		value := c.data[i][columnIdx]
 		if value == nodeID {
 			left = i
 			right = i
@@ -371,23 +399,27 @@ func (c *SpreadsheetClient) GetNodeBounds(ctx context.Context, nodeKey, nodeID s
 		}
 	}
 
-	for i := left + 1; i < len(sheetRange.Values); i++ {
-		fmt.Printf("right: i=%v, sheetRange.Values[i]=%#v\n", i, sheetRange.Values[i])
-		value := DecodeRow(sheetRange.Values[i])
+	for i := left + 1; i <= toRow; i++ {
+		if i >= len(c.data) {
+			break
+		}
+		if columnIdx >= len(c.data[i]) {
+			break
+		}
+		fmt.Printf("right: i=%v, c.data[i]=%#v\n", i, c.data[i])
+		value := c.data[i][columnIdx]
 		if value != "" {
 			break
 		}
-
 		right = i
 	}
 
-	result := &Bound{Top: left + offset, Bottom: right + offset}
-	fmt.Printf("%#v\n", result)
+	result := &Bound{Top: left, Bottom: right}
 
 	return result, nil
 }
 
-func (c *SpreadsheetClient) GetHeaderCell(parentKey string) *HeaderCell {
+func (c *SheetClient) getHeaderCell(parentKey string) *HeaderCell {
 	keys := strings.Split(parentKey, ".")
 	var cell *HeaderCell
 	for _, key := range keys {
@@ -407,7 +439,7 @@ var (
 	ErrorChildNotMatch = errors.New("child name doesn't match")
 )
 
-func (c *SpreadsheetClient) GetChildNode(parentKey, childName string) (*domain.Node, error) {
+func (c *SheetClient) getChildNode(parentKey, childName string) (*domain.Node, error) {
 	fmt.Printf("GetChildNode. parentKey=%v, childName=%v\n", parentKey, childName)
 	if _, ok := domain.Children[parentKey]; !ok {
 		return nil, ErrorChildNotFound
@@ -421,32 +453,27 @@ func (c *SpreadsheetClient) GetChildNode(parentKey, childName string) (*domain.N
 	return domain.Children[parentKey], nil
 }
 
-func (c *SpreadsheetClient) GetLastChildCell(ctx context.Context, parentBounds *Bound, childHeaderCell *HeaderCell) (*Cell, error) {
-	fmt.Printf("GetLastChildCell. parentBounds=%#v, childHeaderCell=%#v", parentBounds, childHeaderCell)
+func (c *SheetClient) getLastChildCell(ctx context.Context, parentBounds *Bound, childHeaderCell *HeaderCell) (*Cell, error) {
+	fmt.Printf("GetLastChildCell. parentBounds=%#v, childHeaderCell=%#v\n", parentBounds, childHeaderCell)
 	var (
-		columnNum = childHeaderCell.Range.Left
-		rowTop    = parentBounds.Top
-		rowBottom = parentBounds.Bottom
-
-		fromA1 = EncodeCoordinate(columnNum, rowTop)
-		toA1   = EncodeCoordinate(columnNum, rowBottom)
-		range_ = fromA1 + ":" + toA1
+		fromRow   = parentBounds.Top
+		toRow     = parentBounds.Bottom
+		columnIdx = childHeaderCell.Range.Left
 	)
-
-	sheetRange, err := c.service.Spreadsheets.Values.Get(c.spreadsheetID, range_).
-		Context(ctx).
-		Do()
-	if err != nil {
-		return nil, err
-	}
 
 	var (
 		lastIdx   = 0
 		lastValue = ""
 	)
 
-	for i, row := range sheetRange.Values {
-		value := DecodeRow(row)
+	for i := fromRow; i <= toRow; i++ {
+		if i >= len(c.data) {
+			break
+		}
+		if columnIdx >= len(c.data[i]) {
+			break
+		}
+		value := c.data[i][columnIdx]
 		if i == 0 && value == "" {
 			return nil, nil
 		}
@@ -460,20 +487,20 @@ func (c *SpreadsheetClient) GetLastChildCell(ctx context.Context, parentBounds *
 		return nil, nil
 	}
 
-	return NewCell(lastValue, rowTop+lastIdx, columnNum, childHeaderCell), nil
+	return NewCell(lastValue, fromRow+lastIdx, columnIdx, childHeaderCell), nil
 }
 
 // 1. get parent row
 // 2. get last child of the parent, e.g. neighbor
 // 3. get last row of the farthest descendent
-func (c *SpreadsheetClient) GetRowNum(ctx context.Context, parentID, childName string, bounds ...*Bound) (int, bool, error) {
+func (c *SheetClient) getRowNum(ctx context.Context, parentID, childName string, bounds ...*Bound) (int, bool, error) {
 	fmt.Printf("GetRowNum. parentID:%v, childName:%v\n", parentID, childName)
 	var (
 		parentKey  = domain.Parents[childName].Key
 		parentName = domain.Parents[childName].Name
 	)
 
-	parentBounds, err := c.GetNodeBounds(ctx, parentKey, parentID, bounds...)
+	parentBounds, err := c.getNodeBounds(ctx, parentKey, parentID, bounds...)
 	fmt.Printf("parentBounds: %#v\n", parentBounds)
 	if err != nil {
 		return 0, false, err
@@ -481,15 +508,15 @@ func (c *SpreadsheetClient) GetRowNum(ctx context.Context, parentID, childName s
 
 	var upperBound = parentBounds.Top
 
-	child, err := c.GetChildNode(parentName, childName)
+	child, err := c.getChildNode(parentName, childName)
 	fmt.Printf("child: %#v\n", child)
 	if err != nil {
 		return 0, false, err
 	}
 
-	childHeaderCell := c.GetHeaderCell(child.Key)
+	childHeaderCell := c.getHeaderCell(child.Key)
 
-	lastChildCell, err := c.GetLastChildCell(ctx, parentBounds, childHeaderCell)
+	lastChildCell, err := c.getLastChildCell(ctx, parentBounds, childHeaderCell)
 	fmt.Printf("lastChildCell: %#v\n", lastChildCell)
 	if err != nil {
 		return 0, false, err
@@ -504,7 +531,7 @@ func (c *SpreadsheetClient) GetRowNum(ctx context.Context, parentID, childName s
 		return lastChildCell.RowNum, true, nil
 	}
 
-	rowNum, _, err := c.GetRowNum(ctx, lastChildCell.Value, grandChildNode.Name, parentBounds)
+	rowNum, _, err := c.getRowNum(ctx, lastChildCell.Value, grandChildNode.Name, parentBounds)
 	if err != nil {
 		return 0, false, err
 	}
@@ -512,23 +539,25 @@ func (c *SpreadsheetClient) GetRowNum(ctx context.Context, parentID, childName s
 	return rowNum, true, nil
 }
 
-func (c *SpreadsheetClient) InsertRecord(ctx context.Context, payload *domain.Payload) error {
-	rowNum, mustInsertRow, err := c.GetRowNum(ctx, payload.ParentID, payload.ChildKey)
+func (c *SheetClient) InsertRecord(ctx context.Context, payload *domain.Payload) error {
+	rowNum, mustInsertRow, err := c.getRowNum(ctx, payload.ParentID, payload.ChildKey)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("SubmitRow. rowNum=%v mustInsertRow=%v\n", rowNum, mustInsertRow)
 
+	offset := 4
+
 	if mustInsertRow {
-		if err := c.insertRowAfter(ctx, rowNum); err != nil {
+		if err := c.insertRowAfter(ctx, offset+rowNum); err != nil {
 			return err
 		}
 		rowNum += 1
 	}
 
 	batchUpdate := NewBatchUpdate(c.service)
-	if err = c.FillRecord(ctx, payload.Value, c.headersMap, rowNum, batchUpdate); err != nil {
+	if err = c.fillRecord(ctx, payload.Value, c.headersMap, offset+rowNum, batchUpdate); err != nil {
 		return err
 	}
 
@@ -539,11 +568,11 @@ func (c *SpreadsheetClient) InsertRecord(ctx context.Context, payload *domain.Pa
 	return nil
 }
 
-func (c *SpreadsheetClient) insertRowAfter(ctx context.Context, rowIndex int) error {
+func (c *SheetClient) insertRowAfter(ctx context.Context, rowIndex int) error {
 	request := &sheets.Request{
 		InsertDimension: &sheets.InsertDimensionRequest{
 			Range: &sheets.DimensionRange{
-				SheetId:    0,
+				SheetId:    c.sheetID,
 				Dimension:  "ROWS",
 				StartIndex: int64(rowIndex) + 1, // Start index is 1-based
 				EndIndex:   int64(rowIndex) + 2, // End index is exclusive
@@ -562,49 +591,4 @@ func (c *SpreadsheetClient) insertRowAfter(ctx context.Context, rowIndex int) er
 	}
 
 	return err
-}
-
-func EncodeCoordinate(columnNum, rowNum int) string {
-	var (
-		columnA1 = EncodeColumn(columnNum)
-		coord    = fmt.Sprintf("%s%d", columnA1, rowNum+1)
-	)
-
-	return coord
-}
-
-// EncodeColumn encodes 0-indexed column to A1
-func EncodeColumn(columnNum int) string {
-	columnNum += 1
-	result := ""
-	for columnNum > 0 {
-		remainder := (columnNum - 1) % 26
-		result = fmt.Sprintf("%c", 65+remainder) + result
-		columnNum = (columnNum - 1) / 26
-	}
-	return result
-}
-
-var regexpDigits = regexp.MustCompile(`\d+`)
-
-func DecodeColumn(column string) int {
-	var (
-		columnWithoutDigits = regexpDigits.ReplaceAllString(column, "")
-		result              = 0
-	)
-
-	for i := 0; i < len(columnWithoutDigits); i++ {
-		result *= 26
-		result += int(columnWithoutDigits[i]) - int('A') + 1
-	}
-
-	return result
-}
-
-func DecodeRow(row []interface{}) string {
-	if len(row) == 0 {
-		return ""
-	}
-
-	return strings.TrimSpace(row[0].(string))
 }

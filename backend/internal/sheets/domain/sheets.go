@@ -57,7 +57,7 @@ var (
 )
 
 type SheetsRepository interface {
-	InsertRecord(ctx context.Context, spreadsheetID string, payload *Payload) error
+	InsertRecord(ctx context.Context, spreadsheetID, sheetName string, sheetID int64, payload *Payload) error
 	UpdateApplication(ctx context.Context, spreadsheetID string, application *Application) error
 	AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error
 }

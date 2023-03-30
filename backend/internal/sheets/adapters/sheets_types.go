@@ -12,16 +12,6 @@ type Bound struct {
 	Bottom int
 }
 
-func (b *Bound) EncodeRange(columnNum int) string {
-	var (
-		fromA1 = EncodeCoordinate(columnNum, b.Top)
-		toA1   = EncodeCoordinate(columnNum, b.Bottom)
-		range_ = fromA1 + ":" + toA1
-	)
-
-	return range_
-}
-
 type HeaderCell struct {
 	Key      string
 	Range    Range

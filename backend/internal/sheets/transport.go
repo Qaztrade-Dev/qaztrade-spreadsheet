@@ -24,7 +24,7 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 		}
 
 		submitRecordHandler = kithttp.NewServer(
-			endpoint.MakeSubmitRecordEndpoint(svc),
+			endpoint.MakeSubmitRecordEndpoint(svc, jwtcli),
 			sheetsTransport.DecodeSubmitRecordRequest, encodeResponse,
 			opts...,
 		)

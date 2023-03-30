@@ -13,20 +13,22 @@ var credentials []byte
 
 func TestSubmit(t *testing.T) {
 	var (
-		ctx           = context.Background()
-		spreadsheetID = "1KL-lrhs-Wu9kRAppBxAHUUFr7OCfNYla8Z7W-0tX4Mo"
+		ctx                 = context.Background()
+		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		sheetName           = "Доставка ЖД транспортом"
+		sheetID       int64 = 932754288
 	)
 
-	cli, err := NewSheetsClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentials)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}
 
-	err = cli.InsertRecord(ctx, spreadsheetID, &domain.Payload{
+	err = cli.InsertRecord(ctx, spreadsheetID, sheetName, sheetID, &domain.Payload{
 		ParentID: "null",
 		ChildKey: "№",
 		Value: domain.PayloadValue{
-			"№": "3",
+			"№": "2",
 			"Производитель/дочерняя компания/дистрибьютор/СПК": "Doodocs",
 			"подтверждающий документ": map[string]interface{}{
 				"производитель":       "производитель",
@@ -47,17 +49,19 @@ func TestSubmit(t *testing.T) {
 
 func TestSubmitChild(t *testing.T) {
 	var (
-		ctx           = context.Background()
-		spreadsheetID = "1KL-lrhs-Wu9kRAppBxAHUUFr7OCfNYla8Z7W-0tX4Mo"
+		ctx                 = context.Background()
+		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		sheetName           = "Доставка ЖД транспортом"
+		sheetID       int64 = 932754288
 	)
 
-	cli, err := NewSheetsClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentials)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}
 
-	err = cli.InsertRecord(ctx, spreadsheetID, &domain.Payload{
-		ParentID: "2",
+	err = cli.InsertRecord(ctx, spreadsheetID, sheetName, sheetID, &domain.Payload{
+		ParentID: "1",
 		ChildKey: "Дистрибьюторский договор",
 		Value: domain.PayloadValue{
 			"Дистрибьюторский договор": map[string]interface{}{
@@ -105,7 +109,7 @@ func TestUpdateApplication(t *testing.T) {
 		}
 	)
 
-	cli, err := NewSheetsClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentials)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}
@@ -123,7 +127,7 @@ func TestAddSheet(t *testing.T) {
 		sheetName     = "Доставка ЖД транспортом"
 	)
 
-	cli, err := NewSheetsClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentials)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}
