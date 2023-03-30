@@ -14,6 +14,7 @@ type Service interface {
 
 type service struct {
 	sheetsRepo domain.SheetsRepository
+	storage    domain.Storage
 }
 
 func NewService(sheetsRepo domain.SheetsRepository) Service {

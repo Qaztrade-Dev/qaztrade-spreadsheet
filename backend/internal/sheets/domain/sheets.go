@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"errors"
+	"io"
 )
 
 type Relations map[string]*Node
@@ -60,4 +61,8 @@ type SheetsRepository interface {
 	InsertRecord(ctx context.Context, spreadsheetID, sheetName string, sheetID int64, payload *Payload) error
 	UpdateApplication(ctx context.Context, spreadsheetID string, application *Application) error
 	AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error
+}
+
+type Storage interface {
+	Upload(ctx context.Context, fileName string, fileSize int64, fileReader io.Reader) (string, error)
 }

@@ -96,6 +96,10 @@
                         name: 'условия',
                         input: { tag: 'input', attrs: { type: 'text' } },
                     },
+                    {
+                        name: 'файл',
+                        input: { tag: 'input', attrs: { type: 'file' } },
+                    },
                 ],
             },
         ];
@@ -104,17 +108,18 @@
         const firstUl = document.querySelector('#form ul');
         const submitButton = document.querySelector('#submit');
 
-        populateForm(firstUl, parentSkel, '');
+        // populateForm(firstUl, parentSkel, '');
         populateForm(firstUl, inputSkel, '');
-        setParentValues();
+        // setParentValues();
 
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             submitButton.disabled = true;
             e.preventDefault();
 
             const formData = new FormData(form);
             const jsonBody = Object.fromEntries(formData);
-            const reqJSON = createNestedJSON(jsonBody);
+            console.log(jsonBody)
+            const reqJSON = await createNestedJSON(jsonBody);
 
             if ('parentID' in reqJSON) {
                 requestSkel.parentID = reqJSON.parentID;
@@ -205,12 +210,27 @@
             }
         }
 
-        function createNestedJSON(value) {
-            return Object.entries(value).reduce((result, [key, value]) => {
+        async function createNestedJSON(value) {
+            return await Object.entries(value).reduce(async (promisedAcc, [key, value]) => {
+                if (value instanceof File) {
+                    value = {
+                        file: await toBase64(value),
+                        size: value.size,
+                        name: value.name
+                    }
+                }
+                const result = await promisedAcc
                 setNestedKey(result, key, value);
                 return result;
-            }, {});
+            }, Promise.resolve({}));
         }
+
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
 
         function setNestedKey(obj, k, v) {
             const keys = k.split('.');
