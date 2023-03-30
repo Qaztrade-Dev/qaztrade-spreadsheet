@@ -17,8 +17,9 @@ type service struct {
 	storage    domain.Storage
 }
 
-func NewService(sheetsRepo domain.SheetsRepository) Service {
+func NewService(sheetsRepo domain.SheetsRepository, storage domain.Storage) Service {
 	return &service{
 		sheetsRepo: sheetsRepo,
+		storage:    storage,
 	}
 }

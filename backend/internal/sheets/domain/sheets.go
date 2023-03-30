@@ -64,5 +64,5 @@ type SheetsRepository interface {
 }
 
 type Storage interface {
-	Upload(ctx context.Context, fileName string, fileSize int64, fileReader io.Reader) (string, error)
+	Upload(ctx context.Context, folderName, fileName string, fileSize int64, fileReader io.Reader) (string, error)
 }

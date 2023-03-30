@@ -24,10 +24,14 @@ const (
 
 func main() {
 	var (
-		ctx       = context.Background()
-		port      = getenv("PORT", defaultPort)
-		jwtsecret = getenv("JWT_SECRET", "qaztradesecret")
-		addr      = ":" + port
+		ctx         = context.Background()
+		port        = getenv("PORT", defaultPort)
+		jwtsecret   = getenv("JWT_SECRET", "qaztradesecret")
+		s3AccessKey = getenv("S3_ACCESS_KEY", "")
+		s3SecretKey = getenv("S3_SECRET_KEY", "")
+		s3Endpoint  = getenv("S3_ENDPOINT", "")
+		s3Bucket    = getenv("S3_BUCKET", "")
+		addr        = ":" + port
 	)
 
 	var logger log.Logger
@@ -37,7 +41,11 @@ func main() {
 	}
 
 	var (
-		sheetsService = sheets.MakeService(ctx, sheets.WithSheetsCredentials(credentials))
+		sheetsService = sheets.MakeService(
+			ctx,
+			sheets.WithSheetsCredentials(credentials),
+			sheets.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
+		)
 	)
 
 	var (

@@ -307,6 +307,7 @@ func (c *SheetClient) fillRecord(
 	for key := range payload {
 		cell := headers[key]
 		if cell.IsLeaf() {
+			fmt.Println(payload[key])
 			batch = append(batch, &UpdateCellRequest{
 				RowIndex:    int64(rowNum),
 				ColumnIndex: int64(cell.Range.Left),

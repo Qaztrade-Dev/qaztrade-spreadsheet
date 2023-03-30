@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
 )
@@ -33,9 +34,9 @@ func (s *service) traversePayload(ctx context.Context, payload map[string]interf
 		switch {
 		case isFile(value):
 			file := decodeFile(value)
-			value, err := s.storage.Upload(ctx, file.FileName, file.FileSize, bytes.NewReader(file.File))
+			value, err := s.storage.Upload(ctx, "folder", file.FileName, file.FileSize, bytes.NewReader(file.File))
 			if err != nil {
-				return nil
+				return err
 			}
 			payload[k] = value
 		case isPayload(value):
@@ -66,12 +67,16 @@ type FilePayload struct {
 
 func decodeFile(value interface{}) *FilePayload {
 	var (
-		mapValue     = value.(map[string]interface{})
-		fileB64      = mapValue["file"].(string)
-		fileSize     = mapValue["size"].(float64)
-		fileName     = mapValue["name"].(string)
-		fileBytes, _ = base64.StdEncoding.DecodeString(fileB64)
+		mapValue = value.(map[string]interface{})
+		fileB64  = mapValue["file"].(string)
+		fileSize = mapValue["size"].(float64)
+		fileName = mapValue["name"].(string)
+
+		findSubstr = "base64,"
+		substrIdx  = strings.Index(fileB64, findSubstr)
 	)
+
+	fileBytes, _ := base64.StdEncoding.DecodeString(fileB64[substrIdx+len(findSubstr):])
 
 	return &FilePayload{
 		File:     fileBytes,

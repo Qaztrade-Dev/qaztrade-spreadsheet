@@ -60,11 +60,19 @@
         <li class="form">
             <button id="trainDeliveryCompany">Добавить компанию</button>
         </li>
+
+        <li class="form">
+            <button id="trainDeliveryDistributedContract">Добавить контракт</button>
+        </li>
     </ul>
 
     <script type="text/javascript">
         document.querySelector('#trainDeliveryCompany').addEventListener('click', (e) => {
             google.script.run.trainDeliveryCompany();
+        })
+
+        document.querySelector('#trainDeliveryDistributedContract').addEventListener('click', (e) => {
+            google.script.run.trainDeliveryDistributedContract();
         })
     </script>
 </body>

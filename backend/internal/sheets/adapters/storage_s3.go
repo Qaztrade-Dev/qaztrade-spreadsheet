@@ -10,18 +10,21 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/google/uuid"
 )
 
 type StorageS3 struct {
-	accessKey string
-	secretKey string
-	cli       *s3.Client
+	accessKey  string
+	secretKey  string
+	bucketName string
+	cli        *s3.Client
 }
 
-func NewStorageS3(ctx context.Context, accessKey, secretKey, endpoint string) (*StorageS3, error) {
+func NewStorageS3(ctx context.Context, accessKey, secretKey, bucketName, endpoint string) (*StorageS3, error) {
 	result := &StorageS3{
-		accessKey: accessKey,
-		secretKey: secretKey,
+		accessKey:  accessKey,
+		secretKey:  secretKey,
+		bucketName: bucketName,
 	}
 
 	cfg, err := config.LoadDefaultConfig(
@@ -36,19 +39,23 @@ func NewStorageS3(ctx context.Context, accessKey, secretKey, endpoint string) (*
 
 	result.cli = s3.NewFromConfig(cfg)
 
-	obj, err := result.cli.ListObjects(ctx, &s3.ListObjectsInput{
-		Bucket: aws.String("beta-camelopardalis"),
-	})
-	fmt.Println(err)
-	for _, v := range obj.Contents {
-		fmt.Printf("%#v\n", *v.Key)
-	}
-
 	return result, nil
 }
 
-func (s *StorageS3) Upload(ctx context.Context, fileName string, fileSize int64, fileReader io.Reader) (string, error) {
-	return "", nil
+func (s *StorageS3) Upload(ctx context.Context, folderName, fileName string, fileSize int64, fileReader io.Reader) (string, error) {
+	key := fmt.Sprintf("%s/%s-%s", folderName, uuid.NewString(), fileName)
+	_, err := s.cli.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:        aws.String(s.bucketName),
+		Body:          fileReader,
+		ContentLength: fileSize,
+		Key:           aws.String(key),
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("https://%s.object.pscloud.io/%s", s.bucketName, key), nil
 }
 
 func (s *StorageS3) customCredentialProvider() aws.CredentialsProvider {

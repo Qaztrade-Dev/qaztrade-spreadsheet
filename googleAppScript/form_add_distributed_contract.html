@@ -108,7 +108,7 @@
         const firstUl = document.querySelector('#form ul');
         const submitButton = document.querySelector('#submit');
 
-        // populateForm(firstUl, parentSkel, '');
+        populateForm(firstUl, parentSkel, '');
         populateForm(firstUl, inputSkel, '');
         // setParentValues();
 
@@ -129,6 +129,11 @@
             requestSkel.value = reqJSON;
             fetch('http://localhost:8082/sheets/records', {
                 method: 'POST',
+                headers: {
+                    authorization: 'Bearer <?!= token ?>',
+                    'x-sheet-name': encodeURIComponent('<?!= sheet_name ?>'),
+                    'x-sheet-id': parseInt('<?!= sheet_id ?>')
+                },
                 body: JSON.stringify(requestSkel),
             })
             .then((res) => {
