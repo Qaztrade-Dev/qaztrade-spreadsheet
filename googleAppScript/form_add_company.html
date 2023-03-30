@@ -141,7 +141,7 @@
                 method: 'POST',
                 headers: {
                     authorization: 'Bearer <?!= token ?>',
-                    'x-sheet-name': parseInt('<?!= sheet_name ?>'),
+                    'x-sheet-name': encodeURIComponent('<?!= sheet_name ?>'),
                     'x-sheet-id': parseInt('<?!= sheet_id ?>')
                 },
                 body: JSON.stringify(requestSkel),

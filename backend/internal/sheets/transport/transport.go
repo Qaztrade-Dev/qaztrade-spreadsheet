@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -100,5 +101,6 @@ func extractHeaderSheetID(r *http.Request) (int64, error) {
 
 func extractHeaderSheetName(r *http.Request) string {
 	sheetName := r.Header.Get("x-sheet-name")
-	return sheetName
+	unescaped, _ := url.QueryUnescape(sheetName)
+	return unescaped
 }

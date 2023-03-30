@@ -6,7 +6,7 @@ func AccessControl(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, authorization, x-sheet-id, x-sheet-name")
 
 		if r.Method == "OPTIONS" {
 			return
