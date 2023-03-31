@@ -52,22 +52,29 @@ func (r *AuthorizationRepositoryPostgre) SignUp(ctx context.Context, input *doma
 
 func (r *AuthorizationRepositoryPostgre) SignIn(ctx context.Context, input *domain.SignInInput) (string, error) {
 	var (
-		email              = strings.TrimSpace(input.Email)
-		hashedPassBytes, _ = bcrypt.GenerateFromPassword([]byte(input.Password), 14)
-		hashedPassStr      = string(hashedPassBytes)
+		email = strings.TrimSpace(input.Email)
 	)
 
 	const sql = `
 		select 
-			id
+			id,
+			hashed_password
 		from "users"
 		where 
-			email = $1 and hashed_password = $2
+			email = $1
 	`
 
-	var userID string
-	err := r.pg.QueryRow(ctx, sql, email, hashedPassStr).Scan(&userID)
+	var (
+		userID     string
+		hashedPass string
+	)
+
+	err := r.pg.QueryRow(ctx, sql, email).Scan(&userID, &hashedPass)
 	if err != nil {
+		return "", err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(input.Password)); err != nil {
 		return "", err
 	}
 
