@@ -26,7 +26,7 @@ func MakeSubmitRecordEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoin
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(SubmitRecordRequest)
 
-		claims, err := j.Parse(req.TokenString)
+		claims, err := jwt.Parse[domain.Claims](j, req.TokenString)
 		if err != nil {
 			return nil, err
 		}

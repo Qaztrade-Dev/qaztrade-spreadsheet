@@ -19,8 +19,13 @@ func NewClient(secret string) *Client {
 	}
 }
 
-func (c *Client) Parse(tokenString string) (*Claims, error) {
-	token, err := stdjwt.ParseWithClaims(tokenString, &Claims{}, func(token *stdjwt.Token) (interface{}, error) {
+func Parse[T any](c *Client, tokenString string) (*T, error) {
+	type tmp struct {
+		Payload *T `json:"p"`
+		stdjwt.RegisteredClaims
+	}
+
+	token, err := stdjwt.ParseWithClaims(tokenString, &tmp{}, func(token *stdjwt.Token) (interface{}, error) {
 		return c.secret, nil
 	})
 
@@ -28,16 +33,21 @@ func (c *Client) Parse(tokenString string) (*Claims, error) {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		return claims, nil
+	if claims, ok := token.Claims.(*tmp); ok && token.Valid {
+		return claims.Payload, nil
 	}
 
 	return nil, err
 }
 
-func (c *Client) NewTokenString(spreadsheetID string) (string, error) {
+func NewTokenString[T any](c *Client, t *T) (string, error) {
+	type tmp struct {
+		Payload *T `json:"p"`
+		stdjwt.RegisteredClaims
+	}
+
 	var (
-		claims = Claims{SpreadsheetID: spreadsheetID}
+		claims = tmp{Payload: t}
 		token  = stdjwt.NewWithClaims(stdjwt.SigningMethodHS256, claims)
 	)
 
