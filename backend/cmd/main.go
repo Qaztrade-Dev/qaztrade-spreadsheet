@@ -98,7 +98,11 @@ func main() {
 func getenv(env string, fallback ...string) string {
 	e := os.Getenv(env)
 	if e == "" {
-		return fallback[0]
+		value := ""
+		if len(fallback) > 0 {
+			value = fallback[0]
+		}
+		return value
 	}
 	return e
 }
