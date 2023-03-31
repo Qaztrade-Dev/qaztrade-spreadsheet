@@ -5,72 +5,51 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/doodocs/qaztrade/backend/internal/auth/endpoint"
 	"github.com/doodocs/qaztrade/backend/internal/auth/service"
+	authTransport "github.com/doodocs/qaztrade/backend/internal/auth/transport"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/gorilla/mux"
 
+	"github.com/go-kit/kit/transport"
+	kithttp "github.com/go-kit/kit/transport/http"
 	kitlog "github.com/go-kit/log"
 )
 
 func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) http.Handler {
 	var (
-	// opts = []kithttp.ServerOption{
-	// 	kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
-	// 	kithttp.ServerErrorEncoder(encodeError),
-	// }
+		opts = []kithttp.ServerOption{
+			kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
+			kithttp.ServerErrorEncoder(encodeError),
+		}
 
-	// submitRecordHandler = kithttp.NewServer(
-	// 	endpoint.MakeSubmitRecordEndpoint(svc, jwtcli),
-	// 	sheetsTransport.DecodeSubmitRecordRequest, encodeResponse,
-	// 	opts...,
-	// )
-	// submitApplicationHandler = kithttp.NewServer(
-	// 	endpoint.MakeSubmitApplicationEndpoint(svc, jwtcli),
-	// 	sheetsTransport.DecodeSubmitApplicationRequest, encodeResponse,
-	// 	opts...,
-	// )
-	// addSheetHandler = kithttp.NewServer(
-	// 	endpoint.MakeAddSheetEndpoint(svc, jwtcli),
-	// 	sheetsTransport.DecodeAddSheetRequest, encodeResponse,
-	// 	opts...,
-	// )
+		signUpHandler = kithttp.NewServer(
+			endpoint.MakeSignUpEndpoint(svc),
+			authTransport.DecodeSignUpRequest, encodeResponse,
+			opts...,
+		)
+		signInHandler = kithttp.NewServer(
+			endpoint.MakeSignInEndpoint(svc),
+			authTransport.DecodeSignInRequest, encodeResponse,
+			opts...,
+		)
+		forgotHandler = kithttp.NewServer(
+			endpoint.MakeForgotEndpoint(svc),
+			authTransport.DecodeForgotRequest, encodeResponse,
+			opts...,
+		)
+		restoreHandler = kithttp.NewServer(
+			endpoint.MakeRestoreEndpoint(svc, jwtcli),
+			authTransport.DecodeRestoreRequest, encodeResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
-	/*
-		POST /auth/signup
-		{
-			"email": "example@example.com",
-			"password": "password123",
-			"org_name": "OpenAI Inc."
-		}
-		Resp:
-		{"access_token": "..."}
-
-		POST /auth/signin
-		{
-			"email": "example@example.com",
-			"password": "password123"
-		}
-		Resp:
-		{"access_token": "..."}
-
-		POST /auth/forgot
-		{
-			"email": "example@example.com"
-		}
-		Resp:
-		200 OK
-
-		POST /auth/restore
-		"Authorization": "Bearer ..."
-
-		{
-			"password": "..."
-		}
-		Resp:
-		200 OK - Login using your password
-	*/
+	r.Handle("/auth/signup", signUpHandler).Methods("POST")
+	r.Handle("/auth/signin", signInHandler).Methods("POST")
+	r.Handle("/auth/forgot", forgotHandler).Methods("POST")
+	r.Handle("/auth/restore", restoreHandler).Methods("POST")
 
 	return r
 }

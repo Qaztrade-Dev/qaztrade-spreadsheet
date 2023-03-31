@@ -19,6 +19,14 @@ type service struct {
 	emailSvc  domain.EmailService
 }
 
-func NewService() Service {
-	return &service{}
+func NewService(
+	authRepo domain.AuthorizationRepository,
+	credsRepo domain.CredentialsRepository,
+	emailSvc domain.EmailService,
+) Service {
+	return &service{
+		authRepo:  authRepo,
+		credsRepo: credsRepo,
+		emailSvc:  emailSvc,
+	}
 }

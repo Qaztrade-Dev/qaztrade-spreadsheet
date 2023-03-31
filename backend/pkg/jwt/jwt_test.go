@@ -2,7 +2,9 @@ package jwt
 
 import (
 	"testing"
+	"time"
 
+	stdjwt "github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,4 +48,25 @@ func TestNewTokenString(t *testing.T) {
 	claims, err := Parse[testClaims](jwtcli, tokenString)
 	require.Nil(t, err)
 	require.Equal(t, expClaims, claims)
+}
+
+func TestWithExpire(t *testing.T) {
+	var (
+		spreadhsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		secret         = "qaztradesecret"
+
+		jwtcli = NewClient(secret)
+	)
+
+	tokenString, err := NewTokenString(
+		jwtcli,
+		&testClaims{SpreadsheetID: spreadhsheetID},
+		WithExpire(time.Date(2019, 3, 30, 1, 2, 3, 4, time.UTC)),
+	)
+	require.Nil(t, err)
+	require.NotEmpty(t, tokenString)
+
+	claims, err := Parse[testClaims](jwtcli, tokenString)
+	require.ErrorIs(t, err, stdjwt.ErrTokenExpired)
+	require.Equal(t, (*testClaims)(nil), claims)
 }

@@ -9,10 +9,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/doodocs/qaztrade/backend/internal/auth"
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/internal/sheets"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/log"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 //go:embed credentials.json
@@ -24,15 +26,29 @@ const (
 
 func main() {
 	var (
-		ctx         = context.Background()
-		port        = getenv("PORT", defaultPort)
-		jwtsecret   = getenv("JWT_SECRET", "qaztradesecret")
-		s3AccessKey = getenv("S3_ACCESS_KEY", "")
-		s3SecretKey = getenv("S3_SECRET_KEY", "")
-		s3Endpoint  = getenv("S3_ENDPOINT", "")
-		s3Bucket    = getenv("S3_BUCKET", "")
+		ctx              = context.Background()
+		port             = getenv("PORT", defaultPort)
+		jwtsecret        = getenv("JWT_SECRET", "qaztradesecret")
+		s3AccessKey      = getenv("S3_ACCESS_KEY")
+		s3SecretKey      = getenv("S3_SECRET_KEY")
+		s3Endpoint       = getenv("S3_ENDPOINT")
+		s3Bucket         = getenv("S3_BUCKET")
+		postgresLogin    = getenv("POSTGRES_LOGIN", "postgres")
+		postgresPassword = getenv("POSTGRES_PASSWORD", "postgres")
+		postgresHost     = getenv("POSTGRES_HOST", "localhost")
+		postgresDatabase = getenv("POSTGRES_DATABASE", "qaztrade")
+		mailLogin        = getenv("MAIL_LOGIN")
+		mailPassword     = getenv("MAIL_PASSWORD")
+
 		addr        = ":" + port
+		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
+		jwtcli      = jwt.NewClient(jwtsecret)
 	)
+
+	pg, err := pgxpool.Connect(ctx, postgresURL)
+	if err != nil {
+		panic(err)
+	}
 
 	var logger log.Logger
 	{
@@ -46,15 +62,22 @@ func main() {
 			sheets.WithSheetsCredentials(credentials),
 			sheets.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
 		)
+
+		authService = auth.MakeService(
+			ctx,
+			auth.WithPostgre(pg),
+			auth.WithJWT(jwtcli),
+			auth.WithMail(mailLogin, mailPassword),
+		)
 	)
 
 	var (
-		jwtcli     = jwt.NewClient(jwtsecret)
 		httpLogger = log.With(logger, "component", "http")
 		mux        = http.NewServeMux()
 	)
 
 	mux.Handle("/sheets/", sheets.MakeHandler(sheetsService, jwtcli, httpLogger))
+	mux.Handle("/auth/", auth.MakeHandler(authService, jwtcli, httpLogger))
 
 	http.Handle("/", common.AccessControl(mux))
 
@@ -72,10 +95,10 @@ func main() {
 	logger.Log("terminated", <-errs)
 }
 
-func getenv(env, fallback string) string {
+func getenv(env string, fallback ...string) string {
 	e := os.Getenv(env)
 	if e == "" {
-		return fallback
+		return fallback[0]
 	}
 	return e
 }

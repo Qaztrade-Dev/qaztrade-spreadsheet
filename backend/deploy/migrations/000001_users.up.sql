@@ -3,10 +3,12 @@ begin;
 create table "users" (
   "id" uuid primary key default gen_random_uuid(),
   "created_at" timestamptz default now(),
-  "email" text not null,
+  "email" text not null unique,
   "hashed_password" text not null,
   "attrs" jsonb default {}
 );
+
+-- create index on user id, email, hashed_password
 
 comment on column "users.attrs" is 'Attributes of the user, i.e. "{"org_name": "OpenAI Inc."}"';
 

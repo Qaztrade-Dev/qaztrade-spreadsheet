@@ -2,8 +2,12 @@ package domain
 
 import "context"
 
+type UserClaims struct {
+	UserID string `json:"uid"`
+}
+
 type Credentials struct {
-	AccessToken string
+	AccessToken string `json:"access_token"`
 }
 
 type SignUpInput struct {
@@ -33,5 +37,5 @@ type CredentialsRepository interface {
 }
 
 type EmailService interface {
-	Send(ctx context.Context, mailName string, payload interface{}) error
+	Send(ctx context.Context, toEmail, mailName string, payload interface{}) error
 }

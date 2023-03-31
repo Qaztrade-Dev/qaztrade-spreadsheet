@@ -1,13 +1,10 @@
 package jwt
 
 import (
+	"time"
+
 	stdjwt "github.com/golang-jwt/jwt/v5"
 )
-
-type Claims struct {
-	SpreadsheetID string `json:"sid"`
-	stdjwt.RegisteredClaims
-}
 
 type Client struct {
 	secret []byte
@@ -40,16 +37,26 @@ func Parse[T any](c *Client, tokenString string) (*T, error) {
 	return nil, err
 }
 
-func NewTokenString[T any](c *Client, t *T) (string, error) {
+func NewTokenString[T any](c *Client, t *T, opts ...Option) (string, error) {
 	type tmp struct {
 		Payload *T `json:"p"`
 		stdjwt.RegisteredClaims
 	}
 
-	var (
-		claims = tmp{Payload: t}
-		token  = stdjwt.NewWithClaims(stdjwt.SigningMethodHS256, claims)
-	)
+	claims := tmp{Payload: t}
+	for _, opt := range opts {
+		opt(&claims.RegisteredClaims)
+	}
+
+	token := stdjwt.NewWithClaims(stdjwt.SigningMethodHS256, claims)
 
 	return token.SignedString(c.secret)
+}
+
+type Option func(claims *stdjwt.RegisteredClaims)
+
+func WithExpire(t time.Time) Option {
+	return func(claims *stdjwt.RegisteredClaims) {
+		claims.ExpiresAt = stdjwt.NewNumericDate(t)
+	}
 }

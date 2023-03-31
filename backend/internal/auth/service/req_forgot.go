@@ -23,7 +23,7 @@ func (s *service) Forgot(ctx context.Context, req *ForgotRequest) error {
 		return err
 	}
 
-	if err := s.emailSvc.Send(ctx, mailName, &MailPayload{
+	if err := s.emailSvc.Send(ctx, req.Email, mailName, &MailPayload{
 		Credentials: creds,
 	}); err != nil {
 		return err
