@@ -307,7 +307,6 @@ func (c *SheetClient) fillRecord(
 	for key := range payload {
 		cell := headers[key]
 		if cell.IsLeaf() {
-			fmt.Println(payload[key])
 			batch = append(batch, &UpdateCellRequest{
 				RowIndex:    int64(rowNum),
 				ColumnIndex: int64(cell.Range.Left),
@@ -329,7 +328,6 @@ func (c *SheetClient) fillRecord(
 	}
 
 	for i := range batch {
-		fmt.Printf("%#v\n", batch[i])
 		batchUpdate.WithRequest(batch[i].Encode(c.sheetID))
 	}
 
@@ -337,6 +335,17 @@ func (c *SheetClient) fillRecord(
 }
 
 func (r *UpdateCellRequest) Encode(sheetID int64) *sheets.Request {
+	var (
+		stringValue  *string
+		formulaValue *string
+	)
+
+	if strings.HasPrefix(r.Value, "=") {
+		formulaValue = &r.Value
+	} else {
+		stringValue = &r.Value
+	}
+
 	return &sheets.Request{
 		UpdateCells: &sheets.UpdateCellsRequest{
 			Fields: "*",
@@ -350,7 +359,8 @@ func (r *UpdateCellRequest) Encode(sheetID int64) *sheets.Request {
 					Values: []*sheets.CellData{
 						{
 							UserEnteredValue: &sheets.ExtendedValue{
-								StringValue: &r.Value,
+								StringValue:  stringValue,
+								FormulaValue: formulaValue,
 							},
 						},
 					},

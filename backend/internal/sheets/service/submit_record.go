@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
@@ -38,7 +39,7 @@ func (s *service) traversePayload(ctx context.Context, payload map[string]interf
 			if err != nil {
 				return err
 			}
-			payload[k] = value
+			payload[k] = fmt.Sprintf("=HYPERLINK(\"%s\", \"файл\")", value)
 		case isPayload(value):
 			return s.traversePayload(ctx, value.(map[string]interface{}))
 		}
