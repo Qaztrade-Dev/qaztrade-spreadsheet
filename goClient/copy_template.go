@@ -13,7 +13,6 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v2"
-	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
 
@@ -73,7 +72,7 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 func CopyTemplate() {
-	ctx := context.Background()
+	_ = context.Background()
 	b, err := os.ReadFile("client_secret.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
@@ -84,55 +83,55 @@ func CopyTemplate() {
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
-	client := getClient(config)
+	_ = getClient(config)
 
-	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		log.Fatalf("Unable to retrieve Sheets client: %v", err)
-	}
+	// srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
+	// if err != nil {
+	// 	log.Fatalf("Unable to retrieve Sheets client: %v", err)
+	// }
 
-	spreadsheetsSrv, err := sheets.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		log.Fatalf("Unable to retrieve Sheets client: %v", err)
-	}
+	// var (
+	// 	spreadsheetID = "1bv_mj8-xnNzBGYmF2YqbEwNPz2IyOuZVaD4E4203trc"
+	// 	folderID      = "1c04RznMaAumXl9OfVkstH4ZAIG3ULOgR"
+	// )
 
-	var (
-		spreadsheetID = "1bv_mj8-xnNzBGYmF2YqbEwNPz2IyOuZVaD4E4203trc"
-		folderID      = "1c04RznMaAumXl9OfVkstH4ZAIG3ULOgR"
-	)
+	// // Replace with the new name for the copied file.
+	// newFileName := "COPIED_SPREADSHEET_NAME1"
 
-	// Replace with the new name for the copied file.
-	newFileName := "COPIED_SPREADSHEET_NAME1"
+	// // Call the Files.Copy method to create a copy of the spreadsheet file.
+	// copy := &drive.File{
+	// 	Title: newFileName,
+	// 	Parents: []*drive.ParentReference{
+	// 		{
+	// 			Id: folderID,
+	// 		},
+	// 	},
+	// }
+	// copiedFile, err := srv.Files.Copy(spreadsheetID, copy).Do()
+	// if err != nil {
+	// 	log.Fatalf("Failed to copy file: %v", err)
+	// }
 
-	// Call the Files.Copy method to create a copy of the spreadsheet file.
-	copy := &drive.File{
-		Title: newFileName,
-		Parents: []*drive.ParentReference{
-			{
-				Id: folderID,
-			},
-		},
-	}
-	copiedFile, err := srv.Files.Copy(spreadsheetID, copy).Do()
-	if err != nil {
-		log.Fatalf("Failed to copy file: %v", err)
-	}
+	// fmt.Printf("Copied file ID: %s\n", copiedFile.Id)
 
-	fmt.Printf("Copied file ID: %s\n", copiedFile.Id)
+	// spreadsheetsSrv, err := sheets.NewService(ctx, option.WithHTTPClient(client))
+	// if err != nil {
+	// 	log.Fatalf("Unable to retrieve Sheets client: %v", err)
+	// }
 
-	// Call the Sheets API to retrieve the spreadsheet.
-	spreadsheet, err := spreadsheetsSrv.Spreadsheets.Get(copiedFile.Id).Do()
-	if err != nil {
-		log.Fatalf("Failed to retrieve spreadsheet: %v", err)
-	}
+	// // Call the Sheets API to retrieve the spreadsheet.
+	// spreadsheet, err := spreadsheetsSrv.Spreadsheets.Get(copiedFile.Id).Do()
+	// if err != nil {
+	// 	log.Fatalf("Failed to retrieve spreadsheet: %v", err)
+	// }
 
-	// Loop through each sheet in the spreadsheet.
-	for _, sheet := range spreadsheet.Sheets {
-		// Loop through each protected range in the sheet.
-		for _, protectedRange := range sheet.ProtectedRanges {
-			AddServiceAccount(spreadsheetsSrv, copiedFile.Id, protectedRange.ProtectedRangeId)
-		}
-	}
+	// // Loop through each sheet in the spreadsheet.
+	// for _, sheet := range spreadsheet.Sheets {
+	// 	// Loop through each protected range in the sheet.
+	// 	for _, protectedRange := range sheet.ProtectedRanges {
+	// 		AddServiceAccount(spreadsheetsSrv, copiedFile.Id, protectedRange.ProtectedRangeId)
+	// 	}
+	// }
 }
 
 func main() {
