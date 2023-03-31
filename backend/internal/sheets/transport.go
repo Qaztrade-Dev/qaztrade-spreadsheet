@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/endpoint"
-	"github.com/doodocs/qaztrade/backend/internal/sheets/pkg/jwt"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
 	sheetsTransport "github.com/doodocs/qaztrade/backend/internal/sheets/transport"
+	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/kit/transport"
 	"github.com/gorilla/mux"
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/internal/sheets"
-	"github.com/doodocs/qaztrade/backend/internal/sheets/pkg/jwt"
+	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/log"
 )
 
@@ -64,7 +64,7 @@ func main() {
 		errs <- http.ListenAndServe(addr, nil)
 	}()
 	go func() {
-		c := make(chan os.Signal)
+		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT)
 		errs <- fmt.Errorf("%s", <-c)
 	}()

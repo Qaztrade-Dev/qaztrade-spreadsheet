@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
-	"github.com/doodocs/qaztrade/backend/internal/sheets/pkg/jwt"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
+	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/kit/endpoint"
 )
 
