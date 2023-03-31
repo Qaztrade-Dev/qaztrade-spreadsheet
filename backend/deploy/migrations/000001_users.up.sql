@@ -5,12 +5,12 @@ create table "users" (
   "created_at" timestamptz default now(),
   "email" text not null unique,
   "hashed_password" text not null,
-  "attrs" jsonb default {}
+  "attrs" jsonb default '{}'::jsonb
 );
 
 -- create index on user id, email, hashed_password
 
-comment on column "users.attrs" is 'Attributes of the user, i.e. "{"org_name": "OpenAI Inc."}"';
+comment on column users.attrs is 'Attributes of the user, i.e. "{"org_name": "OpenAI Inc."}"';
 
 create table "application_statuses" (
   "id" int primary key,
@@ -20,10 +20,10 @@ create table "application_statuses" (
 insert into "application_statuses" 
   ("id", "value")
 values
-  (1, "user_filling"), -- Пользователь заполняет
-  (2, "manager_reviewing"), -- Менеджер проверяет
-  (3, "completed"), -- Завершен
-  (4, "rejected") -- Отклонен
+  (1, 'user_filling'), -- Пользователь заполняет
+  (2, 'manager_reviewing'), -- Менеджер проверяет
+  (3, 'completed'), -- Завершен
+  (4, 'rejected') -- Отклонен
 ;
 
 create table "applications" (
@@ -33,7 +33,7 @@ create table "applications" (
   "status_id" int,
   "spreadsheet_id" text,
   foreign key ("user_id") references "users" ("id"),
-  foreign key ("status_id") references "application_statuses" ("id"),
+  foreign key ("status_id") references "application_statuses" ("id")
 );
 
-end;
+commit;
