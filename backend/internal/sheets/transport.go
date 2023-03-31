@@ -1,10 +1,9 @@
 package sheets
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
 
+	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/endpoint"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
 	sheetsTransport "github.com/doodocs/qaztrade/backend/internal/sheets/transport"
@@ -20,22 +19,22 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 	var (
 		opts = []kithttp.ServerOption{
 			kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
-			kithttp.ServerErrorEncoder(encodeError),
+			kithttp.ServerErrorEncoder(common.EncodeError),
 		}
 
 		submitRecordHandler = kithttp.NewServer(
 			endpoint.MakeSubmitRecordEndpoint(svc, jwtcli),
-			sheetsTransport.DecodeSubmitRecordRequest, encodeResponse,
+			sheetsTransport.DecodeSubmitRecordRequest, common.EncodeResponse,
 			opts...,
 		)
 		submitApplicationHandler = kithttp.NewServer(
 			endpoint.MakeSubmitApplicationEndpoint(svc, jwtcli),
-			sheetsTransport.DecodeSubmitApplicationRequest, encodeResponse,
+			sheetsTransport.DecodeSubmitApplicationRequest, common.EncodeResponse,
 			opts...,
 		)
 		addSheetHandler = kithttp.NewServer(
 			endpoint.MakeAddSheetEndpoint(svc, jwtcli),
-			sheetsTransport.DecodeAddSheetRequest, encodeResponse,
+			sheetsTransport.DecodeAddSheetRequest, common.EncodeResponse,
 			opts...,
 		)
 	)
@@ -46,29 +45,4 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 	r.Handle("/sheets/application", submitApplicationHandler).Methods("POST")
 
 	return r
-}
-
-func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if e, ok := response.(errorer); ok && e.Error() != nil {
-		encodeError(ctx, e.Error(), w)
-		return nil
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	return json.NewEncoder(w).Encode(response)
-}
-
-type errorer interface {
-	Error() error
-}
-
-// encodeError from business-logic
-func encodeError(_ context.Context, err error, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	switch err {
-	default:
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"error": err.Error(),
-	})
 }

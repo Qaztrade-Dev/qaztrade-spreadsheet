@@ -32,8 +32,14 @@ create table "applications" (
   "user_id" uuid,
   "status_id" int,
   "spreadsheet_id" text,
+  "link" text,
   foreign key ("user_id") references "users" ("id"),
   foreign key ("status_id") references "application_statuses" ("id")
+);
+
+create table "oauth2_tokens" (
+  "id" serial primary key,
+  "token" text
 );
 
 commit;
