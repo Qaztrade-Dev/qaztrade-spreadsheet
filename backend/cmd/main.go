@@ -13,6 +13,7 @@ import (
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/internal/google"
 	"github.com/doodocs/qaztrade/backend/internal/sheets"
+	"github.com/doodocs/qaztrade/backend/internal/spreadsheets"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/log"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -46,6 +47,7 @@ func main() {
 		postgresDatabase = getenv("POSTGRES_DATABASE", "qaztrade")
 		mailLogin        = getenv("MAIL_LOGIN")
 		mailPassword     = getenv("MAIL_PASSWORD")
+		svcAccount       = getenv("SERVICE_ACCOUNT")
 
 		addr        = ":" + port
 		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
@@ -87,6 +89,14 @@ func main() {
 			google.WithPostgre(pg),
 			google.WithOAuthConfig(oauthConfig),
 		)
+
+		spreadsheetsService = spreadsheets.MakeService(
+			ctx,
+			spreadsheets.WithPostgre(pg),
+			spreadsheets.WithJWT(jwtcli),
+			spreadsheets.WithOAuthCredentials(oauthSecret),
+			spreadsheets.WithServiceAccount(svcAccount),
+		)
 	)
 
 	var (
@@ -97,6 +107,7 @@ func main() {
 	mux.Handle("/sheets/", sheets.MakeHandler(sheetsService, jwtcli, httpLogger))
 	mux.Handle("/auth/", auth.MakeHandler(authService, jwtcli, httpLogger))
 	mux.Handle("/google/", google.MakeHandler(googleService, httpLogger))
+	mux.Handle("/spreadsheets/", spreadsheets.MakeHandler(spreadsheetsService, jwtcli, httpLogger))
 
 	http.Handle("/", common.AccessControl(mux))
 

@@ -19,7 +19,7 @@ import (
 type SpreadsheetServiceGoogle struct {
 	pg         *pgxpool.Pool
 	config     *oauth2.Config
-	svcAccount string // sheets@secret-beacon-380907.iam.gserviceaccount.com
+	svcAccount string
 	jwtcli     *jwt.Client
 }
 

@@ -1,42 +1,41 @@
 package endpoint
 
-// import (
-// 	"context"
+import (
+	"context"
 
-// 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
-// 	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
-// 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
-// 	"github.com/go-kit/kit/endpoint"
-// )
+	"github.com/doodocs/qaztrade/backend/internal/auth/domain"
+	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/service"
+	"github.com/doodocs/qaztrade/backend/pkg/jwt"
+	"github.com/go-kit/kit/endpoint"
+)
 
-// type SubmitRecordRequest struct {
-// 	TokenString string
-// 	SheetName   string
-// 	SheetID     int64
-// 	Payload     *domain.Payload
-// }
+type CreateSpreadsheetRequest struct {
+	UserToken string
+}
 
-// type SubmitRecordResponse struct {
-// 	Err error `json:"err,omitempty"`
-// }
+type CreateSpreadsheetResponse struct {
+	Link string `json:"link,omitempty"`
+	Err  error  `json:"err,omitempty"`
+}
 
-// func (r *SubmitRecordResponse) Error() error { return r.Err }
+func (r *CreateSpreadsheetResponse) Error() error { return r.Err }
 
-// func MakeSubmitRecordEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
-// 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-// 		req := request.(SubmitRecordRequest)
+func MakeCreateSpreadsheetEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(CreateSpreadsheetRequest)
 
-// 		claims, err := jwt.Parse[domain.Claims](j, req.TokenString)
-// 		if err != nil {
-// 			return nil, err
-// 		}
+		claims, err := jwt.Parse[domain.UserClaims](j, req.UserToken)
+		if err != nil {
+			return nil, err
+		}
 
-// 		err = s.SubmitRecord(ctx, &service.SubmitRecordRequest{
-// 			SpreadsheetID: claims.SpreadsheetID,
-// 			SheetName:     req.SheetName,
-// 			SheetID:       req.SheetID,
-// 			Payload:       req.Payload,
-// 		})
-// 		return SubmitRecordResponse{Err: err}, nil
-// 	}
-// }
+		link, err := s.CreateSpreadsheet(ctx, &service.CreateSpreadsheetRequest{
+			UserID: claims.UserID,
+		})
+
+		return CreateSpreadsheetResponse{
+			Link: link,
+			Err:  err,
+		}, nil
+	}
+}

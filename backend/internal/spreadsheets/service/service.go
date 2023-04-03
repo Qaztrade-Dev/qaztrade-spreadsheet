@@ -7,7 +7,7 @@ import (
 )
 
 type Service interface {
-	CreateSpreadsheet(ctx context.Context, req *CreateSpreadsheetRequest) (spreadsheetID string, err error)
+	CreateSpreadsheet(ctx context.Context, req *CreateSpreadsheetRequest) (publicLink string, err error)
 }
 
 type service struct {
@@ -16,6 +16,14 @@ type service struct {
 	userRepo        domain.UserRepository
 }
 
-func NewService() Service {
-	return &service{}
+func NewService(
+	spreadsheetSvc domain.SpreadsheetService,
+	applicationRepo domain.ApplicationRepository,
+	userRepo domain.UserRepository,
+) Service {
+	return &service{
+		spreadsheetSvc:  spreadsheetSvc,
+		applicationRepo: applicationRepo,
+		userRepo:        userRepo,
+	}
 }

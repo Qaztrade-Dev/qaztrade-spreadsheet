@@ -13,7 +13,7 @@ type UserRepositoryPostgre struct {
 
 var _ domain.UserRepository = (*UserRepositoryPostgre)(nil)
 
-func NeUserRepositoryPostgre(pg *pgxpool.Pool) *UserRepositoryPostgre {
+func NewUserRepositoryPostgre(pg *pgxpool.Pool) *UserRepositoryPostgre {
 	return &UserRepositoryPostgre{
 		pg: pg,
 	}

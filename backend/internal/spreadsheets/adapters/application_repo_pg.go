@@ -13,7 +13,7 @@ type ApplicationRepositoryPostgre struct {
 
 var _ domain.ApplicationRepository = (*ApplicationRepositoryPostgre)(nil)
 
-func NewAuthorizationRepositoryPostgre(pg *pgxpool.Pool) *ApplicationRepositoryPostgre {
+func NewApplicationRepositoryPostgre(pg *pgxpool.Pool) *ApplicationRepositoryPostgre {
 	return &ApplicationRepositoryPostgre{
 		pg: pg,
 	}
@@ -21,7 +21,7 @@ func NewAuthorizationRepositoryPostgre(pg *pgxpool.Pool) *ApplicationRepositoryP
 
 func (r *ApplicationRepositoryPostgre) Create(ctx context.Context, userID string, input *domain.Application) error {
 	const sql = `
-		insert into "users" 
+		insert into "applications" 
 			(
 				user_id,
 				status_id,

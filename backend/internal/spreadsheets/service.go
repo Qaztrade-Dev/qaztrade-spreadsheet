@@ -3,7 +3,10 @@ package spreadsheets
 import (
 	"context"
 
-	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
+	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/adapters"
+	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/service"
+	"github.com/doodocs/qaztrade/backend/pkg/jwt"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 func MakeService(ctx context.Context, opts ...Option) service.Service {
@@ -13,32 +16,58 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		opt(deps)
 	}
 
-	// sheetsRepo, err := adapters.NewSpreadsheetClient(ctx, deps.credentials)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	spreadsheetSvc, err := adapters.NewSpreadsheetServiceGoogle(
+		deps.clientSecretBytes,
+		deps.svcAccount,
+		deps.jwtcli,
+		deps.pg,
+	)
+	if err != nil {
+		panic(err)
+	}
 
-	// storage, err := adapters.NewStorageS3(ctx, deps.s3AccessKey, deps.s3SecretKey, deps.s3Bucket, deps.s3Endpoint)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	var (
+		applicationRepo = adapters.NewApplicationRepositoryPostgre(deps.pg)
+		userRepo        = adapters.NewUserRepositoryPostgre(deps.pg)
+	)
 
-	// svc := service.NewService(sheetsRepo, storage)
-	// return svc
-	return nil
+	svc := service.NewService(spreadsheetSvc, applicationRepo, userRepo)
+	return svc
 }
 
 type Option func(*dependencies)
 
 type dependencies struct {
+	clientSecretBytes []byte
+	svcAccount        string
+	jwtcli            *jwt.Client
+	pg                *pgxpool.Pool
 }
 
 func (d *dependencies) setDefaults() {
 	// pass
 }
 
-// func WithSheetsCredentials(credentials []byte) Option {
-// 	return func(d *dependencies) {
-// 		d.credentials = credentials
-// 	}
-// }
+func WithJWT(jwtcli *jwt.Client) Option {
+	return func(d *dependencies) {
+		d.jwtcli = jwtcli
+	}
+}
+
+func WithPostgre(pg *pgxpool.Pool) Option {
+	return func(d *dependencies) {
+		d.pg = pg
+	}
+}
+
+func WithOAuthCredentials(clientSecretBytes []byte) Option {
+	return func(d *dependencies) {
+		d.clientSecretBytes = clientSecretBytes
+	}
+}
+
+func WithServiceAccount(svcAccount string) Option {
+	return func(d *dependencies) {
+		d.svcAccount = svcAccount
+	}
+}
