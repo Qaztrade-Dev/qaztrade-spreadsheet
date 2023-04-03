@@ -1,3 +1,4 @@
 credentials.json
 client_secret.json
+oauth_secret.json
 .env

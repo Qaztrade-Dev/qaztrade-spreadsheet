@@ -208,7 +208,7 @@ func (s *SpreadsheetServiceGoogle) getOauthToken(ctx context.Context) (string, e
 		select 
 			token
 		from "oauth2_tokens"
-		limit 1
+		where id = 1
 	`
 
 	var (

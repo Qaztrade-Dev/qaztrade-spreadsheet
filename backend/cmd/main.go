@@ -11,14 +11,21 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/auth"
 	"github.com/doodocs/qaztrade/backend/internal/common"
+	"github.com/doodocs/qaztrade/backend/internal/google"
 	"github.com/doodocs/qaztrade/backend/internal/sheets"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/log"
 	"github.com/jackc/pgx/v4/pgxpool"
+	googleOAuth "golang.org/x/oauth2/google"
+	"google.golang.org/api/drive/v2"
+	googleSheets "google.golang.org/api/sheets/v4"
 )
 
 //go:embed credentials.json
 var credentials []byte
+
+//go:embed oauth_secret.json
+var oauthSecret []byte
 
 const (
 	defaultPort = "8082"
@@ -56,6 +63,11 @@ func main() {
 		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 	}
 
+	oauthConfig, err := googleOAuth.ConfigFromJSON(oauthSecret, drive.DriveScope, googleSheets.SpreadsheetsScope)
+	if err != nil {
+		panic(err)
+	}
+
 	var (
 		sheetsService = sheets.MakeService(
 			ctx,
@@ -69,6 +81,12 @@ func main() {
 			auth.WithJWT(jwtcli),
 			auth.WithMail(mailLogin, mailPassword),
 		)
+
+		googleService = google.MakeService(
+			ctx,
+			google.WithPostgre(pg),
+			google.WithOAuthConfig(oauthConfig),
+		)
 	)
 
 	var (
@@ -78,6 +96,7 @@ func main() {
 
 	mux.Handle("/sheets/", sheets.MakeHandler(sheetsService, jwtcli, httpLogger))
 	mux.Handle("/auth/", auth.MakeHandler(authService, jwtcli, httpLogger))
+	mux.Handle("/google/", google.MakeHandler(googleService, httpLogger))
 
 	http.Handle("/", common.AccessControl(mux))
 
