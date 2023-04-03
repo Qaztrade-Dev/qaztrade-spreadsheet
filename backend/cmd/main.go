@@ -12,6 +12,7 @@ import (
 	"github.com/doodocs/qaztrade/backend/internal/auth"
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/internal/google"
+	"github.com/doodocs/qaztrade/backend/internal/manager"
 	"github.com/doodocs/qaztrade/backend/internal/sheets"
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
@@ -97,6 +98,12 @@ func main() {
 			spreadsheets.WithOAuthCredentials(oauthSecret),
 			spreadsheets.WithServiceAccount(svcAccount),
 		)
+
+		managerService = manager.MakeService(
+			ctx,
+			manager.WithPostgre(pg),
+			manager.WithCredentials(credentials),
+		)
 	)
 
 	var (
@@ -108,6 +115,7 @@ func main() {
 	mux.Handle("/auth/", auth.MakeHandler(authService, jwtcli, httpLogger))
 	mux.Handle("/google/", google.MakeHandler(googleService, httpLogger))
 	mux.Handle("/spreadsheets/", spreadsheets.MakeHandler(spreadsheetsService, jwtcli, httpLogger))
+	mux.Handle("/manager/", manager.MakeHandler(managerService, jwtcli, httpLogger))
 
 	http.Handle("/", common.AccessControl(mux))
 

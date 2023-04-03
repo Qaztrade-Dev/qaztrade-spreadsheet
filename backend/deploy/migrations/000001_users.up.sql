@@ -37,8 +37,9 @@ insert into "application_statuses"
 values
   (1, 'user_filling'), -- Пользователь заполняет
   (2, 'manager_reviewing'), -- Менеджер проверяет
-  (3, 'completed'), -- Завершен
-  (4, 'rejected') -- Отклонен
+  (3, 'user_fixing'), -- Пользователь исправляет
+  (4, 'completed'), -- Завершен
+  (5, 'rejected') -- Отклонен
 ;
 
 create table "applications" (
