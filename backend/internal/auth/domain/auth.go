@@ -4,7 +4,7 @@ import "context"
 
 type UserClaims struct {
 	UserID string `json:"uid"`
-	Role   string `json:"role,omitempty"`
+	Role   string `json:"r,omitempty"`
 }
 
 const (

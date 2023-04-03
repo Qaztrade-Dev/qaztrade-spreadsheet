@@ -40,6 +40,8 @@ func (r *ApplicationRepositoryPostgre) EditStatus(ctx context.Context, applicati
 }
 
 func (r *ApplicationRepositoryPostgre) GetOne(ctx context.Context, query *domain.ApplicationQuery) (*domain.Application, error) {
+	query.Limit = 1
+	query.Offset = 0
 	applications, err := r.getMany(ctx, query)
 	if err != nil {
 		return nil, err
