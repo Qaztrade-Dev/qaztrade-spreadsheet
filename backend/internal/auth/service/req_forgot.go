@@ -11,14 +11,14 @@ type ForgotRequest struct {
 }
 
 func (s *service) Forgot(ctx context.Context, req *ForgotRequest) error {
-	userID, err := s.authRepo.GetOne(ctx, &domain.GetQuery{
+	user, err := s.authRepo.GetOne(ctx, &domain.GetQuery{
 		Email: req.Email,
 	})
 	if err != nil {
 		return err
 	}
 
-	creds, err := s.credsRepo.Create(ctx, userID)
+	creds, err := s.credsRepo.Create(ctx, user)
 	if err != nil {
 		return err
 	}

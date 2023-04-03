@@ -4,6 +4,17 @@ import "context"
 
 type UserClaims struct {
 	UserID string `json:"uid"`
+	Role   string `json:"role,omitempty"`
+}
+
+const (
+	RoleUser    = "user"
+	RoleManager = "manager"
+)
+
+type User struct {
+	ID   string
+	Role string
 }
 
 type Credentials struct {
@@ -26,14 +37,14 @@ type GetQuery struct {
 }
 
 type AuthorizationRepository interface {
-	SignUp(ctx context.Context, input *SignUpInput) (userID string, err error)
-	SignIn(ctx context.Context, input *SignInInput) (userID string, err error)
+	SignUp(ctx context.Context, input *SignUpInput) (*User, error)
+	SignIn(ctx context.Context, input *SignInInput) (*User, error)
 	UpdatePassword(ctx context.Context, userID, password string) error
-	GetOne(ctx context.Context, input *GetQuery) (userID string, err error)
+	GetOne(ctx context.Context, input *GetQuery) (*User, error)
 }
 
 type CredentialsRepository interface {
-	Create(ctx context.Context, userID string) (*Credentials, error)
+	Create(ctx context.Context, user *User) (*Credentials, error)
 }
 
 type EmailService interface {

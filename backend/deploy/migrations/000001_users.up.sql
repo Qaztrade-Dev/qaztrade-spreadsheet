@@ -1,14 +1,29 @@
 begin;
 
+create table "user_roles" (
+  "id" int primary key,
+  "value" text
+);
+
+insert into "user_roles" 
+  ("id", "value")
+values
+  (1, 'user'),
+  (2, 'manager')
+;
+
 create table "users" (
   "id" uuid primary key default gen_random_uuid(),
   "created_at" timestamptz default now(),
   "email" text not null unique,
   "hashed_password" text not null,
-  "attrs" jsonb default '{}'::jsonb
+  "attrs" jsonb default '{}'::jsonb,
+  "role_id" int,
+  foreign key ("role_id") references "user_roles" ("id")
 );
 
--- create index on user id, email, hashed_password
+create index users_id_idx on "users" using hash ("id");
+create index users_email_idx on "users" using hash ("email");
 
 comment on column users.attrs is 'Attributes of the user, i.e. "{"org_name": "OpenAI Inc."}"';
 
@@ -37,9 +52,14 @@ create table "applications" (
   foreign key ("status_id") references "application_statuses" ("id")
 );
 
+create index applications_id_idx on "applications" using hash ("id");
+create index applications_user_id_idx on "applications" using hash ("user_id");
+
 create table "oauth2_tokens" (
   "id" serial primary key,
   "token" text
 );
+
+
 
 commit;

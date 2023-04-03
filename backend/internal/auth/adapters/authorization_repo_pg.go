@@ -23,7 +23,7 @@ func NewAuthorizationRepositoryPostgre(pg *pgxpool.Pool) *AuthorizationRepositor
 	}
 }
 
-func (r *AuthorizationRepositoryPostgre) SignUp(ctx context.Context, input *domain.SignUpInput) (string, error) {
+func (r *AuthorizationRepositoryPostgre) SignUp(ctx context.Context, input *domain.SignUpInput) (*domain.User, error) {
 	var (
 		userID             = uuid.NewString()
 		email              = strings.TrimSpace(input.Email)
@@ -33,52 +33,57 @@ func (r *AuthorizationRepositoryPostgre) SignUp(ctx context.Context, input *doma
 
 	jsonAttrs, err := EncodeUserAttrs(&UserAttrs{OrgName: input.OrgName})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	const sql = `
 		insert into "users" 
-			(id, email, hashed_password, attrs)
+			(id, email, hashed_password, attrs, role_id)
 		values
-			($1, $2, $3, $4)
+			($1, $2, $3, $4,
+				(select id from user_roles where value = 'user')
+			)
 	`
 
 	if _, err := r.pg.Exec(ctx, sql, userID, email, hashedPassStr, jsonAttrs); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return userID, nil
+	return &domain.User{ID: userID, Role: domain.RoleUser}, nil
 }
 
-func (r *AuthorizationRepositoryPostgre) SignIn(ctx context.Context, input *domain.SignInInput) (string, error) {
+func (r *AuthorizationRepositoryPostgre) SignIn(ctx context.Context, input *domain.SignInInput) (*domain.User, error) {
 	var (
 		email = strings.TrimSpace(input.Email)
 	)
 
 	const sql = `
 		select 
-			id,
-			hashed_password
-		from "users"
+			u.id,
+			u.hashed_password,
+			ur.value
+		from "users" u
+		join "user_roles" ur on ur.id = u.role_id
 		where 
-			email = $1
+			u.email = $1
 	`
 
 	var (
 		userID     string
 		hashedPass string
+		userRole   string
 	)
 
-	err := r.pg.QueryRow(ctx, sql, email).Scan(&userID, &hashedPass)
+	err := r.pg.QueryRow(ctx, sql, email).Scan(&userID, &hashedPass, &userRole)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(input.Password)); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return userID, nil
+	return &domain.User{ID: userID, Role: userRole}, nil
 }
 
 func (r *AuthorizationRepositoryPostgre) UpdatePassword(ctx context.Context, userID, password string) error {
@@ -100,26 +105,32 @@ func (r *AuthorizationRepositoryPostgre) UpdatePassword(ctx context.Context, use
 	return nil
 }
 
-func (r *AuthorizationRepositoryPostgre) GetOne(ctx context.Context, input *domain.GetQuery) (string, error) {
+func (r *AuthorizationRepositoryPostgre) GetOne(ctx context.Context, input *domain.GetQuery) (*domain.User, error) {
 	var (
 		email = strings.TrimSpace(input.Email)
 	)
 
 	const sql = `
 		select 
-			id
-		from "users"
+			u.id,
+			ur.value
+		from "users" u
+		join "user_roles" ur on ur.id = u.role_id
 		where 
-			email = $1
+			u.email = $1
 	`
 
-	var userID string
-	err := r.pg.QueryRow(ctx, sql, email).Scan(&userID)
+	var (
+		userID   string
+		userRole string
+	)
+
+	err := r.pg.QueryRow(ctx, sql, email).Scan(&userID, &userRole)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return userID, nil
+	return &domain.User{ID: userID, Role: userRole}, nil
 }
 
 type UserAttrs struct {

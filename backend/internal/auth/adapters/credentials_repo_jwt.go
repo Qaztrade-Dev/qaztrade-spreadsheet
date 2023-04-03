@@ -20,9 +20,9 @@ func NewCredentialsRepositoryJWT(jwtcli *jwt.Client) *CredentialsRepositoryJWT {
 	}
 }
 
-func (r *CredentialsRepositoryJWT) Create(ctx context.Context, userID string) (*domain.Credentials, error) {
+func (r *CredentialsRepositoryJWT) Create(ctx context.Context, user *domain.User) (*domain.Credentials, error) {
 	var (
-		claims   = &domain.UserClaims{UserID: userID}
+		claims   = &domain.UserClaims{UserID: user.ID, Role: user.Role}
 		expireAt = time.Now().Add(time.Duration(72 * time.Hour)) // 3 days
 	)
 
