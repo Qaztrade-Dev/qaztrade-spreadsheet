@@ -8,6 +8,7 @@ import (
 
 type Service interface {
 	CreateSpreadsheet(ctx context.Context, req *CreateSpreadsheetRequest) (publicLink string, err error)
+	ListSpreadsheets(ctx context.Context, req *ListSpreadsheetsRequest) (*domain.ApplicationList, error)
 }
 
 type service struct {

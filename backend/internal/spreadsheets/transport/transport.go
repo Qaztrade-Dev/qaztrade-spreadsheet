@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/endpoint"
@@ -24,4 +25,21 @@ func extractHeaderToken(r *http.Request) string {
 
 	tokenString := strings.Split(authorization, " ")[1]
 	return tokenString
+}
+
+func DecodeListSpreadsheetsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		limitStr    = r.URL.Query().Get("limit")
+		offsetStr   = r.URL.Query().Get("offset")
+		tokenString = extractHeaderToken(r)
+
+		limit, _  = strconv.ParseUint(limitStr, 10, 0)
+		offset, _ = strconv.ParseUint(offsetStr, 10, 0)
+	)
+
+	return endpoint.ListSpreadsheetsRequest{
+		UserToken: tokenString,
+		Limit:     limit,
+		Offset:    offset,
+	}, nil
 }
