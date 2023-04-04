@@ -16,9 +16,10 @@ import (
 
 func DecodeSubmitRecordRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
-		ParentID string                 `json:"parentID"`
-		ChildKey string                 `json:"childKey"`
-		Value    map[string]interface{} `json:"value"`
+		RowNumber int                    `json:"rowNum"`
+		ParentID  string                 `json:"parentID"`
+		ChildKey  string                 `json:"childKey"`
+		Value     map[string]interface{} `json:"value"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -40,9 +41,10 @@ func DecodeSubmitRecordRequest(_ context.Context, r *http.Request) (interface{},
 		SheetName:   sheetName,
 		SheetID:     sheetID,
 		Payload: &domain.Payload{
-			ParentID: body.ParentID,
-			ChildKey: body.ChildKey,
-			Value:    domain.PayloadValue(body.Value),
+			RowNumber: body.RowNumber,
+			ParentID:  body.ParentID,
+			ChildKey:  body.ChildKey,
+			Value:     domain.PayloadValue(body.Value),
 		},
 	}, nil
 }

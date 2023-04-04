@@ -49,9 +49,10 @@ var (
 type (
 	PayloadValue map[string]interface{}
 	Payload      struct {
-		ParentID string
-		ChildKey string
-		Value    PayloadValue
+		RowNumber int
+		ParentID  string
+		ChildKey  string
+		Value     PayloadValue
 	}
 )
 

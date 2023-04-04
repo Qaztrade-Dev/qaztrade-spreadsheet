@@ -212,7 +212,7 @@ func (c *SpreadsheetClient) NewSheetClient(ctx context.Context, spreadsheetID, s
 }
 
 func getSheetRangeData(sheetName string) string {
-	rangeName := fmt.Sprintf("'%s'!%s", sheetName, "data")
+	rangeName := fmt.Sprintf("'%s'!%s_%s", sheetName, strings.ReplaceAll(sheetName, " ", "_"), "data")
 
 	return rangeName
 }
@@ -237,7 +237,7 @@ func (c *SheetClient) getData(ctx context.Context, sheetName string) ([][]string
 }
 
 func getSheetRangeHeader(sheetName string) string {
-	rangeName := fmt.Sprintf("'%s'!%s", sheetName, "header")
+	rangeName := fmt.Sprintf("'%s'!%s_%s", sheetName, strings.ReplaceAll(sheetName, " ", "_"), "header")
 
 	return rangeName
 }
@@ -550,9 +550,17 @@ func (c *SheetClient) getRowNum(ctx context.Context, parentID, childName string,
 }
 
 func (c *SheetClient) InsertRecord(ctx context.Context, payload *domain.Payload) error {
-	rowNum, mustInsertRow, err := c.getRowNum(ctx, payload.ParentID, payload.ChildKey)
-	if err != nil {
-		return err
+	var (
+		err           error
+		rowNum        = payload.RowNumber
+		mustInsertRow = false
+	)
+
+	if rowNum == 0 {
+		rowNum, mustInsertRow, err = c.getRowNum(ctx, payload.ParentID, payload.ChildKey)
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("SubmitRow. rowNum=%v mustInsertRow=%v\n", rowNum, mustInsertRow)

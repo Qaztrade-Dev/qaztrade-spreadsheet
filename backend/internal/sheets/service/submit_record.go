@@ -35,6 +35,10 @@ func (s *service) traversePayload(ctx context.Context, payload map[string]interf
 		switch {
 		case isFile(value):
 			file := decodeFile(value)
+			if file.FileSize == 0 {
+				delete(payload, k)
+				continue
+			}
 			value, err := s.storage.Upload(ctx, "folder", file.FileName, file.FileSize, bytes.NewReader(file.File))
 			if err != nil {
 				return err
