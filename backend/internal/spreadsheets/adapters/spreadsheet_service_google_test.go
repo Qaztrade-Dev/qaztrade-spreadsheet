@@ -23,11 +23,14 @@ func TestSpreadsheetCreate(t *testing.T) {
 		svcAccount        = "sheets@secret-beacon-380907.iam.gserviceaccount.com"
 		jwtcli            = jwt.NewClient("qaztradesecret")
 
-		postgresLogin    = getenv("POSTGRES_LOGIN", "postgres")
-		postgresPassword = getenv("POSTGRES_PASSWORD", "postgres")
-		postgresHost     = getenv("POSTGRES_HOST", "localhost")
-		postgresDatabase = getenv("POSTGRES_DATABASE", "qaztrade")
-		postgresURL      = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
+		postgresLogin         = getenv("POSTGRES_LOGIN", "postgres")
+		postgresPassword      = getenv("POSTGRES_PASSWORD", "postgres")
+		postgresHost          = getenv("POSTGRES_HOST", "localhost")
+		postgresDatabase      = getenv("POSTGRES_DATABASE", "qaztrade")
+		templateSpreadsheetId = getenv("TEMPLATE_SPREADSHEET_ID")
+		destinationFolderId   = getenv("DESTINATION_FOLDER_ID")
+
+		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
 
 		user = &domain.User{ID: "75455b90-edad-4281-9509-611c7cc24df8", OrgName: "Doodocs1"}
 	)
@@ -35,7 +38,7 @@ func TestSpreadsheetCreate(t *testing.T) {
 	pg, err := pgxpool.Connect(ctx, postgresURL)
 	require.Nil(t, err)
 
-	svc, err := NewSpreadsheetServiceGoogle(clientSecretBytes, svcAccount, jwtcli, pg)
+	svc, err := NewSpreadsheetServiceGoogle(clientSecretBytes, svcAccount, jwtcli, pg, templateSpreadsheetId, destinationFolderId)
 	require.Nil(t, err)
 
 	id, err := svc.Create(ctx, user)

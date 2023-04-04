@@ -12,19 +12,21 @@ import (
 )
 
 type SpreadsheetClient struct {
-	service *sheets.Service
+	service             *sheets.Service
+	originSpreadsheetID string
 }
 
 var _ domain.SheetsRepository = (*SpreadsheetClient)(nil)
 
-func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte) (*SpreadsheetClient, error) {
+func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte, originSpreadsheetID string) (*SpreadsheetClient, error) {
 	service, err := sheets.NewService(ctx, option.WithCredentialsJSON(credentialsJson))
 	if err != nil {
 		return nil, err
 	}
 
 	return &SpreadsheetClient{
-		service: service,
+		service:             service,
+		originSpreadsheetID: originSpreadsheetID,
 	}, nil
 }
 
@@ -91,8 +93,7 @@ func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID
 
 func (c *SpreadsheetClient) AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error {
 	var (
-		originSpreadsheetID = "1YvRrTIVWz1kigSke6pN8Uz87r0fWl-kyarogwAjKx5c"
-		mappings            = map[string]int64{ // sheetName:sheetID
+		mappings = map[string]int64{ // sheetName:sheetID
 			"Доставка ЖД транспортом": 0,
 		}
 		sourceSheetID = mappings[sheetName]
@@ -107,12 +108,12 @@ func (c *SpreadsheetClient) AddSheet(ctx context.Context, spreadsheetID string, 
 		return domain.ErrorSheetPresent
 	}
 
-	sheetID, err := c.copySheet(ctx, originSpreadsheetID, spreadsheetID, sourceSheetID)
+	sheetID, err := c.copySheet(ctx, c.originSpreadsheetID, spreadsheetID, sourceSheetID)
 	if err != nil {
 		return err
 	}
 
-	protectedRanges, err := c.getProtectedRanges(ctx, originSpreadsheetID, sourceSheetID)
+	protectedRanges, err := c.getProtectedRanges(ctx, c.originSpreadsheetID, sourceSheetID)
 	if err != nil {
 		return err
 	}
@@ -293,8 +294,6 @@ type UpdateCellRequest struct {
 	Value       string
 }
 
-// TODO
-// fillRecord construct batch
 func (c *SheetClient) fillRecord(
 	ctx context.Context,
 	payload domain.PayloadValue,

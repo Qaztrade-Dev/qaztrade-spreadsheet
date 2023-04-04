@@ -35,20 +35,23 @@ const (
 
 func main() {
 	var (
-		ctx              = context.Background()
-		port             = getenv("PORT", defaultPort)
-		jwtsecret        = getenv("JWT_SECRET", "qaztradesecret")
-		s3AccessKey      = getenv("S3_ACCESS_KEY")
-		s3SecretKey      = getenv("S3_SECRET_KEY")
-		s3Endpoint       = getenv("S3_ENDPOINT")
-		s3Bucket         = getenv("S3_BUCKET")
-		postgresLogin    = getenv("POSTGRES_LOGIN", "postgres")
-		postgresPassword = getenv("POSTGRES_PASSWORD", "postgres")
-		postgresHost     = getenv("POSTGRES_HOST", "localhost")
-		postgresDatabase = getenv("POSTGRES_DATABASE", "qaztrade")
-		mailLogin        = getenv("MAIL_LOGIN")
-		mailPassword     = getenv("MAIL_PASSWORD")
-		svcAccount       = getenv("SERVICE_ACCOUNT")
+		ctx                   = context.Background()
+		port                  = getenv("PORT", defaultPort)
+		jwtsecret             = getenv("JWT_SECRET", "qaztradesecret")
+		s3AccessKey           = getenv("S3_ACCESS_KEY")
+		s3SecretKey           = getenv("S3_SECRET_KEY")
+		s3Endpoint            = getenv("S3_ENDPOINT")
+		s3Bucket              = getenv("S3_BUCKET")
+		postgresLogin         = getenv("POSTGRES_LOGIN", "postgres")
+		postgresPassword      = getenv("POSTGRES_PASSWORD", "postgres")
+		postgresHost          = getenv("POSTGRES_HOST", "localhost")
+		postgresDatabase      = getenv("POSTGRES_DATABASE", "qaztrade")
+		mailLogin             = getenv("MAIL_LOGIN")
+		mailPassword          = getenv("MAIL_PASSWORD")
+		svcAccount            = getenv("SERVICE_ACCOUNT")
+		templateSpreadsheetID = getenv("TEMPLATE_SPREADSHEET_ID")
+		destinationFolderID   = getenv("DESTINATION_FOLDER_ID")
+		originSpreadsheetID   = getenv("ORIGIN_SPREADSHEET_ID")
 
 		addr        = ":" + port
 		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
@@ -76,6 +79,7 @@ func main() {
 			ctx,
 			sheets.WithSheetsCredentials(credentials),
 			sheets.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
+			sheets.WithOriginSpreadsheetID(originSpreadsheetID),
 		)
 
 		authService = auth.MakeService(
@@ -97,6 +101,8 @@ func main() {
 			spreadsheets.WithJWT(jwtcli),
 			spreadsheets.WithOAuthCredentials(oauthSecret),
 			spreadsheets.WithServiceAccount(svcAccount),
+			spreadsheets.WithTemplateSpreadsheetID(templateSpreadsheetID),
+			spreadsheets.WithDestinationFolderID(destinationFolderID),
 		)
 
 		managerService = manager.MakeService(

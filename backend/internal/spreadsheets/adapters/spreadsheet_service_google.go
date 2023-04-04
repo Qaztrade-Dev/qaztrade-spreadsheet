@@ -17,25 +17,36 @@ import (
 )
 
 type SpreadsheetServiceGoogle struct {
-	pg         *pgxpool.Pool
-	config     *oauth2.Config
-	svcAccount string
-	jwtcli     *jwt.Client
+	pg                    *pgxpool.Pool
+	config                *oauth2.Config
+	svcAccount            string
+	jwtcli                *jwt.Client
+	templateSpreadsheetID string
+	destinationFolderID   string
 }
 
 var _ domain.SpreadsheetService = (*SpreadsheetServiceGoogle)(nil)
 
-func NewSpreadsheetServiceGoogle(clientSecretBytes []byte, svcAccount string, jwtcli *jwt.Client, pg *pgxpool.Pool) (*SpreadsheetServiceGoogle, error) {
+func NewSpreadsheetServiceGoogle(
+	clientSecretBytes []byte,
+	svcAccount string,
+	jwtcli *jwt.Client,
+	pg *pgxpool.Pool,
+	templateSpreadsheetID string,
+	destinationFolderID string,
+) (*SpreadsheetServiceGoogle, error) {
 	config, err := google.ConfigFromJSON(clientSecretBytes, drive.DriveScope, sheets.SpreadsheetsScope)
 	if err != nil {
 		return nil, err
 	}
 
 	return &SpreadsheetServiceGoogle{
-		pg:         pg,
-		config:     config,
-		svcAccount: svcAccount,
-		jwtcli:     jwtcli,
+		pg:                    pg,
+		config:                config,
+		svcAccount:            svcAccount,
+		jwtcli:                jwtcli,
+		templateSpreadsheetID: templateSpreadsheetID,
+		destinationFolderID:   destinationFolderID,
 	}, err
 }
 
@@ -72,13 +83,6 @@ func (s *SpreadsheetServiceGoogle) Create(ctx context.Context, user *domain.User
 }
 
 func (s *SpreadsheetServiceGoogle) copyFile(ctx context.Context, svc *drive.Service, user *domain.User) (string, error) {
-	var (
-		// TODO
-		// move to struct
-		sourceSpreadsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
-		destinationFolderID = "1c04RznMaAumXl9OfVkstH4ZAIG3ULOgR"
-	)
-
 	newFileName, err := domain.CreateSpreadsheetName(user)
 	if err != nil {
 		return "", err
@@ -86,9 +90,9 @@ func (s *SpreadsheetServiceGoogle) copyFile(ctx context.Context, svc *drive.Serv
 
 	copy := &drive.File{
 		Title:   newFileName,
-		Parents: []*drive.ParentReference{{Id: destinationFolderID}},
+		Parents: []*drive.ParentReference{{Id: s.destinationFolderID}},
 	}
-	copiedFile, err := svc.Files.Copy(sourceSpreadsheetID, copy).Context(ctx).Do()
+	copiedFile, err := svc.Files.Copy(s.templateSpreadsheetID, copy).Context(ctx).Do()
 	if err != nil {
 		return "", err
 	}

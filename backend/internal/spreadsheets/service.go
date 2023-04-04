@@ -21,6 +21,8 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		deps.svcAccount,
 		deps.jwtcli,
 		deps.pg,
+		deps.templateSpreadsheetID,
+		deps.destinationFolderID,
 	)
 	if err != nil {
 		panic(err)
@@ -38,10 +40,12 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 type Option func(*dependencies)
 
 type dependencies struct {
-	clientSecretBytes []byte
-	svcAccount        string
-	jwtcli            *jwt.Client
-	pg                *pgxpool.Pool
+	clientSecretBytes     []byte
+	svcAccount            string
+	jwtcli                *jwt.Client
+	pg                    *pgxpool.Pool
+	templateSpreadsheetID string
+	destinationFolderID   string
 }
 
 func (d *dependencies) setDefaults() {
@@ -69,5 +73,17 @@ func WithOAuthCredentials(clientSecretBytes []byte) Option {
 func WithServiceAccount(svcAccount string) Option {
 	return func(d *dependencies) {
 		d.svcAccount = svcAccount
+	}
+}
+
+func WithTemplateSpreadsheetID(templateSpreadsheetID string) Option {
+	return func(d *dependencies) {
+		d.templateSpreadsheetID = templateSpreadsheetID
+	}
+}
+
+func WithDestinationFolderID(destinationFolderID string) Option {
+	return func(d *dependencies) {
+		d.destinationFolderID = destinationFolderID
 	}
 }

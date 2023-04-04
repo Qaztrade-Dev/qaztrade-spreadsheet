@@ -13,13 +13,14 @@ var credentials []byte
 
 func TestSubmit(t *testing.T) {
 	var (
-		ctx                 = context.Background()
-		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
-		sheetName           = "Доставка ЖД транспортом"
-		sheetID       int64 = 932754288
+		ctx                       = context.Background()
+		originSpreadsheetID       = "1YvRrTIVWz1kigSke6pN8Uz87r0fWl-kyarogwAjKx5c"
+		spreadsheetID             = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		sheetName                 = "Доставка ЖД транспортом"
+		sheetID             int64 = 932754288
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentials, originSpreadsheetID)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}
@@ -49,13 +50,14 @@ func TestSubmit(t *testing.T) {
 
 func TestSubmitChild(t *testing.T) {
 	var (
-		ctx                 = context.Background()
-		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
-		sheetName           = "Доставка ЖД транспортом"
-		sheetID       int64 = 932754288
+		ctx                       = context.Background()
+		originSpreadsheetID       = "1YvRrTIVWz1kigSke6pN8Uz87r0fWl-kyarogwAjKx5c"
+		spreadsheetID             = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		sheetName                 = "Доставка ЖД транспортом"
+		sheetID             int64 = 932754288
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentials, originSpreadsheetID)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}
@@ -78,9 +80,10 @@ func TestSubmitChild(t *testing.T) {
 
 func TestUpdateApplication(t *testing.T) {
 	var (
-		ctx           = context.Background()
-		spreadsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
-		appl          = &domain.Application{
+		ctx                 = context.Background()
+		originSpreadsheetID = "1YvRrTIVWz1kigSke6pN8Uz87r0fWl-kyarogwAjKx5c"
+		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		appl                = &domain.Application{
 			From:               "Kaspi Ltd.",
 			GovReg:             "11111111",
 			FactAddr:           "Алматы",
@@ -109,7 +112,7 @@ func TestUpdateApplication(t *testing.T) {
 		}
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentials, originSpreadsheetID)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}
@@ -122,12 +125,13 @@ func TestUpdateApplication(t *testing.T) {
 
 func TestAddSheet(t *testing.T) {
 	var (
-		ctx           = context.Background()
-		spreadsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
-		sheetName     = "Доставка ЖД транспортом"
+		ctx                 = context.Background()
+		originSpreadsheetID = "1YvRrTIVWz1kigSke6pN8Uz87r0fWl-kyarogwAjKx5c"
+		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		sheetName           = "Доставка ЖД транспортом"
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentials, originSpreadsheetID)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}
