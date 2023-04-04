@@ -49,6 +49,7 @@ func main() {
 		mailLogin             = getenv("MAIL_LOGIN")
 		mailPassword          = getenv("MAIL_PASSWORD")
 		svcAccount            = getenv("SERVICE_ACCOUNT")
+		reviewerAccount       = getenv("REVIEWER_ACCOUNT")
 		templateSpreadsheetID = getenv("TEMPLATE_SPREADSHEET_ID")
 		destinationFolderID   = getenv("DESTINATION_FOLDER_ID")
 		originSpreadsheetID   = getenv("ORIGIN_SPREADSHEET_ID")
@@ -101,6 +102,7 @@ func main() {
 			spreadsheets.WithJWT(jwtcli),
 			spreadsheets.WithOAuthCredentials(oauthSecret),
 			spreadsheets.WithServiceAccount(svcAccount),
+			spreadsheets.WithReviewer(reviewerAccount),
 			spreadsheets.WithTemplateSpreadsheetID(templateSpreadsheetID),
 			spreadsheets.WithDestinationFolderID(destinationFolderID),
 		)

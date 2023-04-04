@@ -19,6 +19,7 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 	spreadsheetSvc, err := adapters.NewSpreadsheetServiceGoogle(
 		deps.clientSecretBytes,
 		deps.svcAccount,
+		deps.reviewerAccount,
 		deps.jwtcli,
 		deps.pg,
 		deps.templateSpreadsheetID,
@@ -42,6 +43,7 @@ type Option func(*dependencies)
 type dependencies struct {
 	clientSecretBytes     []byte
 	svcAccount            string
+	reviewerAccount       string
 	jwtcli                *jwt.Client
 	pg                    *pgxpool.Pool
 	templateSpreadsheetID string
@@ -73,6 +75,12 @@ func WithOAuthCredentials(clientSecretBytes []byte) Option {
 func WithServiceAccount(svcAccount string) Option {
 	return func(d *dependencies) {
 		d.svcAccount = svcAccount
+	}
+}
+
+func WithReviewer(reviewerAccount string) Option {
+	return func(d *dependencies) {
+		d.reviewerAccount = reviewerAccount
 	}
 }
 

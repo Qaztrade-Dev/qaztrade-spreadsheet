@@ -29,6 +29,7 @@ func TestSpreadsheetCreate(t *testing.T) {
 		postgresDatabase      = getenv("POSTGRES_DATABASE", "qaztrade")
 		templateSpreadsheetId = getenv("TEMPLATE_SPREADSHEET_ID")
 		destinationFolderId   = getenv("DESTINATION_FOLDER_ID")
+		reviewerAccount       = getenv("REVIEWER_ACCOUNT")
 
 		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
 
@@ -38,7 +39,7 @@ func TestSpreadsheetCreate(t *testing.T) {
 	pg, err := pgxpool.Connect(ctx, postgresURL)
 	require.Nil(t, err)
 
-	svc, err := NewSpreadsheetServiceGoogle(clientSecretBytes, svcAccount, jwtcli, pg, templateSpreadsheetId, destinationFolderId)
+	svc, err := NewSpreadsheetServiceGoogle(clientSecretBytes, svcAccount, reviewerAccount, jwtcli, pg, templateSpreadsheetId, destinationFolderId)
 	require.Nil(t, err)
 
 	id, err := svc.Create(ctx, user)

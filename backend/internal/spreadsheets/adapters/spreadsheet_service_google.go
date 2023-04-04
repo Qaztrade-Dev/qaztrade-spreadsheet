@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"google.golang.org/api/drive/v2"
+	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
@@ -20,6 +20,7 @@ type SpreadsheetServiceGoogle struct {
 	pg                    *pgxpool.Pool
 	config                *oauth2.Config
 	svcAccount            string
+	reviewerAccount       string
 	jwtcli                *jwt.Client
 	templateSpreadsheetID string
 	destinationFolderID   string
@@ -30,6 +31,7 @@ var _ domain.SpreadsheetService = (*SpreadsheetServiceGoogle)(nil)
 func NewSpreadsheetServiceGoogle(
 	clientSecretBytes []byte,
 	svcAccount string,
+	reviewerAccount string,
 	jwtcli *jwt.Client,
 	pg *pgxpool.Pool,
 	templateSpreadsheetID string,
@@ -44,6 +46,7 @@ func NewSpreadsheetServiceGoogle(
 		pg:                    pg,
 		config:                config,
 		svcAccount:            svcAccount,
+		reviewerAccount:       reviewerAccount,
 		jwtcli:                jwtcli,
 		templateSpreadsheetID: templateSpreadsheetID,
 		destinationFolderID:   destinationFolderID,
@@ -79,6 +82,10 @@ func (s *SpreadsheetServiceGoogle) Create(ctx context.Context, user *domain.User
 		return "", err
 	}
 
+	if err := s.setReviewer(ctx, driveSvc, spreadsheetID); err != nil {
+		return "", err
+	}
+
 	return spreadsheetID, nil
 }
 
@@ -89,8 +96,8 @@ func (s *SpreadsheetServiceGoogle) copyFile(ctx context.Context, svc *drive.Serv
 	}
 
 	copy := &drive.File{
-		Title:   newFileName,
-		Parents: []*drive.ParentReference{{Id: s.destinationFolderID}},
+		Name:    newFileName,
+		Parents: []string{s.destinationFolderID},
 	}
 	copiedFile, err := svc.Files.Copy(s.templateSpreadsheetID, copy).Context(ctx).Do()
 	if err != nil {
@@ -147,6 +154,20 @@ func (s *SpreadsheetServiceGoogle) setProtectedRange(
 	})
 }
 
+func (s *SpreadsheetServiceGoogle) setReviewer(ctx context.Context, svc *drive.Service, spreadsheetID string) error {
+	permission := &drive.Permission{
+		Type:         "user",
+		Role:         "commenter",
+		EmailAddress: s.reviewerAccount,
+	}
+	_, err := svc.Permissions.Create(spreadsheetID, permission).Context(ctx).Do()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *SpreadsheetServiceGoogle) setMetadata(spreadsheetID string, batch *BatchUpdate) error {
 	tokenStr, err := jwt.NewTokenString(s.jwtcli, &domain.SpreadsheetClaims{
 		SpreadsheetID: spreadsheetID,
@@ -175,7 +196,7 @@ func (s *SpreadsheetServiceGoogle) setPublic(ctx context.Context, svc *drive.Ser
 		Type: "anyone",
 		Role: "writer",
 	}
-	_, err := svc.Permissions.Insert(spreadsheetID, permission).Do()
+	_, err := svc.Permissions.Create(spreadsheetID, permission).Context(ctx).Do()
 	if err != nil {
 		return err
 	}

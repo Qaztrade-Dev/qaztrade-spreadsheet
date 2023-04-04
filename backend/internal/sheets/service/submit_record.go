@@ -18,7 +18,7 @@ type SubmitRecordRequest struct {
 }
 
 func (s *service) SubmitRecord(ctx context.Context, req *SubmitRecordRequest) error {
-	if err := s.traversePayload(ctx, req.Payload.Value); err != nil {
+	if err := s.traversePayload(ctx, req.SpreadsheetID, req.SheetName, req.Payload.Value); err != nil {
 		return err
 	}
 
@@ -29,7 +29,8 @@ func (s *service) SubmitRecord(ctx context.Context, req *SubmitRecordRequest) er
 	return nil
 }
 
-func (s *service) traversePayload(ctx context.Context, payload map[string]interface{}) error {
+func (s *service) traversePayload(ctx context.Context, spreadsheetID, sheetName string, payload map[string]interface{}) error {
+	folderName := fmt.Sprintf("%s/%s", spreadsheetID, sheetName)
 	for k := range payload {
 		value := payload[k]
 		switch {
@@ -39,13 +40,13 @@ func (s *service) traversePayload(ctx context.Context, payload map[string]interf
 				delete(payload, k)
 				continue
 			}
-			value, err := s.storage.Upload(ctx, "folder", file.FileName, file.FileSize, bytes.NewReader(file.File))
+			value, err := s.storage.Upload(ctx, folderName, file.FileName, file.FileSize, bytes.NewReader(file.File))
 			if err != nil {
 				return err
 			}
 			payload[k] = fmt.Sprintf("=HYPERLINK(\"%s\", \"файл\")", value)
 		case isPayload(value):
-			return s.traversePayload(ctx, value.(map[string]interface{}))
+			return s.traversePayload(ctx, spreadsheetID, sheetName, value.(map[string]interface{}))
 		}
 	}
 	return nil
