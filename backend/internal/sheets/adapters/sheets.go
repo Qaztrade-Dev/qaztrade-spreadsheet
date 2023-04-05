@@ -310,14 +310,14 @@ func (c *SheetClient) getHeaderCells(ctx context.Context, sheetName string) (Hea
 		hcellMap[topLevelValue] = NewHeaderCell(topLevelValue, topLevelValue, i, rangeR, innerHcellMap)
 	}
 
-	for k := range hcellMap {
-		fmt.Println(k)
-		fmt.Println(hcellMap[k].Values)
-		for v := range hcellMap[k].Values {
-			fmt.Println("\t", v)
-			fmt.Println("\t", hcellMap[k].Values[v].Values)
-		}
-	}
+	// for k := range hcellMap {
+	// 	fmt.Println(k)
+	// 	fmt.Println(hcellMap[k].Values)
+	// 	for v := range hcellMap[k].Values {
+	// 		fmt.Println("\t", v)
+	// 		fmt.Println("\t", hcellMap[k].Values[v].Values)
+	// 	}
+	// }
 
 	return hcellMap, nil
 }
@@ -565,6 +565,7 @@ func (c *SheetClient) getRowNum(ctx context.Context, parentID, childName string,
 		return 0, false, err
 	}
 
+	fmt.Printf("c.getHeaderCell(%v)\n", child.Key)
 	childHeaderCell := c.getHeaderCell(child.Key)
 
 	lastChildCell, err := c.getLastChildCell(ctx, parentBounds, childHeaderCell)
