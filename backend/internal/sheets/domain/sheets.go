@@ -48,7 +48,8 @@ var (
 
 type (
 	PayloadValue map[string]interface{}
-	Payload      struct {
+
+	Payload struct {
 		RowNumber int
 		ParentID  string
 		ChildKey  string
@@ -59,6 +60,12 @@ type (
 var ErrorSheetPresent = errors.New("sheet already present")
 
 type (
+	RemoveInput struct {
+		Value  string
+		RowNum int
+		Name   string
+	}
+
 	SheetsRepository interface {
 		InsertRecord(ctx context.Context, spreadsheetID, sheetName string, sheetID int64, payload *Payload) error
 		UpdateApplication(ctx context.Context, spreadsheetID string, application *Application) error

@@ -38,6 +38,14 @@ func (c *SpreadsheetClient) InsertRecord(ctx context.Context, spreadsheetID, she
 	return sheetClient.InsertRecord(ctx, payload)
 }
 
+func (c *SpreadsheetClient) RemoveRecord(ctx context.Context, spreadsheetID, sheetName string, sheetID int64, input *domain.RemoveInput) error {
+	sheetClient, err := c.NewSheetClient(ctx, spreadsheetID, sheetName, sheetID)
+	if err != nil {
+		return err
+	}
+	return sheetClient.RemoveParent(ctx, input)
+}
+
 func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID string, application *domain.Application) error {
 	var mappings = []struct {
 		Range string
@@ -183,6 +191,7 @@ type SheetClient struct {
 	spreadsheetID string
 	sheetName     string
 	sheetID       int64
+	offset        int
 	headersMap    HeaderCellMap
 	data          [][]string
 }
@@ -207,6 +216,7 @@ func (c *SpreadsheetClient) NewSheetClient(ctx context.Context, spreadsheetID, s
 
 	sheetClient.headersMap = headersMap
 	sheetClient.data = data
+	sheetClient.offset = 4
 
 	return sheetClient, nil
 }
@@ -232,6 +242,12 @@ func (c *SheetClient) getData(ctx context.Context, sheetName string) ([][]string
 		for j := range row {
 			data[i][j] = strings.TrimSpace(row[j].(string))
 		}
+	}
+	for i := range data {
+		for j := range data[i] {
+			fmt.Printf("%v, ", data[i][j])
+		}
+		fmt.Println()
 	}
 	return data, nil
 }
@@ -377,7 +393,7 @@ func (c *SheetClient) getNodeBounds(ctx context.Context, nodeKey, nodeID string,
 		return &Bound{Top: 0, Bottom: len(c.data) - 1}, nil
 	}
 
-	fmt.Printf("%#v\n", nodeKey)
+	fmt.Printf("nodeKey: %#v\n", nodeKey)
 	var (
 		parentHeaderCell = c.getHeaderCell(nodeKey)
 		fromRow          = 0
@@ -388,20 +404,25 @@ func (c *SheetClient) getNodeBounds(ctx context.Context, nodeKey, nodeID string,
 		right = 0
 	)
 
+	fmt.Printf("parentHeaderCell: %+v\n", parentHeaderCell)
+
 	if len(parentBound) > 0 {
 		fromRow = parentBound[0].Top
 		toRow = parentBound[0].Bottom
 	}
 
 	for i := fromRow; i <= toRow; i++ {
+		fmt.Println(i)
 		if i >= len(c.data) {
+			fmt.Println("i >= len(c.data): break")
 			break
 		}
 		if columnIdx >= len(c.data[i]) {
-			break
+			fmt.Println("columnIdx >= len(c.data[i]): break")
+			continue
 		}
-		fmt.Printf("left: i=%v, c.data[i]=%#v\n", i, c.data[i])
 		value := c.data[i][columnIdx]
+		fmt.Printf("left: i=%v, c.data[i][j]=%v\n", i, c.data[i][columnIdx])
 		if value == nodeID {
 			left = i
 			right = i
@@ -414,10 +435,10 @@ func (c *SheetClient) getNodeBounds(ctx context.Context, nodeKey, nodeID string,
 			break
 		}
 		if columnIdx >= len(c.data[i]) {
-			break
+			continue
 		}
-		fmt.Printf("right: i=%v, c.data[i]=%#v\n", i, c.data[i])
 		value := c.data[i][columnIdx]
+		fmt.Printf("right: i=%v, c.data[i][j]=%v\n", i, c.data[i][columnIdx])
 		if value != "" {
 			break
 		}
@@ -432,6 +453,7 @@ func (c *SheetClient) getNodeBounds(ctx context.Context, nodeKey, nodeID string,
 func (c *SheetClient) getHeaderCell(parentKey string) *HeaderCell {
 	keys := strings.Split(parentKey, ".")
 	var cell *HeaderCell
+	fmt.Println(keys)
 	for _, key := range keys {
 		if cell == nil {
 			cell = c.headersMap[key]
@@ -565,17 +587,15 @@ func (c *SheetClient) InsertRecord(ctx context.Context, payload *domain.Payload)
 
 	fmt.Printf("SubmitRow. rowNum=%v mustInsertRow=%v\n", rowNum, mustInsertRow)
 
-	offset := 4
-
 	if mustInsertRow {
-		if err := c.insertRowAfter(ctx, offset+rowNum); err != nil {
+		if err := c.insertRowAfter(ctx, c.offset+rowNum); err != nil {
 			return err
 		}
 		rowNum += 1
 	}
 
 	batchUpdate := NewBatchUpdate(c.service)
-	if err = c.fillRecord(ctx, payload.Value, c.headersMap, offset+rowNum, batchUpdate); err != nil {
+	if err = c.fillRecord(ctx, payload.Value, c.headersMap, c.offset+rowNum, batchUpdate); err != nil {
 		return err
 	}
 
@@ -609,4 +629,37 @@ func (c *SheetClient) insertRowAfter(ctx context.Context, rowIndex int) error {
 	}
 
 	return err
+}
+
+func (c *SheetClient) RemoveParent(ctx context.Context, input *domain.RemoveInput) error {
+	var (
+		parent     = domain.Parents[input.Name]
+		child      = domain.Children[parent.Name]
+		headerCell = c.getHeaderCell(child.Key)
+	)
+
+	bound, err := c.getNodeBounds(ctx, child.Key, input.Value)
+	if err != nil {
+		return err
+	}
+
+	batchUpdate := NewBatchUpdate(c.service)
+
+	batchUpdate.WithRequest(&sheets.Request{
+		DeleteRange: &sheets.DeleteRangeRequest{
+			Range: &sheets.GridRange{
+				SheetId:          c.sheetID,
+				StartRowIndex:    int64(c.offset + bound.Top),
+				EndRowIndex:      int64(c.offset + bound.Bottom + 1),
+				StartColumnIndex: int64(headerCell.Range.Left),
+			},
+			ShiftDimension: "ROWS",
+		},
+	})
+
+	if err := batchUpdate.Do(ctx, c.spreadsheetID); err != nil {
+		return err
+	}
+
+	return nil
 }

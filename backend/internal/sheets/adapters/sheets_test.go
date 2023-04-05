@@ -141,3 +141,26 @@ func TestAddSheet(t *testing.T) {
 		t.Fatal("AddSheet error:", err)
 	}
 }
+
+func TestRemoveParent(t *testing.T) {
+	var (
+		ctx                 = context.Background()
+		originSpreadsheetID = "1YvRrTIVWz1kigSke6pN8Uz87r0fWl-kyarogwAjKx5c"
+		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		sheetName           = "Доставка ЖД транспортом"
+		sheetID             = int64(917580187)
+	)
+
+	cli, err := NewSpreadsheetClient(ctx, credentials, originSpreadsheetID)
+	if err != nil {
+		t.Fatal("NewSheetsClient error:", err)
+	}
+
+	err = cli.RemoveRecord(ctx, spreadsheetID, sheetName, sheetID, &domain.RemoveInput{
+		Value: "1",
+		Name:  "Дистрибьюторский договор",
+	})
+	if err != nil {
+		t.Fatal("RemoveRecord error:", err)
+	}
+}
