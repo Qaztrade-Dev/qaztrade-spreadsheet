@@ -15,7 +15,20 @@ type (
 )
 
 var (
-	Parents = Relations{
+	SheetParents = map[string]Relations{
+		"Доставка ЖД транспортом": TrainDeliveryParents,
+		"Затраты на продвижение":  AdvertisementExpensesParents,
+	}
+
+	SheetChildren = map[string]Relations{
+		"Доставка ЖД транспортом": TrainDeliveryChildren,
+		"Затраты на продвижение":  AdvertisementExpensesChildren,
+	}
+)
+
+// Доставка ЖД транспортом
+var (
+	TrainDeliveryParents = Relations{
 		"№": &Node{
 			Name: "root",
 			Key:  "root",
@@ -30,7 +43,7 @@ var (
 		},
 	}
 
-	Children = Relations{
+	TrainDeliveryChildren = Relations{
 		"root": &Node{
 			Name: "№",
 			Key:  "№",
@@ -42,6 +55,23 @@ var (
 		"Дистрибьюторский договор": &Node{
 			Name: "контракт на поставку",
 			Key:  "контракт на поставку.№",
+		},
+	}
+)
+
+// Затраты на продвижение
+var (
+	AdvertisementExpensesParents = Relations{
+		"№": &Node{
+			Name: "root",
+			Key:  "root",
+		},
+	}
+
+	AdvertisementExpensesChildren = Relations{
+		"root": &Node{
+			Name: "№",
+			Key:  "№",
 		},
 	}
 )

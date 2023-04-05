@@ -126,9 +126,9 @@ func TestUpdateApplication(t *testing.T) {
 func TestAddSheet(t *testing.T) {
 	var (
 		ctx                 = context.Background()
-		originSpreadsheetID = "1YvRrTIVWz1kigSke6pN8Uz87r0fWl-kyarogwAjKx5c"
+		originSpreadsheetID = "1BY6-dstDDWP1k6Xv-HzmZ6q4SJ3i088z26gBgkfwXow"
 		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
-		sheetName           = "Доставка ЖД транспортом"
+		sheetName           = "Затраты на продвижение"
 	)
 
 	cli, err := NewSpreadsheetClient(ctx, credentials, originSpreadsheetID)
@@ -157,10 +157,10 @@ func TestRemoveParent(t *testing.T) {
 	}
 
 	err = cli.RemoveRecord(ctx, spreadsheetID, sheetName, sheetID, &domain.RemoveInput{
-		Value: "1",
+		Value: "2",
 		Name:  "Дистрибьюторский договор",
 	})
 	if err != nil {
-		t.Fatal("RemoveRecord error:", err)
+		t.Fatal("RemoveRecord error ", err)
 	}
 }

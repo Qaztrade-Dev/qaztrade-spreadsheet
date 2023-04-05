@@ -103,11 +103,14 @@ func (c *SpreadsheetClient) AddSheet(ctx context.Context, spreadsheetID string, 
 	var (
 		mappings = map[string]int64{ // sheetName:sheetID
 			"Доставка ЖД транспортом": 0,
+			"Затраты на продвижение":  1156025711,
 		}
 		sourceSheetID = mappings[sheetName]
 	)
 
 	containsSheet, err := c.containsSheet(ctx, spreadsheetID, sheetName)
+	fmt.Println(spreadsheetID, sheetName)
+	fmt.Println("containsSheet", containsSheet, err)
 	if err != nil {
 		return err
 	}
@@ -117,6 +120,8 @@ func (c *SpreadsheetClient) AddSheet(ctx context.Context, spreadsheetID string, 
 	}
 
 	sheetID, err := c.copySheet(ctx, c.originSpreadsheetID, spreadsheetID, sourceSheetID)
+	fmt.Println(c.originSpreadsheetID, spreadsheetID, sourceSheetID)
+	fmt.Println("copySheet", sheetID, err)
 	if err != nil {
 		return err
 	}
@@ -191,6 +196,8 @@ type SheetClient struct {
 	spreadsheetID string
 	sheetName     string
 	sheetID       int64
+	sheetParents  domain.Relations
+	sheetChildren domain.Relations
 	offset        int
 	headersMap    HeaderCellMap
 	data          [][]string
@@ -202,6 +209,8 @@ func (c *SpreadsheetClient) NewSheetClient(ctx context.Context, spreadsheetID, s
 		spreadsheetID: spreadsheetID,
 		sheetName:     sheetName,
 		sheetID:       sheetID,
+		sheetParents:  domain.SheetParents[sheetName],
+		sheetChildren: domain.SheetChildren[sheetName],
 	}
 
 	headersMap, err := sheetClient.getHeaderCells(ctx, sheetName)
@@ -216,7 +225,7 @@ func (c *SpreadsheetClient) NewSheetClient(ctx context.Context, spreadsheetID, s
 
 	sheetClient.headersMap = headersMap
 	sheetClient.data = data
-	sheetClient.offset = 4
+	sheetClient.offset = 2
 
 	return sheetClient, nil
 }
@@ -299,6 +308,15 @@ func (c *SheetClient) getHeaderCells(ctx context.Context, sheetName string) (Hea
 		}
 
 		hcellMap[topLevelValue] = NewHeaderCell(topLevelValue, topLevelValue, i, rangeR, innerHcellMap)
+	}
+
+	for k := range hcellMap {
+		fmt.Println(k)
+		fmt.Println(hcellMap[k].Values)
+		for v := range hcellMap[k].Values {
+			fmt.Println("\t", v)
+			fmt.Println("\t", hcellMap[k].Values[v].Values)
+		}
 	}
 
 	return hcellMap, nil
@@ -451,7 +469,7 @@ func (c *SheetClient) getNodeBounds(ctx context.Context, nodeKey, nodeID string,
 }
 
 func (c *SheetClient) getHeaderCell(parentKey string) *HeaderCell {
-	keys := strings.Split(parentKey, ".")
+	keys := strings.Split(parentKey, "|")
 	var cell *HeaderCell
 	fmt.Println(keys)
 	for _, key := range keys {
@@ -473,16 +491,17 @@ var (
 
 func (c *SheetClient) getChildNode(parentKey, childName string) (*domain.Node, error) {
 	fmt.Printf("GetChildNode. parentKey=%v, childName=%v\n", parentKey, childName)
-	if _, ok := domain.Children[parentKey]; !ok {
+
+	if _, ok := c.sheetChildren[parentKey]; !ok {
 		return nil, ErrorChildNotFound
 	}
 
-	child := domain.Children[parentKey]
+	child := c.sheetChildren[parentKey]
 	if child.Name != childName {
 		return nil, ErrorChildNotMatch
 	}
 
-	return domain.Children[parentKey], nil
+	return c.sheetChildren[parentKey], nil
 }
 
 func (c *SheetClient) getLastChildCell(ctx context.Context, parentBounds *Bound, childHeaderCell *HeaderCell) (*Cell, error) {
@@ -528,8 +547,8 @@ func (c *SheetClient) getLastChildCell(ctx context.Context, parentBounds *Bound,
 func (c *SheetClient) getRowNum(ctx context.Context, parentID, childName string, bounds ...*Bound) (int, bool, error) {
 	fmt.Printf("GetRowNum. parentID:%v, childName:%v\n", parentID, childName)
 	var (
-		parentKey  = domain.Parents[childName].Key
-		parentName = domain.Parents[childName].Name
+		parentKey  = c.sheetParents[childName].Key
+		parentName = c.sheetParents[childName].Name
 	)
 
 	parentBounds, err := c.getNodeBounds(ctx, parentKey, parentID, bounds...)
@@ -558,7 +577,7 @@ func (c *SheetClient) getRowNum(ctx context.Context, parentID, childName string,
 		return upperBound, false, nil
 	}
 
-	grandChildNode, ok := domain.Children[lastChildCell.HeaderCell.GroupKey]
+	grandChildNode, ok := c.sheetChildren[lastChildCell.HeaderCell.GroupKey]
 	if !ok {
 		return lastChildCell.RowNum, true, nil
 	}
@@ -633,8 +652,8 @@ func (c *SheetClient) insertRowAfter(ctx context.Context, rowIndex int) error {
 
 func (c *SheetClient) RemoveParent(ctx context.Context, input *domain.RemoveInput) error {
 	var (
-		parent     = domain.Parents[input.Name]
-		child      = domain.Children[parent.Name]
+		parent     = c.sheetParents[input.Name]
+		child      = c.sheetChildren[parent.Name]
 		headerCell = c.getHeaderCell(child.Key)
 	)
 
