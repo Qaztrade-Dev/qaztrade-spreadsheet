@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
 	"google.golang.org/api/option"
@@ -19,7 +20,11 @@ type SpreadsheetClient struct {
 var _ domain.SheetsRepository = (*SpreadsheetClient)(nil)
 
 func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte, originSpreadsheetID string) (*SpreadsheetClient, error) {
-	service, err := sheets.NewService(ctx, option.WithCredentialsJSON(credentialsJson))
+
+	service, err := sheets.NewService(
+		ctx,
+		option.WithCredentialsJSON(credentialsJson),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +114,6 @@ func (c *SpreadsheetClient) AddSheet(ctx context.Context, spreadsheetID string, 
 	)
 
 	containsSheet, err := c.containsSheet(ctx, spreadsheetID, sheetName)
-	fmt.Println(spreadsheetID, sheetName)
-	fmt.Println("containsSheet", containsSheet, err)
 	if err != nil {
 		return err
 	}
@@ -120,8 +123,6 @@ func (c *SpreadsheetClient) AddSheet(ctx context.Context, spreadsheetID string, 
 	}
 
 	sheetID, err := c.copySheet(ctx, c.originSpreadsheetID, spreadsheetID, sourceSheetID)
-	fmt.Println(c.originSpreadsheetID, spreadsheetID, sourceSheetID)
-	fmt.Println("copySheet", sheetID, err)
 	if err != nil {
 		return err
 	}
@@ -213,12 +214,33 @@ func (c *SpreadsheetClient) NewSheetClient(ctx context.Context, spreadsheetID, s
 		sheetChildren: domain.SheetChildren[sheetName],
 	}
 
-	headersMap, err := sheetClient.getHeaderCells(ctx, sheetName)
+	var (
+		headerRangeName = getSheetRangeHeader(sheetName)
+		dataRangeName   = getSheetRangeData(sheetName)
+	)
+
+	t1 := time.Now()
+	batchDataValues, err := c.getDataFromRanges(ctx, spreadsheetID, []string{headerRangeName, dataRangeName})
+	fmt.Println("time: getDataFromRanges", time.Since(t1))
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := sheetClient.getData(ctx, sheetName)
+	var (
+		headerValues = batchDataValues[0]
+		dataValues   = batchDataValues[1]
+	)
+
+	t1 = time.Now()
+	headersMap, err := sheetClient.getHeaderCells(ctx, sheetName, headerValues)
+	fmt.Println("time: getHeaderCells", time.Since(t1))
+	if err != nil {
+		return nil, err
+	}
+
+	t1 = time.Now()
+	data, err := sheetClient.getData(ctx, sheetName, dataValues)
+	fmt.Println("time: getData", time.Since(t1))
 	if err != nil {
 		return nil, err
 	}
@@ -230,34 +252,39 @@ func (c *SpreadsheetClient) NewSheetClient(ctx context.Context, spreadsheetID, s
 	return sheetClient, nil
 }
 
+func (c *SpreadsheetClient) getDataFromRanges(ctx context.Context, spreadsheetID string, ranges []string) ([][][]interface{}, error) {
+	resp, err := c.service.Spreadsheets.Values.BatchGet(spreadsheetID).Ranges(ranges...).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	datas := make([][][]interface{}, len(resp.ValueRanges))
+	for i := range resp.ValueRanges {
+		datas[i] = resp.ValueRanges[i].Values
+	}
+	return datas, nil
+}
+
 func getSheetRangeData(sheetName string) string {
 	rangeName := fmt.Sprintf("'%s'!%s_%s", sheetName, strings.ReplaceAll(sheetName, " ", "_"), "data")
 
 	return rangeName
 }
 
-func (c *SheetClient) getData(ctx context.Context, sheetName string) ([][]string, error) {
-	headerRangeName := getSheetRangeData(sheetName)
-	sheetRange, err := c.service.Spreadsheets.Values.Get(c.spreadsheetID, headerRangeName).
-		Context(ctx).
-		Do()
-	if err != nil {
-		return nil, err
-	}
-
-	data := make([][]string, len(sheetRange.Values))
-	for i, row := range sheetRange.Values {
+func (c *SheetClient) getData(ctx context.Context, sheetName string, values [][]interface{}) ([][]string, error) {
+	data := make([][]string, len(values))
+	for i, row := range values {
 		data[i] = make([]string, len(row))
 		for j := range row {
 			data[i][j] = strings.TrimSpace(row[j].(string))
 		}
 	}
-	for i := range data {
-		for j := range data[i] {
-			fmt.Printf("%v, ", data[i][j])
-		}
-		fmt.Println()
-	}
+	// for i := range data {
+	// 	for j := range data[i] {
+	// 		fmt.Printf("%v, ", data[i][j])
+	// 	}
+	// 	fmt.Println()
+	// }
 	return data, nil
 }
 
@@ -267,18 +294,10 @@ func getSheetRangeHeader(sheetName string) string {
 	return rangeName
 }
 
-func (c *SheetClient) getHeaderCells(ctx context.Context, sheetName string) (HeaderCellMap, error) {
-	headerRangeName := getSheetRangeHeader(sheetName)
-	sheetRange, err := c.service.Spreadsheets.Values.Get(c.spreadsheetID, headerRangeName).
-		Context(ctx).
-		Do()
-	if err != nil {
-		return nil, err
-	}
-
+func (c *SheetClient) getHeaderCells(ctx context.Context, sheetName string, values [][]interface{}) (HeaderCellMap, error) {
 	var (
-		topLevel = sheetRange.Values[0]
-		lowLevel = sheetRange.Values[1]
+		topLevel = values[0]
+		lowLevel = values[1]
 		hcellMap = make(HeaderCellMap)
 	)
 
@@ -471,14 +490,14 @@ func (c *SheetClient) getNodeBounds(ctx context.Context, nodeKey, nodeID string,
 func (c *SheetClient) getHeaderCell(parentKey string) *HeaderCell {
 	keys := strings.Split(parentKey, "|")
 	var cell *HeaderCell
-	fmt.Println(keys)
+	// fmt.Println(keys)
 	for _, key := range keys {
 		if cell == nil {
 			cell = c.headersMap[key]
 		} else {
 			cell = cell.Values[key]
 		}
-		fmt.Printf("key=%#v,cell=%#v\n", key, cell)
+		// fmt.Printf("key=%#v,cell=%#v\n", key, cell)
 	}
 
 	return cell
@@ -522,7 +541,7 @@ func (c *SheetClient) getLastChildCell(ctx context.Context, parentBounds *Bound,
 			break
 		}
 		if columnIdx >= len(c.data[i]) {
-			break
+			continue
 		}
 		value := c.data[i][columnIdx]
 		if i == 0 && value == "" {
@@ -596,38 +615,45 @@ func (c *SheetClient) InsertRecord(ctx context.Context, payload *domain.Payload)
 		err           error
 		rowNum        = payload.RowNumber
 		mustInsertRow = false
+		batchUpdate   = NewBatchUpdate(c.service)
 	)
 
 	if rowNum == 0 {
+		t1 := time.Now()
 		rowNum, mustInsertRow, err = c.getRowNum(ctx, payload.ParentID, payload.ChildKey)
+		fmt.Println("time: getRowNum", time.Since(t1))
 		if err != nil {
 			return err
 		}
+
 	}
 
 	fmt.Printf("SubmitRow. rowNum=%v mustInsertRow=%v\n", rowNum, mustInsertRow)
 
 	if mustInsertRow {
-		if err := c.insertRowAfter(ctx, c.offset+rowNum); err != nil {
-			return err
-		}
+		t1 := time.Now()
+		c.insertRowAfter(ctx, c.offset+rowNum, batchUpdate)
+		fmt.Println("time: insertRowAfter", time.Since(t1))
 		rowNum += 1
 	}
 
-	batchUpdate := NewBatchUpdate(c.service)
+	t1 := time.Now()
 	if err = c.fillRecord(ctx, payload.Value, c.headersMap, c.offset+rowNum, batchUpdate); err != nil {
 		return err
 	}
+	fmt.Println("time: fillRecord", time.Since(t1))
 
+	t1 = time.Now()
 	if err := batchUpdate.Do(ctx, c.spreadsheetID); err != nil {
 		return err
 	}
+	fmt.Println("time: batchUpdate.Do", time.Since(t1))
 
 	return nil
 }
 
-func (c *SheetClient) insertRowAfter(ctx context.Context, rowIndex int) error {
-	request := &sheets.Request{
+func (c *SheetClient) insertRowAfter(ctx context.Context, rowIndex int, batchUpdate *BatchUpdate) {
+	batchUpdate.WithRequest(&sheets.Request{
 		InsertDimension: &sheets.InsertDimensionRequest{
 			Range: &sheets.DimensionRange{
 				SheetId:    c.sheetID,
@@ -637,18 +663,7 @@ func (c *SheetClient) insertRowAfter(ctx context.Context, rowIndex int) error {
 			},
 			InheritFromBefore: true,
 		},
-	}
-
-	batchUpdateRequest := sheets.BatchUpdateSpreadsheetRequest{
-		Requests: []*sheets.Request{request},
-	}
-
-	_, err := c.service.Spreadsheets.BatchUpdate(c.spreadsheetID, &batchUpdateRequest).Context(ctx).Do()
-	if err != nil {
-		return err
-	}
-
-	return err
+	})
 }
 
 func (c *SheetClient) RemoveParent(ctx context.Context, input *domain.RemoveInput) error {
