@@ -78,6 +78,7 @@ var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domain.ApplicationQuery) ([]*domain.Application, error) {
 	mainStmt := psql.
 		Select(
+			"a.id",
 			"a.created_at",
 			"ast.value",
 			"a.spreadsheet_id",
@@ -136,6 +137,7 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 		applications = make([]*domain.Application, 0)
 
 		// scans
+		applID            *string
 		applCreatedAt     *time.Time
 		applStatus        *string
 		applSpreadsheetID *string
@@ -143,12 +145,14 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 	)
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
+		&applID,
 		&applCreatedAt,
 		&applStatus,
 		&applSpreadsheetID,
 		&applLink,
 	}, func(pgx.QueryFuncRow) error {
 		applications = append(applications, &domain.Application{
+			ID:            valueFromPointer(applID),
 			CreatedAt:     valueFromPointer(applCreatedAt),
 			Status:        valueFromPointer(applStatus),
 			SpreadsheetID: valueFromPointer(applSpreadsheetID),

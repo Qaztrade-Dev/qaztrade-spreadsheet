@@ -2,6 +2,7 @@ package tally
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
 )
@@ -14,7 +15,7 @@ type tallyFieldOption struct {
 type tallyField struct {
 	Label   string             `json:"label"`
 	Type    string             `json:"type"`
-	Value   string             `json:"value"`
+	Value   interface{}        `json:"value"`
 	Options []tallyFieldOption `json:"options"`
 }
 
@@ -45,9 +46,10 @@ func Decode(jsonBytes []byte) (*domain.Application, error) {
 		"Наименование отрасли":                        &appl.Industry,
 		"Вид деятельности":                            &appl.Activity,
 		"Численность сотрудников":                     &appl.EmpCount,
-		"Производитель":                               &appl.Manufacturer,
-		"Товар":                                       &appl.Item,
-		"Объем товара":                                &appl.ItemVolume,
+		"Производственная мощность, возможности увеличения": &appl.ProductCapacity,
+		"Производитель": &appl.Manufacturer,
+		"Товар":         &appl.Item,
+		"Объем товара":  &appl.ItemVolume,
 		"Объем фактической валютной выручки за полугодие предшествующей дате подачи заявки": &appl.FactVolumeEarnings,
 		"Фактическая загруженность производства":                                            &appl.FactWorkload,
 		"Фамилия руководителя":        &appl.ChiefLastname,
@@ -61,9 +63,9 @@ func Decode(jsonBytes []byte) (*domain.Application, error) {
 		"Должность конт. лица":        &appl.ContPosition,
 		"Телефона конт. лица":         &appl.ContPhone,
 		"Эл. адрес конт. лица":        &appl.ContEmail,
-		"Страна происхождения товара": &appl.Country,
-		"Код ТНВЭД (6 знаков)":        &appl.CodeTnved,
-		"token":                       &appl.Token,
+		"Сведения о реализуемых отечественных товарах обрабатывающей промышленности и/или о предоставляемых ИКУ":                                &appl.InfoManufacturedGoods,
+		"Наименование товаров с указанием товарной позиции на уровне 6 и более знаков ЕТН ВЭД ЕАЭС и/или ИКУ на уровне не менее 4 знаков ОКВЭД": &appl.NameOfGoods,
+		"token": &appl.Token,
 	}
 
 	for _, field := range response.Data.Fields {
@@ -80,13 +82,20 @@ func extractValue(field *tallyField) string {
 	switch field.Type {
 	case "DROPDOWN":
 		return extractDropdown(field)
+	case "INPUT_NUMBER":
+		return extractNumber(field)
 	default:
 		return extractText(field)
 	}
 }
 
 func extractText(field *tallyField) string {
-	return field.Value
+	return field.Value.(string)
+}
+
+func extractNumber(field *tallyField) string {
+	v := int(field.Value.(float64))
+	return strconv.Itoa(v)
 }
 
 func extractDropdown(field *tallyField) string {

@@ -84,31 +84,31 @@ func TestUpdateApplication(t *testing.T) {
 		originSpreadsheetID = "1YvRrTIVWz1kigSke6pN8Uz87r0fWl-kyarogwAjKx5c"
 		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
 		appl                = &domain.Application{
-			From:               "Kaspi Ltd.",
-			GovReg:             "11111111",
-			FactAddr:           "Алматы",
-			Bin:                "950223347566",
-			Industry:           "Информационные технологии",
-			Activity:           "ЭДО",
-			EmpCount:           "1-5",
-			Manufacturer:       "Doodocs",
-			Item:               "Подписка",
-			ItemVolume:         "200",
-			FactVolumeEarnings: "35000000",
-			FactWorkload:       "100",
-			ChiefLastname:      "Давлетов",
-			ChiefFirstname:     "Дагар",
-			ChiefMiddlename:    "Гусманович",
-			ChiefPosition:      "Директор",
-			ChiefPhone:         "+77777777774",
-			ContLastname:       "Тлекбаи",
-			ContFirstname:      "Али",
-			ContMiddlename:     "Кайратулы",
-			ContPosition:       "Разработчик",
-			ContPhone:          "+77777777777",
-			ContEmail:          "a@gmail.com",
-			Country:            "Казахстан",
-			CodeTnved:          "123123",
+			From:                  "Kaspi Ltd.",
+			GovReg:                "11111111",
+			FactAddr:              "Алматы",
+			Bin:                   "950223347566",
+			Industry:              "Информационные технологии",
+			Activity:              "ЭДО",
+			EmpCount:              "1-5",
+			Manufacturer:          "Doodocs",
+			Item:                  "Подписка",
+			ItemVolume:            "200",
+			FactVolumeEarnings:    "35000000",
+			FactWorkload:          "100",
+			ChiefLastname:         "Давлетов",
+			ChiefFirstname:        "Дагар",
+			ChiefMiddlename:       "Гусманович",
+			ChiefPosition:         "Директор",
+			ChiefPhone:            "+77777777774",
+			ContLastname:          "Тлекбаи",
+			ContFirstname:         "Али",
+			ContMiddlename:        "Кайратулы",
+			ContPosition:          "Разработчик",
+			ContPhone:             "+77777777777",
+			ContEmail:             "a@gmail.com",
+			InfoManufacturedGoods: "Казахстан",
+			NameOfGoods:           "123123",
 		}
 	)
 
@@ -148,7 +148,7 @@ func TestRemoveParent(t *testing.T) {
 		originSpreadsheetID = "1YvRrTIVWz1kigSke6pN8Uz87r0fWl-kyarogwAjKx5c"
 		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
 		sheetName           = "Доставка ЖД транспортом"
-		sheetID             = int64(917580187)
+		sheetID             = int64(1974041431)
 	)
 
 	cli, err := NewSpreadsheetClient(ctx, credentials, originSpreadsheetID)
@@ -157,7 +157,7 @@ func TestRemoveParent(t *testing.T) {
 	}
 
 	err = cli.RemoveRecord(ctx, spreadsheetID, sheetName, sheetID, &domain.RemoveInput{
-		Value: "2",
+		Value: "21",
 		Name:  "Дистрибьюторский договор",
 	})
 	if err != nil {

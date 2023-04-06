@@ -43,7 +43,7 @@ func TestEncode(t *testing.T) {
 				{
 				  "key": "question_mVOLNM",
 				  "label": "БИН/ИИН",
-				  "type": "INPUT_NUMBER",
+				  "type": "INPUT_TEXT",
 				  "value": "950223347566"
 				},
 				{
@@ -64,6 +64,12 @@ func TestEncode(t *testing.T) {
 				  "type": "INPUT_TEXT",
 				  "value": "1-5"
 				},
+				{
+					"key": "question_nrMjY2",
+					"label": "Производственная мощность, возможности увеличения",
+					"type": "INPUT_TEXT",
+					"value": "900"
+				  },
 				{
 				  "key": "question_w4V4OA",
 				  "label": "Производитель",
@@ -161,31 +167,17 @@ func TestEncode(t *testing.T) {
 				  "value": "a@gmail.com"
 				},
 				{
-				  "key": "question_31oAR1",
-				  "label": "Страна происхождения товара",
-				  "type": "DROPDOWN",
-				  "value": "6bbe451f-4ed5-4e30-8f9e-7577c995184a",
-				  "options": [
-					{
-					  "id": "6bbe451f-4ed5-4e30-8f9e-7577c995184a",
-					  "text": "Казахстан"
-					},
-					{
-					  "id": "c947a37a-ada5-44be-9747-ed6bcde20024",
-					  "text": "Зарубеж"
-					},
-					{
-					  "id": "6bbe451f-4ed5-4e30-8f9e-7577c995184a",
-					  "text": "Казахстан"
-					}
-				  ]
+				  "key": "question_wMpeVk",
+				  "label": "Сведения о реализуемых отечественных товарах обрабатывающей промышленности и/или о предоставляемых ИКУ",
+				  "type": "INPUT_TEXT",
+				  "value": "Information"
 				},
 				{
-				  "key": "question_wMpeVk",
-				  "label": "Код ТНВЭД (6 знаков)",
-				  "type": "INPUT_TEXT",
-				  "value": "123123"
-				},
+					"key": "question_wMpeVk",
+					"label": "Наименование товаров с указанием товарной позиции на уровне 6 и более знаков ЕТН ВЭД ЕАЭС и/или ИКУ на уровне не менее 4 знаков ОКВЭД",
+					"type": "INPUT_TEXT",
+					"value": "Goods"
+				  },
 				{
 					"key": "question_wMpeVk",
 					"label": "token",
@@ -198,32 +190,33 @@ func TestEncode(t *testing.T) {
 		`)
 
 		expAppl = &domain.Application{
-			From:               "Doodocs Ltd.",
-			GovReg:             "120120102",
-			FactAddr:           "Астана",
-			Bin:                "950223347566",
-			Industry:           "Информационные технологии",
-			Activity:           "ЭДО",
-			EmpCount:           "1-5",
-			Manufacturer:       "Doodocs",
-			Item:               "Подписка",
-			ItemVolume:         "200",
-			FactVolumeEarnings: "35000000",
-			FactWorkload:       "100",
-			ChiefLastname:      "Давлетов",
-			ChiefFirstname:     "Дагар",
-			ChiefMiddlename:    "Гусманович",
-			ChiefPosition:      "Директор",
-			ChiefPhone:         "+77777777774",
-			ContLastname:       "Тлекбаи",
-			ContFirstname:      "Али",
-			ContMiddlename:     "Кайратулы",
-			ContPosition:       "Разработчик",
-			ContPhone:          "+77777777777",
-			ContEmail:          "a@gmail.com",
-			Country:            "Казахстан",
-			CodeTnved:          "123123",
-			Token:              "token-1",
+			From:                  "Doodocs Ltd.",
+			GovReg:                "120120102",
+			FactAddr:              "Астана",
+			Bin:                   "950223347566",
+			Industry:              "Информационные технологии",
+			Activity:              "ЭДО",
+			EmpCount:              "1-5",
+			ProductCapacity:       "900",
+			Manufacturer:          "Doodocs",
+			Item:                  "Подписка",
+			ItemVolume:            "200",
+			FactVolumeEarnings:    "35000000",
+			FactWorkload:          "100",
+			ChiefLastname:         "Давлетов",
+			ChiefFirstname:        "Дагар",
+			ChiefMiddlename:       "Гусманович",
+			ChiefPosition:         "Директор",
+			ChiefPhone:            "+77777777774",
+			ContLastname:          "Тлекбаи",
+			ContFirstname:         "Али",
+			ContMiddlename:        "Кайратулы",
+			ContPosition:          "Разработчик",
+			ContPhone:             "+77777777777",
+			ContEmail:             "a@gmail.com",
+			InfoManufacturedGoods: "Information",
+			NameOfGoods:           "Goods",
+			Token:                 "token-1",
 		}
 	)
 

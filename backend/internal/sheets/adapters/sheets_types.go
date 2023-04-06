@@ -1,26 +1,30 @@
 package adapters
 
-type HeaderCellMap map[string]*HeaderCell
+type HeadersMap map[string]*Header
 
 type Range struct {
 	Left  int
 	Right int
 }
 
-type Bound struct {
+type Bounds struct {
 	Top    int
 	Bottom int
 }
 
-type HeaderCell struct {
-	Key      string
-	Range    Range
-	Values   HeaderCellMap
-	GroupKey string
+func (b *Bounds) Equals(a *Bounds) bool {
+	return b.Top == a.Top && b.Bottom == a.Bottom
 }
 
-func NewHeaderCell(key, groupKey string, rangeL, rangeR int, hcellMap HeaderCellMap) *HeaderCell {
-	return &HeaderCell{
+type Header struct {
+	Key      string
+	Range    Range
+	GroupKey string
+	Values   HeadersMap
+}
+
+func NewHeader(key, groupKey string, rangeL, rangeR int, hcellMap HeadersMap) *Header {
+	return &Header{
 		Key:      key,
 		GroupKey: groupKey,
 		Range: Range{
@@ -31,7 +35,7 @@ func NewHeaderCell(key, groupKey string, rangeL, rangeR int, hcellMap HeaderCell
 	}
 }
 
-func (h *HeaderCell) IsLeaf() bool {
+func (h *Header) IsLeaf() bool {
 	if h.Values == nil {
 		return true
 	}
@@ -42,10 +46,10 @@ type Cell struct {
 	Value      string
 	RowNum     int
 	ColumnNum  int
-	HeaderCell *HeaderCell
+	HeaderCell *Header
 }
 
-func NewCell(value string, rowNum, columnNum int, headerCell *HeaderCell) *Cell {
+func NewCell(value string, rowNum, columnNum int, headerCell *Header) *Cell {
 	return &Cell{
 		Value:      value,
 		RowNum:     rowNum,

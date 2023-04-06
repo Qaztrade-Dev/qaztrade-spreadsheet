@@ -14,6 +14,7 @@ const (
 )
 
 type Application struct {
+	ID            string
 	UserID        string
 	SpreadsheetID string
 	Link          string

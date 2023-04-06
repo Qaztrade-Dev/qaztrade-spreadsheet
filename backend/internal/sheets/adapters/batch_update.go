@@ -18,8 +18,8 @@ func NewBatchUpdate(service *sheets.Service) *BatchUpdate {
 	}
 }
 
-func (b *BatchUpdate) WithRequest(request *sheets.Request) {
-	b.requests = append(b.requests, request)
+func (b *BatchUpdate) WithRequest(requests ...*sheets.Request) {
+	b.requests = append(b.requests, requests...)
 }
 
 func (b *BatchUpdate) WithProtectedRange(sheetID int64, protectedRanges []*sheets.ProtectedRange) {
