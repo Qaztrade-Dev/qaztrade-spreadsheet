@@ -49,6 +49,8 @@ create table "applications" (
   "status_id" int,
   "spreadsheet_id" text,
   "link" text,
+  "sign_link" text,
+  "is_signed" boolean default false,
   foreign key ("user_id") references "users" ("id"),
   foreign key ("status_id") references "application_statuses" ("id")
 );

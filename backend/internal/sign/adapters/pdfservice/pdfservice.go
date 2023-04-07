@@ -6,8 +6,8 @@ import (
 	"io"
 	"text/template"
 
+	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
 	"github.com/doodocs/qaztrade/backend/internal/sign/pkg/gopdf"
-	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
 )
 
 var (
@@ -20,6 +20,8 @@ var (
 type PDFService struct {
 	applicationTemplate *template.Template
 }
+
+var _ domain.PDFService = (*PDFService)(nil)
 
 func NewPDFService() (*PDFService, error) {
 	applicationTemplate, err := template.New("").Parse(string(applicationBodyBytes))
