@@ -64,58 +64,81 @@
 
     <script>
         const requestSkel = {
-            rowNum: parseInt('<?!= rowNum ?>'),
             parentID: null,
-            childKey: 'Дистрибьюторский договор',
+            childKey: '№',
             value: {}
         };
 
-        const parentSkel = [
-            {
-                name: 'Компания №',
-                input: {
-                    tag: 'select',
-                    options: ['1', '2', '3'],
-                },
-                key: 'parentID',
-            },
-        ];
-
         const inputSkel = [
             {
-                name: 'Дистрибьюторский договор',
+                name: '№',
+                input: { tag: 'input', attrs: { type: 'text' } }
+            },
+            {
+                name: 'производитель/дочерняя компания/дистрибьютор/СПК',
+                input: { tag: 'input', attrs: { type: 'text' } }
+            },
+            {
+                name: 'Документ, подтверждающий статус отечественного производителя товара, действующий на возмещаемый период',
                 inputs: [
                     {
+                        name: 'файл',
+                        input: { tag: 'input', attrs: { type: 'file' } }
+                    },
+                    {
+                        name: 'производитель',
+                        input: { tag: 'input', attrs: { type: 'text' } }
+                    },
+                    {
+                        name: 'наименование',
+                        input: { tag: 'input', attrs: { type: 'text' } }
+                    },
+                    {
                         name: '№',
-                        input: { tag: 'input', attrs: { type: 'text' } },
+                        input: { tag: 'input', attrs: { type: 'text' } }
+                    },
+                    {
+                        name: 'наименование товара',
+                        input: { tag: 'input', attrs: { type: 'text' } }
+                    },
+                    {
+                        name: 'ТН ВЭД (6 знаков)',
+                        input: { tag: 'input', attrs: { type: 'text' } }
                     },
                     {
                         name: 'дата',
-                        input: { tag: 'input', attrs: { type: 'text' } },
+                        input: { tag: 'input', attrs: { type: 'text' } }
                     },
                     {
-                        name: 'условия',
-                        input: { tag: 'input', attrs: { type: 'text' } },
+                        name: 'срок',
+                        input: { tag: 'input', attrs: { type: 'text' } }
                     },
                     {
-                        name: 'файл',
-                        input: { tag: 'input', attrs: { type: 'file' } },
+                        name: 'подтверждение на сайте уполномоченного органа',
+                        input: { tag: 'input', attrs: { type: 'text' } }
                     },
-                ],
+                ]
+            },
+            {
+                name: 'Учредители',
+                inputs: [
+                    {
+                        name: 'наим.физ/юр лица',
+                        input: { tag: 'input', attrs: { type: 'text' } }
+                    },
+                    {
+                        name: 'доля',
+                        input: { tag: 'input', attrs: { type: 'text' } }
+                    },
+                ]
             },
         ];
 
         const form = document.querySelector('#form');
         const firstUl = document.querySelector('#form ul');
         const submitButton = document.querySelector('#submit');
-        const rowValues = JSON.parse(`<?!= rowValues ?>`)
-        
-        if (!(isPlainObject(rowValues) && Object.keys(rowValues).length > 0)) {
-            populateForm(firstUl, parentSkel, '');
-            setParentValues();
-        }
+
         populateForm(firstUl, inputSkel, '');
-        setRowValues();
 
         form.addEventListener('submit', async (e) => {
             submitButton.disabled = true;
@@ -123,7 +146,6 @@
 
             const formData = new FormData(form);
             const jsonBody = Object.fromEntries(formData);
-            console.log(jsonBody)
             const reqJSON = await createNestedJSON(jsonBody);
 
             if ('parentID' in reqJSON) {
@@ -132,7 +154,7 @@
             }
 
             requestSkel.value = reqJSON;
-            fetch('http://localhost:8082/sheets/records', {
+            fetch('https://a91b-2a09-bac1-40c0-28-00-119-11.eu.ngrok.io/sheets/records', {
                 method: 'POST',
                 headers: {
                     authorization: 'Bearer <?!= token ?>',
@@ -150,8 +172,8 @@
         });
 
         function setParentValues() {
-            const parentValues = JSON.parse('<?!= parentValues ?>');
-            const select = document.querySelector('[name=".parentID"]');
+            const parentValues = JSON.parse('<?= parentValues ?>');
+            const select = document.querySelector('[name="|parentID"]');
 
             if (!select) {
                 return;
@@ -171,22 +193,22 @@
 
                     parent.appendChild(label);
                     parent.appendChild(ul);
-                    populateForm(ul, elem.inputs, `${prefix}.${elem.name}`);
+                    populateForm(ul, elem.inputs, `${prefix}|${elem.name}`);
                 } else {
                     const li = document.createElement('li');
 
                     const label = document.createElement('label');
-                    label.setAttribute('for', `${prefix}.${elem.name}`);
+                    label.setAttribute('for', `${prefix}|${elem.name}`);
                     label.innerText = elem.name;
 
                     const input = document.createElement(elem.input.tag);
                     setAttributes(input, elem.input.attrs);
                     setOptions(input, elem.input.options);
 
-                    input.setAttribute('id', `${prefix}.${elem.name}`);
+                    input.setAttribute('id', `${prefix}|${elem.name}`);
 
                     const inputName = elem.key ?? elem.name;
-                    input.setAttribute('name', `${prefix}.${inputName}`);
+                    input.setAttribute('name', `${prefix}|${inputName}`);
 
                     li.appendChild(label);
                     li.appendChild(input);
@@ -243,7 +265,7 @@
         });
 
         function setNestedKey(obj, k, v) {
-            const keys = k.split('.');
+            const keys = k.split('|');
 
             let temp = obj;
             for (const key of keys) {
@@ -265,36 +287,7 @@
             return obj;
         }
 
-        function setRowValues() {
-            const rowValues = JSON.parse(`<?!= rowValues ?>`)
-            if (isPlainObject(rowValues) && Object.keys(rowValues).length > 0) {
-                fillRowValues(rowValues, '');
-            }
-        }
-
-        function fillRowValues(payload, prefix) {
-            for (const k in payload) {
-                if (isPlainObject(payload[k])) {
-                    fillRowValues(payload[k], `${prefix}.${k}`)
-                } else {
-                    const input = document.querySelector(`[name="${prefix}.${k}"]`);
-
-                    if (!input || input.type === "file") {
-                        continue;
-                    }
-
-                    input.innerHTML = '';
-                    input.value = payload[k]
-                }
-            }
-        }
-
-        function isPlainObject(value) {
-            return typeof value === 'object' && value !== null && value.constructor.name === 'Object';
-        }
-
     </script>
 </body>
 
 </html>
-
