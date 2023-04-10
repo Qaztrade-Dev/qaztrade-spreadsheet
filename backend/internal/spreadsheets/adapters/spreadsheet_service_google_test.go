@@ -27,6 +27,7 @@ func TestSpreadsheetCreate(t *testing.T) {
 		postgresPassword      = getenv("POSTGRES_PASSWORD", "postgres")
 		postgresHost          = getenv("POSTGRES_HOST", "localhost")
 		postgresDatabase      = getenv("POSTGRES_DATABASE", "qaztrade")
+		originSpreadsheetID   = getenv("ORIGIN_SPREADSHEET_ID")
 		templateSpreadsheetId = getenv("TEMPLATE_SPREADSHEET_ID")
 		destinationFolderId   = getenv("DESTINATION_FOLDER_ID")
 		reviewerAccount       = getenv("REVIEWER_ACCOUNT")
@@ -39,12 +40,64 @@ func TestSpreadsheetCreate(t *testing.T) {
 	pg, err := pgxpool.Connect(ctx, postgresURL)
 	require.Nil(t, err)
 
-	svc, err := NewSpreadsheetServiceGoogle(clientSecretBytes, svcAccount, reviewerAccount, jwtcli, pg, templateSpreadsheetId, destinationFolderId)
+	svc, err := NewSpreadsheetServiceGoogle(
+		clientSecretBytes,
+		svcAccount,
+		reviewerAccount,
+		jwtcli,
+		pg,
+		originSpreadsheetID,
+		templateSpreadsheetId,
+		destinationFolderId,
+	)
 	require.Nil(t, err)
 
 	id, err := svc.Create(ctx, user)
 	fmt.Println(id)
 	fmt.Println(err)
+}
+
+func TestAddSheet(t *testing.T) {
+	var (
+		ctx               = context.Background()
+		clientSecretBytes = clientSecretBytes
+		svcAccount        = "sheets@secret-beacon-380907.iam.gserviceaccount.com"
+		jwtcli            = jwt.NewClient("qaztradesecret")
+
+		postgresLogin         = getenv("POSTGRES_LOGIN", "postgres")
+		postgresPassword      = getenv("POSTGRES_PASSWORD", "postgres")
+		postgresHost          = getenv("POSTGRES_HOST", "localhost")
+		postgresDatabase      = getenv("POSTGRES_DATABASE", "qaztrade")
+		templateSpreadsheetId = getenv("TEMPLATE_SPREADSHEET_ID")
+		destinationFolderId   = getenv("DESTINATION_FOLDER_ID")
+		reviewerAccount       = getenv("REVIEWER_ACCOUNT")
+
+		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
+
+		originSpreadsheetID = "1BY6-dstDDWP1k6Xv-HzmZ6q4SJ3i088z26gBgkfwXow"
+		spreadsheetID       = "1iMQUuchYFCICEnOOeDPmJsGnsCTWg7DRFzEWA427fJE"
+		sheetName           = "Доставка ЖД транспортом"
+	)
+
+	pg, err := pgxpool.Connect(ctx, postgresURL)
+	require.Nil(t, err)
+
+	svc, err := NewSpreadsheetServiceGoogle(
+		clientSecretBytes,
+		svcAccount,
+		reviewerAccount,
+		jwtcli,
+		pg,
+		originSpreadsheetID,
+		templateSpreadsheetId,
+		destinationFolderId,
+	)
+	require.Nil(t, err)
+
+	err = svc.AddSheet(ctx, spreadsheetID, sheetName)
+	if err != nil {
+		t.Fatal("AddSheet error:", err)
+	}
 }
 
 func getenv(env string, fallback ...string) string {

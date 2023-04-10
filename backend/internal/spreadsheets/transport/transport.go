@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -41,5 +42,22 @@ func DecodeListSpreadsheetsRequest(_ context.Context, r *http.Request) (interfac
 		UserToken: tokenString,
 		Limit:     limit,
 		Offset:    offset,
+	}, nil
+}
+
+func DecodeAddSheetRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var body struct {
+		SheetName string `json:"sheet_name"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+
+	tokenString := extractHeaderToken(r)
+
+	return endpoint.AddSheetRequest{
+		TokenString: tokenString,
+		SheetName:   body.SheetName,
 	}, nil
 }

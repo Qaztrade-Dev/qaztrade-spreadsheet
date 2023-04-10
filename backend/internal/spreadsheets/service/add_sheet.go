@@ -10,7 +10,7 @@ type AddSheetRequest struct {
 }
 
 func (s *service) AddSheet(ctx context.Context, req *AddSheetRequest) error {
-	if err := s.sheetsRepo.AddSheet(ctx, req.SpreadsheetID, req.SheetName); err != nil {
+	if err := s.spreadsheetSvc.AddSheet(ctx, req.SpreadsheetID, req.SheetName); err != nil {
 		return err
 	}
 

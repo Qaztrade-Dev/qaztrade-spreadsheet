@@ -80,7 +80,6 @@ func main() {
 			ctx,
 			sheets.WithSheetsCredentials(credentials),
 			sheets.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
-			sheets.WithOriginSpreadsheetID(originSpreadsheetID),
 		)
 
 		authService = auth.MakeService(
@@ -105,6 +104,7 @@ func main() {
 			spreadsheets.WithReviewer(reviewerAccount),
 			spreadsheets.WithTemplateSpreadsheetID(templateSpreadsheetID),
 			spreadsheets.WithDestinationFolderID(destinationFolderID),
+			spreadsheets.WithOriginSpreadsheetID(originSpreadsheetID),
 		)
 
 		managerService = manager.MakeService(

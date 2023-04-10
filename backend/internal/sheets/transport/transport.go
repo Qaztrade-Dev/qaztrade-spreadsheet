@@ -3,7 +3,6 @@ package transport
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -66,21 +65,47 @@ func DecodeSubmitApplicationRequest(_ context.Context, r *http.Request) (interfa
 	}, nil
 }
 
-func DecodeAddSheetRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var body struct {
-		SheetName string `json:"sheet_name"`
-	}
-	fmt.Println("hello")
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+func DecodeUploadFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
 		return nil, err
 	}
 
-	tokenString := extractHeaderToken(r)
+	fileReader, header, err := r.FormFile("fileInput")
+	if err != nil {
+		return nil, err
+	}
+	defer fileReader.Close()
 
-	return endpoint.AddSheetRequest{
-		TokenString: tokenString,
-		SheetName:   body.SheetName,
+	var (
+		fileName = header.Filename
+		fileSize = header.Size
+		jsonData = r.FormValue("selected_cell")
+	)
+
+	var body struct {
+		SheetName string `json:"sheet_name"`
+		SheetID   int64  `json:"sheet_id"`
+		RowIdx    int64  `json:"row_idx"`
+		ColumnIdx int64  `json:"column_idx"`
+	}
+
+	if err := json.Unmarshal([]byte(jsonData), &body); err != nil {
+		return nil, err
+	}
+
+	var (
+		tokenString = extractHeaderToken(r)
+	)
+
+	return endpoint.UploadFileRequest{
+		SpreadsheetTokenStr: tokenString,
+		SheetID:             body.SheetID,
+		SheetName:           body.SheetName,
+		RowIdx:              body.RowIdx,
+		ColumnIdx:           body.ColumnIdx,
+		FileReader:          fileReader,
+		FileSize:            fileSize,
+		FileName:            fileName,
 	}, nil
 }
 

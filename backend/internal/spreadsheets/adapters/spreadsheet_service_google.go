@@ -22,6 +22,7 @@ type SpreadsheetServiceGoogle struct {
 	svcAccount            string
 	reviewerAccount       string
 	jwtcli                *jwt.Client
+	originSpreadsheetID   string
 	templateSpreadsheetID string
 	destinationFolderID   string
 }
@@ -34,6 +35,7 @@ func NewSpreadsheetServiceGoogle(
 	reviewerAccount string,
 	jwtcli *jwt.Client,
 	pg *pgxpool.Pool,
+	originSpreadsheetID string,
 	templateSpreadsheetID string,
 	destinationFolderID string,
 ) (*SpreadsheetServiceGoogle, error) {
@@ -42,15 +44,18 @@ func NewSpreadsheetServiceGoogle(
 		return nil, err
 	}
 
-	return &SpreadsheetServiceGoogle{
+	client := &SpreadsheetServiceGoogle{
 		pg:                    pg,
 		config:                config,
 		svcAccount:            svcAccount,
 		reviewerAccount:       reviewerAccount,
 		jwtcli:                jwtcli,
+		originSpreadsheetID:   originSpreadsheetID,
 		templateSpreadsheetID: templateSpreadsheetID,
 		destinationFolderID:   destinationFolderID,
-	}, err
+	}
+
+	return client, err
 }
 
 func (s *SpreadsheetServiceGoogle) Create(ctx context.Context, user *domain.User) (string, error) {
@@ -177,6 +182,16 @@ func (s *SpreadsheetServiceGoogle) setMetadata(spreadsheetID string, batch *Batc
 	}
 
 	batch.WithRequest(&sheets.Request{
+		DeleteDeveloperMetadata: &sheets.DeleteDeveloperMetadataRequest{
+			DataFilter: &sheets.DataFilter{
+				DeveloperMetadataLookup: &sheets.DeveloperMetadataLookup{
+					MetadataKey: "token",
+				},
+			},
+		},
+	})
+
+	batch.WithRequest(&sheets.Request{
 		CreateDeveloperMetadata: &sheets.CreateDeveloperMetadataRequest{
 			DeveloperMetadata: &sheets.DeveloperMetadata{
 				Location: &sheets.DeveloperMetadataLocation{
@@ -261,4 +276,102 @@ func clientWithToken(config *oauth2.Config, token *oauth2.Token) *http.Client {
 func (s *SpreadsheetServiceGoogle) GetPublicLink(_ context.Context, spreadsheetID string) string {
 	url := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/edit?usp=sharing", spreadsheetID)
 	return url
+}
+
+func (c *SpreadsheetServiceGoogle) AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error {
+	var (
+		mappings = map[string]int64{ // sheetName:sheetID
+			"Доставка ЖД транспортом": 0,
+			"Затраты на продвижение":  1156025711,
+		}
+		sourceSheetID = mappings[sheetName]
+	)
+
+	httpClient, err := c.getOauth2Client(ctx)
+	if err != nil {
+		return err
+	}
+
+	spreadsheetsSvc, err := sheets.NewService(ctx, option.WithHTTPClient(httpClient))
+	if err != nil {
+		return err
+	}
+
+	containsSheet, err := c.containsSheet(ctx, spreadsheetsSvc, spreadsheetID, sheetName)
+	if err != nil {
+		return err
+	}
+
+	if containsSheet {
+		return domain.ErrorSheetPresent
+	}
+
+	sheetID, err := c.copySheet(ctx, spreadsheetsSvc, c.originSpreadsheetID, spreadsheetID, sourceSheetID)
+	if err != nil {
+		return err
+	}
+
+	protectedRanges, err := c.getProtectedRanges(ctx, spreadsheetsSvc, c.originSpreadsheetID, sourceSheetID)
+	if err != nil {
+		return err
+	}
+
+	batchUpdate := NewBatchUpdate(spreadsheetsSvc)
+	{
+		batchUpdate.WithProtectedRange(sheetID, protectedRanges)
+		batchUpdate.WithSheetName(sheetID, sheetName)
+	}
+
+	if err := batchUpdate.Do(ctx, spreadsheetID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *SpreadsheetServiceGoogle) containsSheet(ctx context.Context, svc *sheets.Service, spreadsheetID string, sheetName string) (bool, error) {
+	spreadsheet, err := svc.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
+	if err != nil {
+		return false, err
+	}
+
+	// Iterate through the sheets and check if the sheet name exists
+	for _, sheet := range spreadsheet.Sheets {
+		if sheet.Properties.Title == sheetName {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// copySheet returns sheetId
+func (c *SpreadsheetServiceGoogle) copySheet(ctx context.Context, svc *sheets.Service, sourceSpreadsheetID, targetSpreadsheetID string, sheetID int64) (int64, error) {
+	copyRequest := &sheets.CopySheetToAnotherSpreadsheetRequest{
+		DestinationSpreadsheetId: targetSpreadsheetID,
+	}
+
+	resp, err := svc.Spreadsheets.Sheets.CopyTo(sourceSpreadsheetID, sheetID, copyRequest).Context(ctx).Do()
+	if err != nil {
+		return 0, err
+	}
+
+	return resp.SheetId, nil
+}
+
+func (c *SpreadsheetServiceGoogle) getProtectedRanges(ctx context.Context, svc *sheets.Service, spreadsheetID string, sheetID int64) ([]*sheets.ProtectedRange, error) {
+	spreadsheet, err := svc.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	var protectedRanges []*sheets.ProtectedRange
+	for _, sheet := range spreadsheet.Sheets {
+		if sheet.Properties.SheetId == sheetID {
+			protectedRanges = sheet.ProtectedRanges
+			break
+		}
+	}
+
+	return protectedRanges, nil
 }

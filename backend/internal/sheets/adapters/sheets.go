@@ -13,13 +13,12 @@ import (
 )
 
 type SpreadsheetClient struct {
-	service             *sheets.Service
-	originSpreadsheetID string
+	service *sheets.Service
 }
 
 var _ domain.SheetsRepository = (*SpreadsheetClient)(nil)
 
-func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte, originSpreadsheetID string) (*SpreadsheetClient, error) {
+func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte) (*SpreadsheetClient, error) {
 
 	service, err := sheets.NewService(
 		ctx,
@@ -30,8 +29,7 @@ func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte, originSpr
 	}
 
 	return &SpreadsheetClient{
-		service:             service,
-		originSpreadsheetID: originSpreadsheetID,
+		service: service,
 	}, nil
 }
 
@@ -103,94 +101,6 @@ func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID
 	}
 
 	return nil
-}
-
-func (c *SpreadsheetClient) AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error {
-	var (
-		mappings = map[string]int64{ // sheetName:sheetID
-			"Доставка ЖД транспортом": 0,
-			"Затраты на продвижение":  1156025711,
-		}
-		sourceSheetID = mappings[sheetName]
-	)
-
-	containsSheet, err := c.containsSheet(ctx, spreadsheetID, sheetName)
-	if err != nil {
-		return err
-	}
-
-	if containsSheet {
-		return domain.ErrorSheetPresent
-	}
-
-	sheetID, err := c.copySheet(ctx, c.originSpreadsheetID, spreadsheetID, sourceSheetID)
-	if err != nil {
-		return err
-	}
-
-	protectedRanges, err := c.getProtectedRanges(ctx, c.originSpreadsheetID, sourceSheetID)
-	if err != nil {
-		return err
-	}
-
-	batchUpdate := NewBatchUpdate(c.service)
-	{
-		batchUpdate.WithProtectedRange(sheetID, protectedRanges)
-		batchUpdate.WithSheetName(sheetID, sheetName)
-	}
-
-	if err := batchUpdate.Do(ctx, spreadsheetID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *SpreadsheetClient) containsSheet(ctx context.Context, spreadsheetID string, sheetName string) (bool, error) {
-	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
-	if err != nil {
-		return false, err
-	}
-
-	// Iterate through the sheets and check if the sheet name exists
-	for _, sheet := range spreadsheet.Sheets {
-		if sheet.Properties.Title == sheetName {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-// copySheet returns sheetId
-func (c *SpreadsheetClient) copySheet(ctx context.Context, sourceSpreadsheetID, targetSpreadsheetID string, sheetID int64) (int64, error) {
-	copyRequest := &sheets.CopySheetToAnotherSpreadsheetRequest{
-		DestinationSpreadsheetId: targetSpreadsheetID,
-	}
-
-	resp, err := c.service.Spreadsheets.Sheets.CopyTo(sourceSpreadsheetID, sheetID, copyRequest).Context(ctx).Do()
-	if err != nil {
-		return 0, err
-	}
-
-	return resp.SheetId, nil
-}
-
-func (c *SpreadsheetClient) getProtectedRanges(ctx context.Context, spreadsheetID string, sheetID int64) ([]*sheets.ProtectedRange, error) {
-	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	var protectedRanges []*sheets.ProtectedRange
-	for _, sheet := range spreadsheet.Sheets {
-		if sheet.Properties.SheetId == sheetID {
-			protectedRanges = sheet.ProtectedRanges
-			break
-		}
-	}
-
-	return protectedRanges, nil
 }
 
 type SheetClient struct {
@@ -401,10 +311,10 @@ func (r *UpdateCellRequest) encode(sheetID int64) *sheets.Request {
 
 	return &sheets.Request{
 		UpdateCells: &sheets.UpdateCellsRequest{
-			Fields: "*",
+			Fields: "userEnteredValue",
 			Start: &sheets.GridCoordinate{
-				RowIndex:    int64(r.RowIndex),
-				ColumnIndex: int64(r.ColumnIndex),
+				RowIndex:    r.RowIndex,
+				ColumnIndex: r.ColumnIndex,
 				SheetId:     sheetID,
 			},
 			Rows: []*sheets.RowData{
@@ -768,6 +678,24 @@ func (c *SheetClient) RemoveParent(ctx context.Context, input *domain.RemoveInpu
 	}
 
 	if err := batchUpdate.Do(ctx, c.spreadsheetID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *SpreadsheetClient) UpdateCell(ctx context.Context, spreadsheetID string, input *domain.UpdateCellInput) error {
+	var (
+		batch             = NewBatchUpdate(c.service)
+		updateCellRequest = &UpdateCellRequest{
+			RowIndex:    input.RowIdx - 1,
+			ColumnIndex: input.ColumnIdx - 1,
+			Value:       input.Value,
+		}
+	)
+	batch.WithRequest(updateCellRequest.encode(input.SheetID))
+
+	if err := batch.Do(ctx, spreadsheetID); err != nil {
 		return err
 	}
 

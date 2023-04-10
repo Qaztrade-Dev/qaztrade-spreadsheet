@@ -22,6 +22,7 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		deps.reviewerAccount,
 		deps.jwtcli,
 		deps.pg,
+		deps.originSpreadsheetID,
 		deps.templateSpreadsheetID,
 		deps.destinationFolderID,
 	)
@@ -34,7 +35,7 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		userRepo        = adapters.NewUserRepositoryPostgre(deps.pg)
 	)
 
-	svc := service.NewService(spreadsheetSvc, applicationRepo, userRepo)
+	svc := service.NewService(spreadsheetSvc, applicationRepo, userRepo, deps.jwtcli)
 	return svc
 }
 
@@ -46,6 +47,7 @@ type dependencies struct {
 	reviewerAccount       string
 	jwtcli                *jwt.Client
 	pg                    *pgxpool.Pool
+	originSpreadsheetID   string
 	templateSpreadsheetID string
 	destinationFolderID   string
 }
@@ -81,6 +83,12 @@ func WithServiceAccount(svcAccount string) Option {
 func WithReviewer(reviewerAccount string) Option {
 	return func(d *dependencies) {
 		d.reviewerAccount = reviewerAccount
+	}
+}
+
+func WithOriginSpreadsheetID(originSpreadsheetID string) Option {
+	return func(d *dependencies) {
+		d.originSpreadsheetID = originSpreadsheetID
 	}
 }
 

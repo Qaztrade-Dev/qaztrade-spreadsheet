@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"errors"
 	"io"
 )
 
@@ -87,8 +86,6 @@ type (
 	}
 )
 
-var ErrorSheetPresent = errors.New("sheet already present")
-
 type (
 	RemoveInput struct {
 		Value  string
@@ -96,10 +93,17 @@ type (
 		Name   string
 	}
 
+	UpdateCellInput struct {
+		SheetID   int64
+		RowIdx    int64
+		ColumnIdx int64
+		Value     string
+	}
+
 	SheetsRepository interface {
 		InsertRecord(ctx context.Context, spreadsheetID, sheetName string, sheetID int64, payload *Payload) error
 		UpdateApplication(ctx context.Context, spreadsheetID string, application *Application) error
-		AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error
+		UpdateCell(ctx context.Context, spreadsheetID string, input *UpdateCellInput) error
 	}
 
 	Storage interface {
@@ -107,6 +111,6 @@ type (
 	}
 )
 
-type Claims struct {
+type SpreadsheetClaims struct {
 	SpreadsheetID string `json:"sid"`
 }

@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
+	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 )
 
 type CreateSpreadsheetRequest struct {
@@ -31,5 +34,27 @@ func (s *service) CreateSpreadsheet(ctx context.Context, req *CreateSpreadsheetR
 		return "", err
 	}
 
-	return publicLink, nil
+	tallyLink, err := s.getTallyLink(spreadsheetID)
+	if err != nil {
+		return "", err
+	}
+
+	return tallyLink, nil
+}
+
+func (s *service) getTallyLink(spreadsheetID string) (string, error) {
+	baseURL := "https://tally.so/r/m6LxZB"
+	tokenStr, err := jwt.NewTokenString(s.jwtcli, &domain.SpreadsheetClaims{
+		SpreadsheetID: spreadsheetID,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	queryParams := url.Values{
+		"token":          {tokenStr},
+		"spreadsheet_id": {spreadsheetID},
+	}
+
+	return fmt.Sprintf("%s?%s", baseURL, queryParams.Encode()), nil
 }

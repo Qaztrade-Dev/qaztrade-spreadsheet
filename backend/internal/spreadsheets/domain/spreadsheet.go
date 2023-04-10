@@ -2,13 +2,17 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
 
+var ErrorSheetPresent = errors.New("sheet already present")
+
 type SpreadsheetService interface {
 	Create(ctx context.Context, user *User) (spreadsheetID string, err error)
 	GetPublicLink(ctx context.Context, spreadsheetID string) (link string)
+	AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error
 }
 
 type Application struct {

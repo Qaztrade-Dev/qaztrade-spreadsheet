@@ -23,7 +23,7 @@ func MakeSubmitApplicationEndpoint(s service.Service, j *jwt.Client) endpoint.En
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(SubmitApplicationRequest)
 
-		claims, err := jwt.Parse[domain.Claims](j, req.Application.Token)
+		claims, err := jwt.Parse[domain.SpreadsheetClaims](j, req.Application.Token)
 		if err != nil {
 			return nil, err
 		}

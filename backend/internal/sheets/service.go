@@ -14,7 +14,7 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		opt(deps)
 	}
 
-	sheetsRepo, err := adapters.NewSpreadsheetClient(ctx, deps.credentials, deps.originSpreadsheetID)
+	sheetsRepo, err := adapters.NewSpreadsheetClient(ctx, deps.credentials)
 	if err != nil {
 		panic(err)
 	}
@@ -55,11 +55,5 @@ func WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket string) Option
 		d.s3SecretKey = s3SecretKey
 		d.s3Endpoint = s3Endpoint
 		d.s3Bucket = s3Bucket
-	}
-}
-
-func WithOriginSpreadsheetID(originSpreadsheetID string) Option {
-	return func(d *dependencies) {
-		d.originSpreadsheetID = originSpreadsheetID
 	}
 }
