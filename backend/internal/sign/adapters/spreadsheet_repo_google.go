@@ -114,7 +114,7 @@ func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID st
 
 	attachments := make([]io.ReadSeeker, 0, len(sheetIDs))
 	for _, sheetID := range sheetIDs {
-		exportURL := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/export?exportFormat=pdf&format=pdf&size=A4&portrait=false&fitw=false&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=true&fzr=true&top_margin=0&bottom_margin=0&left_margin=0&right_margin=0&gid=%d", spreadsheetID, sheetID)
+		exportURL := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/export?exportFormat=pdf&range=A1:A3&format=pdf&size=A4&portrait=false&fitw=false&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=true&fzr=true&top_margin=0&bottom_margin=0&left_margin=0&right_margin=0&gid=%d", spreadsheetID, sheetID)
 
 		req, err := http.NewRequestWithContext(ctx, "GET", exportURL, nil)
 		if err != nil {

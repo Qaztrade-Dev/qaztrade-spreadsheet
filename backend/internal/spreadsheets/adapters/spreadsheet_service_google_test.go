@@ -75,7 +75,7 @@ func TestAddSheet(t *testing.T) {
 		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
 
 		originSpreadsheetID = "1BY6-dstDDWP1k6Xv-HzmZ6q4SJ3i088z26gBgkfwXow"
-		spreadsheetID       = "1iMQUuchYFCICEnOOeDPmJsGnsCTWg7DRFzEWA427fJE"
+		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
 		sheetName           = "Доставка ЖД транспортом"
 	)
 

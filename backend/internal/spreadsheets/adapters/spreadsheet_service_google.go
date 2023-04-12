@@ -281,8 +281,20 @@ func (s *SpreadsheetServiceGoogle) GetPublicLink(_ context.Context, spreadsheetI
 func (c *SpreadsheetServiceGoogle) AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error {
 	var (
 		mappings = map[string]int64{ // sheetName:sheetID
-			"Доставка ЖД транспортом": 0,
-			"Затраты на продвижение":  1156025711,
+			"Доставка ЖД транспортом":                     928848876,
+			"Затраты на сертификацию предприятия":         693636717,
+			"Затраты на рекламу ИКУ за рубежом":           1717840340,
+			"Затраты на перевод каталога ИКУ":             784543090,
+			"Затраты на аренду помещения ИКУ":             699998073,
+			"Затраты на сертификацию ИКУ":                 830264833,
+			"Затраты на демонстрацию ИКУ":                 826367543,
+			"Затраты на франчайзинг":                      808421585,
+			"Затраты на соответствие товаров требованиям": 564452334,
+			"Затраты на регистрацию товарных знаков":      719601032,
+			"Затраты на аренду":                           1638330977,
+			"Затраты на перевод":                          545808572,
+			"Затраты на рекламу товаров за рубежом":       1112839101,
+			"Затраты на участие в выставках":              662810845,
 		}
 		sourceSheetID = mappings[sheetName]
 	)
@@ -311,15 +323,16 @@ func (c *SpreadsheetServiceGoogle) AddSheet(ctx context.Context, spreadsheetID s
 		return err
 	}
 
-	protectedRanges, err := c.getProtectedRanges(ctx, spreadsheetsSvc, c.originSpreadsheetID, sourceSheetID)
+	dataToCopy, err := c.getDataToCopy(ctx, spreadsheetsSvc, c.originSpreadsheetID, sheetID, sourceSheetID)
 	if err != nil {
 		return err
 	}
 
 	batchUpdate := NewBatchUpdate(spreadsheetsSvc)
 	{
-		batchUpdate.WithProtectedRange(sheetID, protectedRanges)
+		batchUpdate.WithProtectedRange(sheetID, dataToCopy.protectedRanges)
 		batchUpdate.WithSheetName(sheetID, sheetName)
+		batchUpdate.WithRequest(dataToCopy.updateCellRequests...)
 	}
 
 	if err := batchUpdate.Do(ctx, spreadsheetID); err != nil {
@@ -359,19 +372,95 @@ func (c *SpreadsheetServiceGoogle) copySheet(ctx context.Context, svc *sheets.Se
 	return resp.SheetId, nil
 }
 
-func (c *SpreadsheetServiceGoogle) getProtectedRanges(ctx context.Context, svc *sheets.Service, spreadsheetID string, sheetID int64) ([]*sheets.ProtectedRange, error) {
-	spreadsheet, err := svc.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
+type getDataToCopyResponse struct {
+	protectedRanges    []*sheets.ProtectedRange
+	updateCellRequests []*sheets.Request
+}
+
+func (c *SpreadsheetServiceGoogle) getDataToCopy(ctx context.Context, svc *sheets.Service, spreadsheetID string, destinationSheetID, sourceSheetID int64) (*getDataToCopyResponse, error) {
+	spreadsheet, err := svc.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	var protectedRanges []*sheets.ProtectedRange
-	for _, sheet := range spreadsheet.Sheets {
-		if sheet.Properties.SheetId == sheetID {
-			protectedRanges = sheet.ProtectedRanges
+	var (
+		sheet *sheets.Sheet
+	)
+
+	for i, tmpSheet := range spreadsheet.Sheets {
+		if tmpSheet.Properties.SheetId == sourceSheetID {
+			sheet = spreadsheet.Sheets[i]
 			break
 		}
 	}
 
-	return protectedRanges, nil
+	var (
+		protectedRanges    []*sheets.ProtectedRange = sheet.ProtectedRanges
+		updateCellRequests []*sheets.Request
+	)
+
+	// adapt data validations of range
+	for rowIdx, row := range sheet.Data[0].RowData {
+		for cellIdx, cell := range row.Values {
+			if cell.DataValidation != nil && cell.DataValidation.Condition.Type == "ONE_OF_RANGE" {
+				updateCellRequests = append(updateCellRequests, &sheets.Request{
+					UpdateCells: &sheets.UpdateCellsRequest{
+						Start: &sheets.GridCoordinate{
+							RowIndex: int64(rowIdx),
+
+							ColumnIndex: int64(cellIdx),
+							SheetId:     destinationSheetID,
+						},
+						Fields: "dataValidation",
+						Rows: []*sheets.RowData{
+							{
+								Values: []*sheets.CellData{
+									{
+										DataValidation: sheet.Data[0].RowData[rowIdx].Values[cellIdx].DataValidation,
+									},
+								},
+							},
+						},
+					},
+				})
+			}
+		}
+	}
+
+	// adapt formulas
+	for rowIdx, row := range sheet.Data[0].RowData {
+		for cellIdx, cell := range row.Values {
+			if cell.UserEnteredValue != nil && cell.UserEnteredValue.FormulaValue != nil {
+				updateCellRequests = append(updateCellRequests, &sheets.Request{
+					UpdateCells: &sheets.UpdateCellsRequest{
+						Start: &sheets.GridCoordinate{
+							RowIndex: int64(rowIdx),
+
+							ColumnIndex: int64(cellIdx),
+							SheetId:     destinationSheetID,
+						},
+						Fields: "userEnteredValue",
+						Rows: []*sheets.RowData{
+							{
+								Values: []*sheets.CellData{
+									{
+										UserEnteredValue: &sheets.ExtendedValue{
+											FormulaValue: sheet.Data[0].RowData[rowIdx].Values[cellIdx].UserEnteredValue.FormulaValue,
+										},
+									},
+								},
+							},
+						},
+					},
+				})
+			}
+		}
+	}
+
+	result := &getDataToCopyResponse{
+		protectedRanges:    protectedRanges,
+		updateCellRequests: updateCellRequests,
+	}
+
+	return result, nil
 }

@@ -53,8 +53,8 @@ func (b *BatchUpdate) WithSheetName(sheetID int64, sheetName string) {
 	})
 }
 
-func (b *BatchUpdate) WithRequest(request *sheets.Request) {
-	b.requests = append(b.requests, request)
+func (b *BatchUpdate) WithRequest(requests ...*sheets.Request) {
+	b.requests = append(b.requests, requests...)
 }
 
 func (b *BatchUpdate) Do(ctx context.Context, spreadsheetID string) error {
