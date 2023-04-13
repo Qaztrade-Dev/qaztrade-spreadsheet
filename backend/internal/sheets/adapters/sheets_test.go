@@ -3,23 +3,24 @@ package adapters
 import (
 	"context"
 	_ "embed"
+	"os"
 	"testing"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
 )
 
-//go:embed credentials.json
-var credentials []byte
+//go:embed credentials_sa.json
+var credentialsSA []byte
 
 func TestSubmit(t *testing.T) {
 	var (
 		ctx                 = context.Background()
-		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		spreadsheetID       = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 		sheetName           = "Доставка ЖД транспортом"
 		sheetID       int64 = 932754288
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}
@@ -50,12 +51,12 @@ func TestSubmit(t *testing.T) {
 func TestSubmitChild(t *testing.T) {
 	var (
 		ctx                 = context.Background()
-		spreadsheetID       = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		spreadsheetID       = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 		sheetName           = "Доставка ЖД транспортом"
 		sheetID       int64 = 932754288
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}
@@ -79,7 +80,7 @@ func TestSubmitChild(t *testing.T) {
 func TestUpdateApplication(t *testing.T) {
 	var (
 		ctx           = context.Background()
-		spreadsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 		appl          = &domain.Application{
 			From:                  "Kaspi Ltd.",
 			GovReg:                "11111111",
@@ -109,7 +110,7 @@ func TestUpdateApplication(t *testing.T) {
 		}
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}
@@ -123,12 +124,12 @@ func TestUpdateApplication(t *testing.T) {
 func TestRemoveParent(t *testing.T) {
 	var (
 		ctx           = context.Background()
-		spreadsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 		sheetName     = "Доставка ЖД транспортом"
 		sheetID       = int64(1974041431)
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
 	if err != nil {
 		t.Fatal("NewSheetsClient error:", err)
 	}

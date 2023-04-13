@@ -9,16 +9,16 @@ import (
 	"testing"
 )
 
-//go:embed credentials.json
-var credentials []byte
+//go:embed credentials_sa.json
+var credentialsSA []byte
 
 func TestGetApplication(t *testing.T) {
 	var (
 		ctx           = context.Background()
-		spreadsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
 	if err != nil {
 		t.Fatal("NewSpreadsheetClient error:", err)
 	}
@@ -34,10 +34,10 @@ func TestGetApplication(t *testing.T) {
 func TestGetAttachments(t *testing.T) {
 	var (
 		ctx           = context.Background()
-		spreadsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentials)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
 	if err != nil {
 		t.Fatal("NewSpreadsheetClient error:", err)
 	}

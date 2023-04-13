@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -17,7 +18,7 @@ func TestParse(t *testing.T) {
 		tokenString = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwIjp7InNpZCI6IjFJN3RZQWhValBKR2FNVTdfWGJoQzA4clF3NTVJUmM3YkV0ZzFtZ21SUEtnIn19.QfFWe6asN8YVA-hElikkOAq1jlueW3_e-9oohf_xf0k"
 		secret      = "qaztradesecret"
 		expClaims   = &testClaims{
-			SpreadsheetID: "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg",
+			SpreadsheetID: os.Getenv("TEMPLATE_SPREADSHEET_ID"),
 		}
 
 		jwtcli = NewClient(secret)
@@ -30,10 +31,10 @@ func TestParse(t *testing.T) {
 
 func TestNewTokenString(t *testing.T) {
 	var (
-		spreadhsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		spreadhsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 		secret         = "qaztradesecret"
 		expClaims      = &testClaims{
-			SpreadsheetID: "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg",
+			SpreadsheetID: os.Getenv("TEMPLATE_SPREADSHEET_ID"),
 		}
 
 		jwtcli = NewClient(secret)
@@ -52,7 +53,7 @@ func TestNewTokenString(t *testing.T) {
 
 func TestWithExpire(t *testing.T) {
 	var (
-		spreadhsheetID = "1I7tYAhUjPJGaMU7_XbhC08rQw55IRc7bEtg1mgmRPKg"
+		spreadhsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 		secret         = "qaztradesecret"
 
 		jwtcli = NewClient(secret)

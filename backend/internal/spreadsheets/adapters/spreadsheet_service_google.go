@@ -383,9 +383,7 @@ func (c *SpreadsheetServiceGoogle) getDataToCopy(ctx context.Context, svc *sheet
 		return nil, err
 	}
 
-	var (
-		sheet *sheets.Sheet
-	)
+	var sheet *sheets.Sheet
 
 	for i, tmpSheet := range spreadsheet.Sheets {
 		if tmpSheet.Properties.SheetId == sourceSheetID {
@@ -406,8 +404,7 @@ func (c *SpreadsheetServiceGoogle) getDataToCopy(ctx context.Context, svc *sheet
 				updateCellRequests = append(updateCellRequests, &sheets.Request{
 					UpdateCells: &sheets.UpdateCellsRequest{
 						Start: &sheets.GridCoordinate{
-							RowIndex: int64(rowIdx),
-
+							RowIndex:    int64(rowIdx),
 							ColumnIndex: int64(cellIdx),
 							SheetId:     destinationSheetID,
 						},
@@ -434,8 +431,7 @@ func (c *SpreadsheetServiceGoogle) getDataToCopy(ctx context.Context, svc *sheet
 				updateCellRequests = append(updateCellRequests, &sheets.Request{
 					UpdateCells: &sheets.UpdateCellsRequest{
 						Start: &sheets.GridCoordinate{
-							RowIndex: int64(rowIdx),
-
+							RowIndex:    int64(rowIdx),
 							ColumnIndex: int64(cellIdx),
 							SheetId:     destinationSheetID,
 						},

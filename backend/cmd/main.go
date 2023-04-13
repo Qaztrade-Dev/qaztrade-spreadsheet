@@ -23,11 +23,11 @@ import (
 	googleSheets "google.golang.org/api/sheets/v4"
 )
 
-//go:embed credentials.json
-var credentials []byte
+//go:embed credentials_sa.json
+var credentialsSA []byte
 
-//go:embed oauth_secret.json
-var oauthSecret []byte
+//go:embed credentials_oauth.json
+var credentialsOAuth []byte
 
 const (
 	defaultPort = "8082"
@@ -70,7 +70,7 @@ func main() {
 		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 	}
 
-	oauthConfig, err := googleOAuth.ConfigFromJSON(oauthSecret, drive.DriveScope, googleSheets.SpreadsheetsScope)
+	oauthConfig, err := googleOAuth.ConfigFromJSON(credentialsOAuth, drive.DriveScope, googleSheets.SpreadsheetsScope)
 	if err != nil {
 		panic(err)
 	}
@@ -78,7 +78,7 @@ func main() {
 	var (
 		sheetsService = sheets.MakeService(
 			ctx,
-			sheets.WithSheetsCredentials(credentials),
+			sheets.WithSheetsCredentials(credentialsSA),
 			sheets.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
 		)
 
@@ -99,7 +99,7 @@ func main() {
 			ctx,
 			spreadsheets.WithPostgre(pg),
 			spreadsheets.WithJWT(jwtcli),
-			spreadsheets.WithOAuthCredentials(oauthSecret),
+			spreadsheets.WithOAuthCredentials(credentialsOAuth),
 			spreadsheets.WithServiceAccount(svcAccount),
 			spreadsheets.WithReviewer(reviewerAccount),
 			spreadsheets.WithTemplateSpreadsheetID(templateSpreadsheetID),
@@ -110,7 +110,7 @@ func main() {
 		managerService = manager.MakeService(
 			ctx,
 			manager.WithPostgre(pg),
-			manager.WithCredentials(credentials),
+			manager.WithCredentials(credentialsSA),
 		)
 	)
 
