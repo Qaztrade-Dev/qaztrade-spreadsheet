@@ -121,6 +121,7 @@ func (s *SpreadsheetServiceGoogle) initSpreadsheet(ctx context.Context, svc *she
 	batch := NewBatchUpdate(svc)
 	for _, sheet := range spreadsheet.Sheets {
 		for _, protectedRange := range sheet.ProtectedRanges {
+			protectedRange := protectedRange
 			s.setProtectedRange(spreadsheetID, protectedRange, batch)
 		}
 	}
@@ -141,20 +142,10 @@ func (s *SpreadsheetServiceGoogle) setProtectedRange(
 	protectedRange *sheets.ProtectedRange,
 	batch *BatchUpdate,
 ) {
-	editors := protectedRange.Editors
-	if stringSliceIndex(editors.Users, s.svcAccount) >= 0 {
-		return
-	}
-
-	editors.Users = append(editors.Users, s.svcAccount)
-
 	batch.WithRequest(&sheets.Request{
 		UpdateProtectedRange: &sheets.UpdateProtectedRangeRequest{
-			ProtectedRange: &sheets.ProtectedRange{
-				ProtectedRangeId: protectedRange.ProtectedRangeId,
-				Editors:          editors,
-			},
-			Fields: "editors",
+			ProtectedRange: protectedRange,
+			Fields:         "editors",
 		},
 	})
 }
@@ -216,15 +207,6 @@ func (s *SpreadsheetServiceGoogle) setPublic(ctx context.Context, svc *drive.Ser
 		return err
 	}
 	return nil
-}
-
-func stringSliceIndex(arr []string, str string) int {
-	for i, v := range arr {
-		if v == str {
-			return i
-		}
-	}
-	return -1
 }
 
 func (s *SpreadsheetServiceGoogle) getOauth2Client(ctx context.Context) (*http.Client, error) {
