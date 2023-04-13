@@ -113,16 +113,29 @@ func (s *SpreadsheetServiceGoogle) copyFile(ctx context.Context, svc *drive.Serv
 }
 
 func (s *SpreadsheetServiceGoogle) initSpreadsheet(ctx context.Context, svc *sheets.Service, spreadsheetID string) error {
-	spreadsheet, err := svc.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
+	templateSpreadsheet, err := svc.Spreadsheets.Get(s.templateSpreadsheetID).Context(ctx).Do()
+	if err != nil {
+		return err
+	}
+
+	spreadsheet, err := svc.Spreadsheets.Get(spreadsheetID).Context(ctx).Do()
 	if err != nil {
 		return err
 	}
 
 	batch := NewBatchUpdate(svc)
+
 	for _, sheet := range spreadsheet.Sheets {
 		for _, protectedRange := range sheet.ProtectedRanges {
 			protectedRange := protectedRange
-			s.setProtectedRange(spreadsheetID, protectedRange, batch)
+			s.deleteProtectedRange(protectedRange, batch)
+		}
+	}
+
+	for _, sheet := range templateSpreadsheet.Sheets {
+		for _, protectedRange := range sheet.ProtectedRanges {
+			protectedRange := protectedRange
+			s.addProtectedRange(protectedRange, batch)
 		}
 	}
 
@@ -137,15 +150,18 @@ func (s *SpreadsheetServiceGoogle) initSpreadsheet(ctx context.Context, svc *she
 	return nil
 }
 
-func (s *SpreadsheetServiceGoogle) setProtectedRange(
-	spreadsheetID string,
-	protectedRange *sheets.ProtectedRange,
-	batch *BatchUpdate,
-) {
+func (s *SpreadsheetServiceGoogle) deleteProtectedRange(protectedRange *sheets.ProtectedRange, batch *BatchUpdate) {
 	batch.WithRequest(&sheets.Request{
-		UpdateProtectedRange: &sheets.UpdateProtectedRangeRequest{
+		DeleteProtectedRange: &sheets.DeleteProtectedRangeRequest{
+			ProtectedRangeId: protectedRange.ProtectedRangeId,
+		},
+	})
+}
+
+func (s *SpreadsheetServiceGoogle) addProtectedRange(protectedRange *sheets.ProtectedRange, batch *BatchUpdate) {
+	batch.WithRequest(&sheets.Request{
+		AddProtectedRange: &sheets.AddProtectedRangeRequest{
 			ProtectedRange: protectedRange,
-			Fields:         "editors",
 		},
 	})
 }
@@ -263,7 +279,7 @@ func (s *SpreadsheetServiceGoogle) GetPublicLink(_ context.Context, spreadsheetI
 func (c *SpreadsheetServiceGoogle) AddSheet(ctx context.Context, spreadsheetID string, sheetName string) error {
 	var (
 		mappings = map[string]int64{ // sheetName:sheetID
-			"Доставка ЖД транспортом":                     928848876,
+			"Затраты на доставку транспортом":             928848876,
 			"Затраты на сертификацию предприятия":         693636717,
 			"Затраты на рекламу ИКУ за рубежом":           1717840340,
 			"Затраты на перевод каталога ИКУ":             784543090,
@@ -325,7 +341,7 @@ func (c *SpreadsheetServiceGoogle) AddSheet(ctx context.Context, spreadsheetID s
 }
 
 func (c *SpreadsheetServiceGoogle) containsSheet(ctx context.Context, svc *sheets.Service, spreadsheetID string, sheetName string) (bool, error) {
-	spreadsheet, err := svc.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
+	spreadsheet, err := svc.Spreadsheets.Get(spreadsheetID).Context(ctx).Do()
 	if err != nil {
 		return false, err
 	}

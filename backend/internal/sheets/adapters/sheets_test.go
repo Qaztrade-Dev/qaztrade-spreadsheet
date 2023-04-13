@@ -12,71 +12,6 @@ import (
 //go:embed credentials_sa.json
 var credentialsSA []byte
 
-func TestSubmit(t *testing.T) {
-	var (
-		ctx                 = context.Background()
-		spreadsheetID       = os.Getenv("TEMPLATE_SPREADSHEET_ID")
-		sheetName           = "Доставка ЖД транспортом"
-		sheetID       int64 = 932754288
-	)
-
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
-	if err != nil {
-		t.Fatal("NewSheetsClient error:", err)
-	}
-
-	err = cli.InsertRecord(ctx, spreadsheetID, sheetName, sheetID, &domain.Payload{
-		ParentID: "null",
-		ChildKey: "№",
-		Value: domain.PayloadValue{
-			"№": "2",
-			"Производитель/дочерняя компания/дистрибьютор/СПК": "Doodocs",
-			"подтверждающий документ": map[string]interface{}{
-				"производитель":       "производитель",
-				"наименование":        "наименование",
-				"№":                   "№",
-				"наименование товара": "наименование товара",
-				"ТН ВЭД (6 знаков)":   "ТН ВЭД (6 знаков)",
-				"дата":                "дата",
-				"срок":                "срок",
-				"подтверждение на сайте уполномоченного органа": "подтверждение на сайте уполномоченного органа",
-			},
-		},
-	})
-	if err != nil {
-		t.Fatal("InsertRecord error:", err)
-	}
-}
-
-func TestSubmitChild(t *testing.T) {
-	var (
-		ctx                 = context.Background()
-		spreadsheetID       = os.Getenv("TEMPLATE_SPREADSHEET_ID")
-		sheetName           = "Доставка ЖД транспортом"
-		sheetID       int64 = 932754288
-	)
-
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
-	if err != nil {
-		t.Fatal("NewSheetsClient error:", err)
-	}
-
-	err = cli.InsertRecord(ctx, spreadsheetID, sheetName, sheetID, &domain.Payload{
-		ParentID: "1",
-		ChildKey: "Дистрибьюторский договор",
-		Value: domain.PayloadValue{
-			"Дистрибьюторский договор": map[string]interface{}{
-				"№":       "3",
-				"дата":    "дата",
-				"условия": "условия",
-			},
-		},
-	})
-	if err != nil {
-		t.Fatal("InsertRecord error:", err)
-	}
-}
-
 func TestUpdateApplication(t *testing.T) {
 	var (
 		ctx           = context.Background()
@@ -118,27 +53,5 @@ func TestUpdateApplication(t *testing.T) {
 	err = cli.UpdateApplication(ctx, spreadsheetID, appl)
 	if err != nil {
 		t.Fatal("UpdateApplication error:", err)
-	}
-}
-
-func TestRemoveParent(t *testing.T) {
-	var (
-		ctx           = context.Background()
-		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
-		sheetName     = "Доставка ЖД транспортом"
-		sheetID       = int64(1974041431)
-	)
-
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
-	if err != nil {
-		t.Fatal("NewSheetsClient error:", err)
-	}
-
-	err = cli.RemoveRecord(ctx, spreadsheetID, sheetName, sheetID, &domain.RemoveInput{
-		Value: "21",
-		Name:  "Дистрибьюторский договор",
-	})
-	if err != nil {
-		t.Fatal("RemoveRecord error ", err)
 	}
 }

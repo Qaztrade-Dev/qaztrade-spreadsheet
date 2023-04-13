@@ -22,11 +22,6 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 			kithttp.ServerErrorEncoder(common.EncodeError),
 		}
 
-		submitRecordHandler = kithttp.NewServer(
-			endpoint.MakeSubmitRecordEndpoint(svc, jwtcli),
-			sheetsTransport.DecodeSubmitRecordRequest, common.EncodeResponse,
-			opts...,
-		)
 		submitApplicationHandler = kithttp.NewServer(
 			endpoint.MakeSubmitApplicationEndpoint(svc, jwtcli),
 			sheetsTransport.DecodeSubmitApplicationRequest, common.EncodeResponse,
@@ -41,7 +36,6 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 	)
 
 	r := mux.NewRouter()
-	r.Handle("/sheets/records", submitRecordHandler).Methods("POST")
 	r.Handle("/sheets/application", submitApplicationHandler).Methods("POST")
 	r.Handle("/sheets/file", uploadFileHandler).Methods("POST")
 

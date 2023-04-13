@@ -7,7 +7,6 @@ import (
 )
 
 type Service interface {
-	SubmitRecord(ctx context.Context, req *SubmitRecordRequest) error
 	SubmitApplication(ctx context.Context, req *SubmitApplicationRequest) error
 	UploadFile(ctx context.Context, req *UploadFileRequest) error
 }

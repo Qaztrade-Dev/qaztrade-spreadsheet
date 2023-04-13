@@ -44,7 +44,6 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 		ColumnIdx: req.ColumnIdx,
 		Value:     valueHyperlink,
 	}); err != nil {
-		fmt.Println("UpdateCell", err)
 		return err
 	}
 

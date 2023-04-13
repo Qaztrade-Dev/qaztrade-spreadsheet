@@ -9,45 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/endpoint"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/pkg/tally"
 )
-
-func DecodeSubmitRecordRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var body struct {
-		RowNumber int                    `json:"rowNum"`
-		ParentID  string                 `json:"parentID"`
-		ChildKey  string                 `json:"childKey"`
-		Value     map[string]interface{} `json:"value"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return nil, err
-	}
-
-	var (
-		tokenString = extractHeaderToken(r)
-		sheetName   = extractHeaderSheetName(r)
-	)
-
-	sheetID, err := extractHeaderSheetID(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return endpoint.SubmitRecordRequest{
-		TokenString: tokenString,
-		SheetName:   sheetName,
-		SheetID:     sheetID,
-		Payload: &domain.Payload{
-			RowNumber: body.RowNumber,
-			ParentID:  body.ParentID,
-			ChildKey:  body.ChildKey,
-			Value:     domain.PayloadValue(body.Value),
-		},
-	}, nil
-}
 
 func DecodeSubmitApplicationRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	tallyJsonBytes, err := io.ReadAll(r.Body)
