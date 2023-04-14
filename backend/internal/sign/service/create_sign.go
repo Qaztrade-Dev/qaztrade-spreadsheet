@@ -53,10 +53,6 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 		return "", err
 	}
 
-	if err := s.applicationRepo.EditStatus(ctx, req.SpreadsheetID, domain.StatusManagerReviewing); err != nil {
-		return "", err
-	}
-
 	return linkbase + resp.SignLink, nil
 }
 

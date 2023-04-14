@@ -8,6 +8,7 @@ import (
 
 type Service interface {
 	CreateSign(ctx context.Context, req *CreateSignRequest) (string, error)
+	ConfirmSign(ctx context.Context, req *ConfirmSignRequest) error
 }
 
 type service struct {

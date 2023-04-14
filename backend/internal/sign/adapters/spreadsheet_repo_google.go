@@ -12,19 +12,29 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/drive/v2"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
 
 type SpreadsheetClient struct {
-	service     *sheets.Service
-	credentials *google.Credentials
+	sheetsService *sheets.Service
+	driveService  *drive.Service
+	credentials   *google.Credentials
 }
 
 var _ domain.SpreadsheetRepository = (*SpreadsheetClient)(nil)
 
 func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte) (*SpreadsheetClient, error) {
-	service, err := sheets.NewService(
+	sheetsService, err := sheets.NewService(
+		ctx,
+		option.WithCredentialsJSON(credentialsJson),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	driveService, err := drive.NewService(
 		ctx,
 		option.WithCredentialsJSON(credentialsJson),
 	)
@@ -42,8 +52,9 @@ func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte) (*Spreads
 	}
 
 	return &SpreadsheetClient{
-		service:     service,
-		credentials: credentials,
+		sheetsService: sheetsService,
+		driveService:  driveService,
+		credentials:   credentials,
 	}, nil
 }
 
@@ -104,7 +115,7 @@ func (c *SpreadsheetClient) GetApplication(ctx context.Context, spreadsheetID st
 }
 
 func (c *SpreadsheetClient) getDataFromRanges(ctx context.Context, spreadsheetID string, ranges []string) ([][][]interface{}, error) {
-	resp, err := c.service.Spreadsheets.Values.BatchGet(spreadsheetID).Ranges(ranges...).Context(ctx).Do()
+	resp, err := c.sheetsService.Spreadsheets.Values.BatchGet(spreadsheetID).Ranges(ranges...).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +128,7 @@ func (c *SpreadsheetClient) getDataFromRanges(ctx context.Context, spreadsheetID
 }
 
 func (c *SpreadsheetClient) getExpensesSheetTitles(ctx context.Context, spreadsheetID string) ([]string, error) {
-	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).Context(ctx).Do()
+	spreadsheet, err := c.sheetsService.Spreadsheets.Get(spreadsheetID).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +154,7 @@ func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID st
 		return nil, errors.New("no expenses")
 	}
 
-	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Ranges(expensesSheetTitles...).Context(ctx).Do()
+	spreadsheet, err := c.sheetsService.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Ranges(expensesSheetTitles...).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -288,4 +299,45 @@ func (p *exportRequest) ExportURL() string {
 	)
 
 	return urlStr
+}
+
+func (c *SpreadsheetClient) UpdateSigningTime(ctx context.Context, spreadsheetID, signingTime string) error {
+	var mappings = []struct {
+		Range string
+		Value string
+	}{
+		{Range: "signing_time", Value: signingTime},
+	}
+
+	data := make([]*sheets.ValueRange, 0, len(mappings))
+	for i := range mappings {
+		data = append(data, &sheets.ValueRange{
+			Range:  mappings[i].Range,
+			Values: [][]interface{}{{mappings[i].Value}},
+		})
+	}
+
+	updateValuesRequest := &sheets.BatchUpdateValuesRequest{
+		ValueInputOption: "RAW",
+		Data:             data,
+	}
+
+	_, err := c.sheetsService.Spreadsheets.Values.BatchUpdate(spreadsheetID, updateValuesRequest).Do()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SpreadsheetClient) SwitchModeRead(ctx context.Context, spreadsheetID string) error {
+	permission := &drive.Permission{
+		Type: "anyone",
+		Role: "reader",
+	}
+	_, err := s.driveService.Permissions.Insert(spreadsheetID, permission).Do()
+	if err != nil {
+		return err
+	}
+	return nil
 }

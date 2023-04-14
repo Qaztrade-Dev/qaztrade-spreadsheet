@@ -14,6 +14,8 @@ type PDFService interface {
 type SpreadsheetRepository interface {
 	GetApplication(ctx context.Context, spreadsheetID string) (*Application, error)
 	GetAttachments(ctx context.Context, spreadsheetID string) ([]io.ReadSeeker, error)
+	UpdateSigningTime(ctx context.Context, spreadsheetID, signingTime string) error
+	SwitchModeRead(ctx context.Context, spreadsheetID string) error
 }
 
 type CreateSigningDocumentResponse struct {
@@ -34,14 +36,17 @@ const (
 )
 
 type SignApplication struct {
-	SignLink string
-	Status   string
+	SpreadsheetID string
+	SignLink      string
+	Status        string
 }
 
 type ApplicationRepository interface {
 	AssignSigningInfo(ctx context.Context, spreadsheetID string, info *CreateSigningDocumentResponse) error
-	EditStatus(ctx context.Context, spreadsheetID, statusName string) error
+	ConfirmSigningInfo(ctx context.Context, spreadsheetID string) error
 	GetApplication(ctx context.Context, spreadsheetID string) (*SignApplication, error)
+	EditStatus(ctx context.Context, spreadsheetID, statusName string) error
+	GetApplicationByDocumentID(ctx context.Context, documentID string) (*SignApplication, error)
 }
 
 type SpreadsheetClaims struct {

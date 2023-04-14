@@ -18,7 +18,6 @@ type SpreadsheetClient struct {
 var _ domain.SheetsRepository = (*SpreadsheetClient)(nil)
 
 func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte) (*SpreadsheetClient, error) {
-
 	service, err := sheets.NewService(
 		ctx,
 		option.WithCredentialsJSON(credentialsJson),

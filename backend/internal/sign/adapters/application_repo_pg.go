@@ -35,6 +35,22 @@ func (r *ApplicationRepositoryPostgre) AssignSigningInfo(ctx context.Context, sp
 	return nil
 }
 
+func (r *ApplicationRepositoryPostgre) ConfirmSigningInfo(ctx context.Context, spreadsheetID string) error {
+	const sql = `
+		update "applications" set
+			is_signed=true,
+			sign_at=now()
+		where 
+			spreadsheet_id=$1
+	`
+
+	if _, err := r.pg.Exec(ctx, sql, spreadsheetID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *ApplicationRepositoryPostgre) EditStatus(ctx context.Context, spreadsheetID, statusName string) error {
 	const sql = `
 		update "applications" set
@@ -75,6 +91,41 @@ func (r *ApplicationRepositoryPostgre) GetApplication(ctx context.Context, sprea
 	result := &domain.SignApplication{
 		SignLink: valueFromPointer(scanSignLink),
 		Status:   valueFromPointer(scanStatus),
+	}
+
+	return result, nil
+}
+
+func (r *ApplicationRepositoryPostgre) GetApplicationByDocumentID(ctx context.Context, documentID string) (*domain.SignApplication, error) {
+	const query = `
+		select
+			a.spreadsheet_id,
+			a.sign_link,
+			aps.value
+		from "applications" a
+		join "application_statuses" aps on aps.id = a.status_id
+		where 
+			a.sign_document_id = $1
+	`
+
+	var (
+		scanSpreadsheetID *string
+		scanSignLink      *string
+		scanStatus        *string
+	)
+
+	if err := r.pg.QueryRow(ctx, query, documentID).Scan(
+		&scanSpreadsheetID,
+		&scanSignLink,
+		&scanStatus,
+	); err != nil {
+		return nil, err
+	}
+
+	result := &domain.SignApplication{
+		SpreadsheetID: valueFromPointer(scanSpreadsheetID),
+		SignLink:      valueFromPointer(scanSignLink),
+		Status:        valueFromPointer(scanStatus),
 	}
 
 	return result, nil

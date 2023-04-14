@@ -24,13 +24,20 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 
 		createSignHandler = kithttp.NewServer(
 			endpoint.MakeCreateSignEndpoint(svc, jwtcli),
-			signTransport.DecodeCreateSpreadsheetRequest, common.EncodeResponse,
+			signTransport.DecodeCreateSignRequest, common.EncodeResponse,
+			opts...,
+		)
+
+		confirmSignHandler = kithttp.NewServer(
+			endpoint.MakeConfirmSignEndpoint(svc),
+			signTransport.DecodeConfirmSignRequest, common.EncodeResponse,
 			opts...,
 		)
 	)
 
 	r := mux.NewRouter()
 	r.Handle("/sign/", createSignHandler).Methods("POST")
+	r.Handle("/sign/callback", confirmSignHandler).Methods("POST")
 
 	return r
 }
