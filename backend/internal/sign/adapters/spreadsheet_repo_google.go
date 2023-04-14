@@ -3,9 +3,11 @@ package adapters
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
@@ -98,25 +100,71 @@ func (c *SpreadsheetClient) GetApplication(ctx context.Context, spreadsheetID st
 	return &result, nil
 }
 
-func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID string) ([]io.ReadSeeker, error) {
-	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).IncludeGridData(false).Context(ctx).Do()
+func (c *SpreadsheetClient) getDataFromRanges(ctx context.Context, spreadsheetID string, ranges []string) ([][][]interface{}, error) {
+	resp, err := c.service.Spreadsheets.Values.BatchGet(spreadsheetID).Ranges(ranges...).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	sheetIDs := make([]int64, 0)
-	for _, sheet := range spreadsheet.Sheets {
-		if sheet.Properties.Title == "Заявление" {
-			continue
-		}
-		sheetIDs = append(sheetIDs, sheet.Properties.SheetId)
+	datas := make([][][]interface{}, len(resp.ValueRanges))
+	for i := range resp.ValueRanges {
+		datas[i] = resp.ValueRanges[i].Values
+	}
+	return datas, nil
+}
+
+func (c *SpreadsheetClient) getExpensesSheetTitles(ctx context.Context, spreadsheetID string) ([]string, error) {
+	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).Context(ctx).Do()
+	if err != nil {
+		return nil, err
 	}
 
-	attachments := make([]io.ReadSeeker, 0, len(sheetIDs))
-	for _, sheetID := range sheetIDs {
-		exportURL := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/export?exportFormat=pdf&range=A1:A3&format=pdf&size=A4&portrait=false&fitw=false&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=true&fzr=true&top_margin=0&bottom_margin=0&left_margin=0&right_margin=0&gid=%d", spreadsheetID, sheetID)
+	sheetTitles := make([]string, 0)
+	for _, sheet := range spreadsheet.Sheets {
+		switch sheet.Properties.Title {
+		case "Заявление", "ТНВЭД", "ОКВЭД":
+			continue
+		}
+		sheetTitles = append(sheetTitles, sheet.Properties.Title)
+	}
+	return sheetTitles, nil
+}
 
-		req, err := http.NewRequestWithContext(ctx, "GET", exportURL, nil)
+func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID string) ([]io.ReadSeeker, error) {
+	expensesSheetTitles, err := c.getExpensesSheetTitles(ctx, spreadsheetID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(expensesSheetTitles) == 0 {
+		return nil, errors.New("no expenses")
+	}
+
+	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Ranges(expensesSheetTitles...).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	sheets := spreadsheet.Sheets
+
+	exportRequests := make([]*exportRequest, 0, len(sheets))
+	for _, sheet := range sheets {
+		nonEmptyRange := getNonEmptyRange(sheet)
+		if nonEmptyRange.RangeEnd <= 2 {
+			continue
+		}
+
+		exportRequests = append(exportRequests, &exportRequest{
+			RangeStart:    nonEmptyRange.RangeStart,
+			RangeEnd:      nonEmptyRange.RangeEnd,
+			sheetID:       sheet.Properties.SheetId,
+			spreadsheetID: spreadsheetID,
+		})
+	}
+
+	attachments := make([]io.ReadSeeker, 0, len(sheets))
+	for _, exportReq := range exportRequests {
+		req, err := http.NewRequestWithContext(ctx, "GET", exportReq.ExportURL(), nil)
 		if err != nil {
 			return nil, err
 		}
@@ -125,10 +173,8 @@ func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID st
 		if err != nil {
 			return nil, err
 		}
-
 		req.Header.Add("Authorization", "Bearer "+token.AccessToken)
 
-		// Make request
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
@@ -147,15 +193,96 @@ func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID st
 	return attachments, nil
 }
 
-func (c *SpreadsheetClient) getDataFromRanges(ctx context.Context, spreadsheetID string, ranges []string) ([][][]interface{}, error) {
-	resp, err := c.service.Spreadsheets.Values.BatchGet(spreadsheetID).Ranges(ranges...).Context(ctx).Do()
-	if err != nil {
-		return nil, err
+type getNonEmptyRangeResponse struct {
+	RangeStart int64
+	RangeEnd   int64 // inclusive
+}
+
+func getNonEmptyRange(sheet *sheets.Sheet) *getNonEmptyRangeResponse {
+	var (
+		sheetLength = len(sheet.Data[0].RowData)
+		rangeEnd    = sheetLength - 1
+	)
+
+	for i := sheetLength - 1; i >= 0; i-- {
+		var (
+			row                = sheet.Data[0].RowData[i]
+			nonEmptyCellsCount = 0
+		)
+
+		for _, cell := range row.Values {
+			switch {
+			case cell.UserEnteredValue == nil:
+				continue
+			case cell.UserEnteredValue.StringValue != nil:
+				value := strings.TrimSpace(*cell.UserEnteredValue.StringValue)
+				if len(value) > 0 {
+					nonEmptyCellsCount += 1
+				}
+			case cell.UserEnteredValue.BoolValue != nil,
+				cell.UserEnteredValue.NumberValue != nil,
+				cell.Hyperlink != "":
+				nonEmptyCellsCount += 1
+			}
+		}
+
+		if nonEmptyCellsCount > 0 {
+			rangeEnd = i
+			break
+		}
 	}
 
-	datas := make([][][]interface{}, len(resp.ValueRanges))
-	for i := range resp.ValueRanges {
-		datas[i] = resp.ValueRanges[i].Values
+	return &getNonEmptyRangeResponse{
+		RangeStart: 0,
+		RangeEnd:   int64(rangeEnd),
 	}
-	return datas, nil
+}
+
+type exportRequest struct {
+	spreadsheetID string
+	sheetID       int64
+	RangeStart    int64
+	RangeEnd      int64 // inclusive
+}
+
+func (p *exportRequest) getQueryParams() *url.Values {
+	var (
+		rangeStart = p.RangeStart + 1
+		rangeEnd   = p.RangeEnd + 1
+	)
+
+	queryParams := &url.Values{
+		"exportFormat":  {"pdf"},
+		"format":        {"pdf"},
+		"size":          {"A4"},
+		"portrait":      {"false"},
+		"fitw":          {"true"},
+		"sheetnames":    {"true"},
+		"printtitle":    {"false"},
+		"pagenumbers":   {"false"},
+		"gridlines":     {"true"},
+		"fzr":           {"true"},
+		"top_margin":    {"0"},
+		"bottom_margin": {"0"},
+		"left_margin":   {"0"},
+		"right_margin":  {"0"},
+		"gid":           {fmt.Sprintf("%d", p.sheetID)},
+		"range":         {fmt.Sprintf("%d:%d", rangeStart, rangeEnd)},
+	}
+
+	return queryParams
+}
+
+func (p *exportRequest) ExportURL() string {
+	var (
+		queryParams    = p.getQueryParams()
+		queryParamsStr = queryParams.Encode()
+		urlStr         = fmt.Sprintf(
+			"https://docs.google.com/spreadsheets/d/%s/export?%s",
+			p.spreadsheetID,
+			queryParamsStr,
+		)
+	)
+
+	return urlStr
 }
