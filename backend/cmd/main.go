@@ -14,6 +14,7 @@ import (
 	"github.com/doodocs/qaztrade/backend/internal/google"
 	"github.com/doodocs/qaztrade/backend/internal/manager"
 	"github.com/doodocs/qaztrade/backend/internal/sheets"
+	"github.com/doodocs/qaztrade/backend/internal/sign"
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/log"
@@ -53,6 +54,9 @@ func main() {
 		templateSpreadsheetID = getenv("TEMPLATE_SPREADSHEET_ID")
 		destinationFolderID   = getenv("DESTINATION_FOLDER_ID")
 		originSpreadsheetID   = getenv("ORIGIN_SPREADSHEET_ID")
+		signUrlBase           = getenv("SIGN_URL_BASE")
+		signLogin             = getenv("SIGN_LOGIN")
+		signPassword          = getenv("SIGN_PASSWORD")
 
 		addr        = ":" + port
 		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
@@ -112,6 +116,14 @@ func main() {
 			manager.WithPostgre(pg),
 			manager.WithCredentials(credentialsSA),
 		)
+
+		signService = sign.MakeService(
+			ctx,
+			sign.WithJWT(jwtcli),
+			sign.WithPostgre(pg),
+			sign.WithSignCredentials(signUrlBase, signLogin, signPassword),
+			sign.WithCredentialsSA(credentialsSA),
+		)
 	)
 
 	var (
@@ -124,6 +136,7 @@ func main() {
 	mux.Handle("/google/", google.MakeHandler(googleService, httpLogger))
 	mux.Handle("/spreadsheets/", spreadsheets.MakeHandler(spreadsheetsService, jwtcli, httpLogger))
 	mux.Handle("/manager/", manager.MakeHandler(managerService, jwtcli, httpLogger))
+	mux.Handle("/sign/", sign.MakeHandler(signService, jwtcli, httpLogger))
 
 	http.Handle("/", common.AccessControl(mux))
 

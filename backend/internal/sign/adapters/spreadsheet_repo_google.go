@@ -93,7 +93,10 @@ func (c *SpreadsheetClient) GetApplication(ctx context.Context, spreadsheetID st
 	}
 
 	for i := range batchDataValues {
-		value := strings.TrimSpace(batchDataValues[i][0][0].(string))
+		var value string
+		if len(batchDataValues[i]) > 0 && len(batchDataValues[i][0]) > 0 {
+			value = strings.TrimSpace(batchDataValues[i][0][0].(string))
+		}
 		*mappings[i].Value = value
 	}
 
@@ -256,7 +259,7 @@ func (p *exportRequest) getQueryParams() *url.Values {
 		"format":        {"pdf"},
 		"size":          {"A4"},
 		"portrait":      {"false"},
-		"fitw":          {"true"},
+		"fitw":          {"false"},
 		"sheetnames":    {"true"},
 		"printtitle":    {"false"},
 		"pagenumbers":   {"false"},

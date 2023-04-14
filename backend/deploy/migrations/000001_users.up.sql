@@ -50,13 +50,17 @@ create table "applications" (
   "spreadsheet_id" text,
   "link" text,
   "sign_link" text,
+  "sign_document_id" text,
   "is_signed" boolean default false,
+  "sign_at" timestamptz default null,
   foreign key ("user_id") references "users" ("id"),
   foreign key ("status_id") references "application_statuses" ("id")
 );
 
 create index applications_id_idx on "applications" using hash ("id");
 create index applications_user_id_idx on "applications" using hash ("user_id");
+create index applications_spreadsheet_id_idx on "applications" using hash ("spreadsheet_id");
+create index applications_sign_document_id_idx on "applications" using hash ("sign_document_id");
 
 create table "oauth2_tokens" (
   "id" serial primary key,
