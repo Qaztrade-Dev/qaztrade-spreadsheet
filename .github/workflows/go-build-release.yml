@@ -28,6 +28,7 @@ jobs:
       - name: Build Go project
         run: |
           cd backend
+          go mod download
           go build -o main ./cmd
 
       - name: Create Release
