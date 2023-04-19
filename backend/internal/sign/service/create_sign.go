@@ -47,6 +47,7 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 
 	application.ExpensesList = strings.Join(expensesTitles, ", ")
 	application.ExpensesSum = fmt.Sprintf("%v", sumFloats64(expensesValues))
+	application.ApplicationDate = createApplicationDate()
 
 	attachments, err := s.spreadsheetRepo.GetAttachments(ctx, req.SpreadsheetID, expensesTitles)
 	if err != nil {
@@ -85,6 +86,18 @@ func createDocumentName(application *domain.Application) (string, error) {
 
 	timeStr := now.In(location).Format(time.DateTime)
 	return fmt.Sprintf("Заявление %s %s", application.Bin, timeStr), nil
+}
+
+func createApplicationDate() string {
+	now := time.Now()
+
+	location, err := time.LoadLocation("Asia/Almaty")
+	if err != nil {
+		return now.Format(time.DateTime)
+	}
+
+	timeStr := now.In(location).Format(time.DateTime)
+	return timeStr
 }
 
 func sumFloats64(ints []float64) float64 {

@@ -39,6 +39,7 @@ type Application struct {
 	AgreementFile         string
 	ExpensesSum           string
 	ExpensesList          string
+	ApplicationDate       string
 
 	Token string
 }
