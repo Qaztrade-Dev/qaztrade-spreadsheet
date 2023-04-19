@@ -139,7 +139,7 @@ func (c *SpreadsheetClient) getDataFromRanges(ctx context.Context, spreadsheetID
 func (c *SpreadsheetClient) GetExpenseValues(ctx context.Context, spreadsheetID string, expensesTitles []string) ([]float64, error) {
 	strRanges := make([]string, 0, len(expensesTitles))
 	for i := range expensesTitles {
-		strRanges = append(strRanges, fmt.Sprintf("'%s'!expense_value", expensesTitles[i]))
+		strRanges = append(strRanges, fmt.Sprintf("%s_expense_value", strings.ReplaceAll(expensesTitles[i], " ", "_")))
 	}
 
 	batchDataValues, err := c.getDataFromRanges(ctx, spreadsheetID, strRanges)
@@ -155,7 +155,7 @@ func (c *SpreadsheetClient) GetExpenseValues(ctx context.Context, spreadsheetID 
 		}
 		value = strings.ReplaceAll(value, ",", ".")
 
-		expenseValues[i], err = strconv.ParseFloat(value, 10)
+		expenseValues[i], err = strconv.ParseFloat(value, 64)
 		if err != nil {
 			return nil, err
 		}
