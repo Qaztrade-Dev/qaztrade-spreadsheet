@@ -177,12 +177,26 @@ func TestEncode(t *testing.T) {
 					"label": "Наименование товаров с указанием товарной позиции на уровне 6 и более знаков ЕТН ВЭД ЕАЭС и/или ИКУ на уровне не менее 4 знаков ОКВЭД",
 					"type": "INPUT_TEXT",
 					"value": "Goods"
-				  },
+				},
 				{
 					"key": "question_wMpeVk",
 					"label": "token",
 					"type": "INPUT_TEXT",
 					"value": "token-1"
+				},
+				{
+					"key": "question_mKbGd7",
+					"label": "Файл соглашения",
+					"type": "FILE_UPLOAD",
+					"value": [
+						{
+							"id": "jaakzE",
+							"name": "sample.pdf",
+							"url": "https://storage.googleapis.com/tally-response-assets/BbbVld/4c61ceca-fbaa-4e8b-bbd2-bf35321b62ae/sample.pdf",
+							"mimeType": "application/pdf",
+							"size": 3028
+						}
+					]
 				}
 			  ]
 			}
@@ -216,6 +230,7 @@ func TestEncode(t *testing.T) {
 			ContEmail:             "a@gmail.com",
 			InfoManufacturedGoods: "Information",
 			NameOfGoods:           "Goods",
+			AgreementFile:         "https://storage.googleapis.com/tally-response-assets/BbbVld/4c61ceca-fbaa-4e8b-bbd2-bf35321b62ae/sample.pdf",
 			Token:                 "token-1",
 		}
 	)

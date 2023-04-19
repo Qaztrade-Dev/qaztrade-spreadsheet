@@ -35,7 +35,7 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 		return err
 	}
 
-	valueHyperlink := fmt.Sprintf("=HYPERLINK(\"%s\", \"файл\")", value)
+	valueHyperlink := fmt.Sprintf("=HYPERLINK(\"%s\"; \"файл\")", value)
 
 	// 4. write url to cell
 	if err := s.sheetsRepo.UpdateCell(ctx, req.SpreadsheetID, &domain.UpdateCellInput{

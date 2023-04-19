@@ -318,7 +318,7 @@ func (c *SpreadsheetClient) UpdateSigningTime(ctx context.Context, spreadsheetID
 	}
 
 	updateValuesRequest := &sheets.BatchUpdateValuesRequest{
-		ValueInputOption: "RAW",
+		ValueInputOption: "USER_ENTERED",
 		Data:             data,
 	}
 

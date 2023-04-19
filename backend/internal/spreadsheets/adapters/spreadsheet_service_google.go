@@ -169,7 +169,7 @@ func (s *SpreadsheetServiceGoogle) addProtectedRange(protectedRange *sheets.Prot
 func (s *SpreadsheetServiceGoogle) setReviewer(ctx context.Context, svc *drive.Service, spreadsheetID string) error {
 	permission := &drive.Permission{
 		Type:         "user",
-		Role:         "commenter",
+		Role:         "writer",
 		EmailAddress: s.reviewerAccount,
 	}
 	_, err := svc.Permissions.Create(spreadsheetID, permission).Context(ctx).Do()

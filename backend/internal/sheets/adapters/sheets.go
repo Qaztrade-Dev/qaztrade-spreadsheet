@@ -41,8 +41,10 @@ func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID
 		{Range: "fact_addr", Value: application.FactAddr},
 		{Range: "bin", Value: application.Bin},
 		{Range: "industry", Value: application.Industry},
+		{Range: "industry_other", Value: application.IndustryOther},
 		{Range: "activity", Value: application.Activity},
 		{Range: "emp_count", Value: application.EmpCount},
+		{Range: "tax_sum", Value: application.TaxSum},
 		{Range: "product_capacity", Value: application.ProductCapacity},
 		{Range: "manufacturer", Value: application.Manufacturer},
 		{Range: "item", Value: application.Item},
@@ -62,6 +64,8 @@ func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID
 		{Range: "cont_email", Value: application.ContEmail},
 		{Range: "info_manufactured_goods", Value: application.InfoManufacturedGoods},
 		{Range: "name_of_goods", Value: application.NameOfGoods},
+		{Range: "has_agreement", Value: application.HasAgreement},
+		{Range: "agreement_file", Value: application.AgreementFile},
 	}
 
 	data := make([]*sheets.ValueRange, 0, len(mappings))
@@ -73,7 +77,7 @@ func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID
 	}
 
 	updateValuesRequest := &sheets.BatchUpdateValuesRequest{
-		ValueInputOption: "RAW",
+		ValueInputOption: "USER_ENTERED",
 		Data:             data,
 	}
 

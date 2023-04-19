@@ -44,8 +44,10 @@ func Decode(jsonBytes []byte) (*domain.Application, error) {
 		"Фактический адрес":                           &appl.FactAddr,
 		"БИН/ИИН":                                     &appl.Bin,
 		"Наименование отрасли":                        &appl.Industry,
+		"Индустрия, если выбрано \"Иное\"":            &appl.IndustryOther,
 		"Вид деятельности":                            &appl.Activity,
 		"Численность сотрудников":                     &appl.EmpCount,
+		"Сумма уплаченных налогов без учета косвенных налогов (налог на добавленную стоимость и акцизы) в году, предшествующем году подачи заявки": &appl.TaxSum,
 		"Производственная мощность, возможности увеличения": &appl.ProductCapacity,
 		"Производитель": &appl.Manufacturer,
 		"Товар":         &appl.Item,
@@ -65,7 +67,9 @@ func Decode(jsonBytes []byte) (*domain.Application, error) {
 		"Эл. адрес конт. лица":        &appl.ContEmail,
 		"Сведения о реализуемых отечественных товарах обрабатывающей промышленности и/или о предоставляемых ИКУ":                                &appl.InfoManufacturedGoods,
 		"Наименование товаров с указанием товарной позиции на уровне 6 и более знаков ЕТН ВЭД ЕАЭС и/или ИКУ на уровне не менее 4 знаков ОКВЭД": &appl.NameOfGoods,
-		"token": &appl.Token,
+		"Наличие соглашения о промышленной сборке": &appl.HasAgreement,
+		"Файл соглашения": &appl.AgreementFile,
+		"token":           &appl.Token,
 	}
 
 	for _, field := range response.Data.Fields {
@@ -82,6 +86,8 @@ func extractValue(field *tallyField) string {
 	switch field.Type {
 	case "DROPDOWN":
 		return extractDropdown(field)
+	case "FILE_UPLOAD":
+		return extractFileUpload(field)
 	case "INPUT_NUMBER":
 		return extractNumber(field)
 	default:
@@ -90,6 +96,9 @@ func extractValue(field *tallyField) string {
 }
 
 func extractText(field *tallyField) string {
+	if field.Value == nil {
+		return ""
+	}
 	return field.Value.(string)
 }
 
@@ -105,4 +114,26 @@ func extractDropdown(field *tallyField) string {
 		}
 	}
 	return ""
+}
+
+func extractFileUpload(field *tallyField) string {
+	if field.Value == nil {
+		return ""
+	}
+
+	fileValues, ok := field.Value.([]interface{})
+	if !ok {
+		return ""
+	}
+
+	if len(fileValues) == 0 {
+		return ""
+	}
+
+	value, ok := fileValues[0].(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	return value["url"].(string)
 }
