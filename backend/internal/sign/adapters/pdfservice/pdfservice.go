@@ -87,7 +87,7 @@ func (s *PDFService) createFirstPart(application *domain.Application, attachment
 	)
 
 	pdf.WithPages(page1)
-	pdf.WithPDFs(attachments...)
+	pdf.WithPDFsAfter(attachments...)
 
 	pdfBuffer, err := pdf.Output()
 	if err != nil {
@@ -119,7 +119,7 @@ func (s *PDFService) createSecondPart(application *domain.Application, attachmen
 	)
 
 	pdf.WithPages(page1)
-	pdf.WithPDFs(attachments...)
+	pdf.WithPDFsBefore(attachments...)
 
 	pdfBuffer, err := pdf.Output()
 	if err != nil {

@@ -57,10 +57,11 @@ var (
 )
 
 type PDF struct {
-	fpdf         *gofpdf.Fpdf
-	pages        []*Page
-	isRendered   bool
-	forMergePDFs []io.ReadSeeker
+	fpdf       *gofpdf.Fpdf
+	pages      []*Page
+	isRendered bool
+	beforePDFs []io.ReadSeeker
+	afterPDFs  []io.ReadSeeker
 }
 
 func NewPDF() (*PDF, error) {
@@ -135,8 +136,12 @@ func (p *Page) Render(fpdf *gofpdf.Fpdf) {
 	}
 }
 
-func (p *PDF) WithPDFs(pdfs ...io.ReadSeeker) {
-	p.forMergePDFs = append(p.forMergePDFs, pdfs...)
+func (p *PDF) WithPDFsBefore(pdfs ...io.ReadSeeker) {
+	p.beforePDFs = append(p.beforePDFs, pdfs...)
+}
+
+func (p *PDF) WithPDFsAfter(pdfs ...io.ReadSeeker) {
+	p.afterPDFs = append(p.afterPDFs, pdfs...)
 }
 
 func (p *PDF) WithPages(pages ...*Page) {
@@ -169,18 +174,36 @@ func (p *PDF) Output() (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	if len(p.forMergePDFs) > 0 {
-		return p.mergeWith(buffer)
+	if len(p.beforePDFs) > 0 {
+		return p.mergeBefore(buffer)
+	}
+
+	if len(p.afterPDFs) > 0 {
+		return p.mergeAfter(buffer)
 	}
 
 	return buffer, nil
 }
 
-func (p *PDF) mergeWith(inputBuffer *bytes.Buffer) (*bytes.Buffer, error) {
+func (p *PDF) mergeBefore(inputBuffer *bytes.Buffer) (*bytes.Buffer, error) {
 	var (
 		buffer     = &bytes.Buffer{}
 		readSeeker = bytes.NewReader(inputBuffer.Bytes())
-		rss        = append([]io.ReadSeeker{readSeeker}, p.forMergePDFs...)
+		rss        = append(p.beforePDFs, readSeeker)
+	)
+
+	if err := api.Merge(rss, buffer, nil); err != nil {
+		return nil, err
+	}
+
+	return buffer, nil
+}
+
+func (p *PDF) mergeAfter(inputBuffer *bytes.Buffer) (*bytes.Buffer, error) {
+	var (
+		buffer     = &bytes.Buffer{}
+		readSeeker = bytes.NewReader(inputBuffer.Bytes())
+		rss        = append([]io.ReadSeeker{readSeeker}, p.afterPDFs...)
 	)
 
 	if err := api.Merge(rss, buffer, nil); err != nil {
