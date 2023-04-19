@@ -14,16 +14,22 @@ type EmailServiceGmail struct {
 	email    string
 	password string
 	template *template.Template
+	dialer   *gomail.Dialer
 }
 
 var _ domain.EmailService = (*EmailServiceGmail)(nil)
 
 func NewEmailServiceGmail(email, password string) *EmailServiceGmail {
-	t := template.Must(template.ParseFiles("./templates/forgot.html"))
+	templ := template.Must(template.ParseFiles("./templates/forgot.html"))
+
+	dialer := gomail.NewDialer("webmail.p-s.kz", 587, email, password)
+	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
 	return &EmailServiceGmail{
 		email:    email,
 		password: password,
-		template: t,
+		template: templ,
+		dialer:   dialer,
 	}
 }
 
@@ -39,11 +45,8 @@ func (s *EmailServiceGmail) Send(ctx context.Context, toEmail, mailName string, 
 	m.SetHeader("To", toEmail)
 	m.SetHeader("Subject", "Восстановление пароля")
 	m.SetBody("text/html", buf.String())
-	d := gomail.NewDialer("smtp.gmail.com", 587, s.email, s.password)
 
-	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
-
-	if err := d.DialAndSend(m); err != nil {
+	if err := s.dialer.DialAndSend(m); err != nil {
 		return err
 	}
 

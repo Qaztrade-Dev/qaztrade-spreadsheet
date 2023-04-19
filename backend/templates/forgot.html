@@ -7,6 +7,13 @@
     <title>Document</title>
 </head>
 <body>
-    <p>{{ .Credentials.AccessToken  }}</p>
+    <h3>Восстановление пароля</h3>
+    <p>
+        <a href="https://export.gov.kz/qaztrade/auth/reset/{{ .Credentials.AccessToken  }}">
+            Восстановить пароль
+        </a>
+    </p>
+
+    <p>QazTrade</p>
 </body>
 </html>
