@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
@@ -29,17 +31,34 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 		return "", err
 	}
 
-	documentName, err := createDocumentName(application)
+	expensesTitles, err := s.spreadsheetRepo.GetExpensesSheetTitles(ctx, req.SpreadsheetID)
 	if err != nil {
 		return "", err
 	}
 
-	attachments, err := s.spreadsheetRepo.GetAttachments(ctx, req.SpreadsheetID)
+	if len(expensesTitles) == 0 {
+		return "", errors.New("no expenses")
+	}
+
+	expensesValues, err := s.spreadsheetRepo.GetExpenseValues(ctx, req.SpreadsheetID, expensesTitles)
+	if err != nil {
+		return "", err
+	}
+
+	application.ExpensesList = strings.Join(expensesTitles, ", ")
+	application.ExpensesSum = fmt.Sprintf("%v", sumFloats64(expensesValues))
+
+	attachments, err := s.spreadsheetRepo.GetAttachments(ctx, req.SpreadsheetID, expensesTitles)
 	if err != nil {
 		return "", err
 	}
 
 	pdfToSign, err := s.pdfSvc.Create(application, attachments)
+	if err != nil {
+		return "", err
+	}
+
+	documentName, err := createDocumentName(application)
 	if err != nil {
 		return "", err
 	}
@@ -66,4 +85,12 @@ func createDocumentName(application *domain.Application) (string, error) {
 
 	timeStr := now.In(location).Format(time.DateTime)
 	return fmt.Sprintf("Заявление %s %s", application.Bin, timeStr), nil
+}
+
+func sumFloats64(ints []float64) float64 {
+	result := float64(0)
+	for _, v := range ints {
+		result += v
+	}
+	return result
 }

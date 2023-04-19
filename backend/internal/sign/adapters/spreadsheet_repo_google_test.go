@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 //go:embed credentials_sa.json
@@ -19,14 +21,10 @@ func TestGetApplication(t *testing.T) {
 	)
 
 	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
-	if err != nil {
-		t.Fatal("NewSpreadsheetClient error:", err)
-	}
+	require.Nil(t, err)
 
 	application, err := cli.GetApplication(ctx, spreadsheetID)
-	if err != nil {
-		t.Fatal("GetApplication error:", err)
-	}
+	require.Nil(t, err)
 
 	fmt.Printf("%#v\n", application)
 }
@@ -38,11 +36,17 @@ func TestGetAttachments(t *testing.T) {
 	)
 
 	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
-	if err != nil {
-		t.Fatal("NewSpreadsheetClient error:", err)
+	require.Nil(t, err)
+
+	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)
+	require.Nil(t, err)
+
+	fmt.Println(expensesTitles)
+	if len(expensesTitles) == 0 {
+		return
 	}
 
-	attachments, err := cli.GetAttachments(ctx, spreadsheetID)
+	attachments, err := cli.GetAttachments(ctx, spreadsheetID, expensesTitles)
 	if err != nil {
 		t.Fatal("GetAttachments error:", err)
 	}
@@ -52,4 +56,22 @@ func TestGetAttachments(t *testing.T) {
 		body, _ := io.ReadAll(attachment)
 		os.WriteFile(name, body, 0644)
 	}
+}
+
+func TestGetExpensesData(t *testing.T) {
+	var (
+		ctx           = context.Background()
+		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
+	)
+
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
+	require.Nil(t, err)
+
+	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)
+	require.Nil(t, err)
+	fmt.Println(expensesTitles)
+
+	expensesValues, err := cli.GetExpenseValues(ctx, spreadsheetID, expensesTitles)
+	require.Nil(t, err)
+	fmt.Println(expensesValues)
 }

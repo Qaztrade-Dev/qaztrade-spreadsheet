@@ -13,7 +13,9 @@ type PDFService interface {
 
 type SpreadsheetRepository interface {
 	GetApplication(ctx context.Context, spreadsheetID string) (*Application, error)
-	GetAttachments(ctx context.Context, spreadsheetID string) ([]io.ReadSeeker, error)
+	GetExpensesSheetTitles(ctx context.Context, spreadsheetID string) ([]string, error)
+	GetExpenseValues(ctx context.Context, spreadsheetID string, expensesTitles []string) ([]float64, error)
+	GetAttachments(ctx context.Context, spreadsheetID string, expensesTitles []string) ([]io.ReadSeeker, error)
 	UpdateSigningTime(ctx context.Context, spreadsheetID, signingTime string) error
 	SwitchModeRead(ctx context.Context, spreadsheetID string) error
 }

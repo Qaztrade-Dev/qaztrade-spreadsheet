@@ -3,11 +3,11 @@ package adapters
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
@@ -70,8 +70,10 @@ func (c *SpreadsheetClient) GetApplication(ctx context.Context, spreadsheetID st
 		{Range: "fact_addr", Value: &result.FactAddr},
 		{Range: "bin", Value: &result.Bin},
 		{Range: "industry", Value: &result.Industry},
+		{Range: "industry_other", Value: &result.IndustryOther},
 		{Range: "activity", Value: &result.Activity},
 		{Range: "emp_count", Value: &result.EmpCount},
+		{Range: "tax_sum", Value: &result.TaxSum},
 		{Range: "product_capacity", Value: &result.ProductCapacity},
 		{Range: "manufacturer", Value: &result.Manufacturer},
 		{Range: "item", Value: &result.Item},
@@ -91,6 +93,13 @@ func (c *SpreadsheetClient) GetApplication(ctx context.Context, spreadsheetID st
 		{Range: "cont_email", Value: &result.ContEmail},
 		{Range: "info_manufactured_goods", Value: &result.InfoManufacturedGoods},
 		{Range: "name_of_goods", Value: &result.NameOfGoods},
+		{Range: "spend_plan", Value: &result.SpendPlan},
+		{Range: "spend_plan_other", Value: &result.SpendPlanOther},
+		{Range: "metrics_2022", Value: &result.Metrics2022},
+		{Range: "metrics_2023", Value: &result.Metrics2023},
+		{Range: "metrics_2024", Value: &result.Metrics2024},
+		{Range: "metrics_2025", Value: &result.Metrics2025},
+		{Range: "has_agreement", Value: &result.HasAgreement},
 	}
 
 	strRanges := make([]string, 0, len(mappings))
@@ -127,7 +136,35 @@ func (c *SpreadsheetClient) getDataFromRanges(ctx context.Context, spreadsheetID
 	return datas, nil
 }
 
-func (c *SpreadsheetClient) getExpensesSheetTitles(ctx context.Context, spreadsheetID string) ([]string, error) {
+func (c *SpreadsheetClient) GetExpenseValues(ctx context.Context, spreadsheetID string, expensesTitles []string) ([]float64, error) {
+	strRanges := make([]string, 0, len(expensesTitles))
+	for i := range expensesTitles {
+		strRanges = append(strRanges, fmt.Sprintf("'%s'!expense_value", expensesTitles[i]))
+	}
+
+	batchDataValues, err := c.getDataFromRanges(ctx, spreadsheetID, strRanges)
+	if err != nil {
+		return nil, err
+	}
+
+	expenseValues := make([]float64, len(expensesTitles))
+	for i := range batchDataValues {
+		var value string
+		if len(batchDataValues[i]) > 0 && len(batchDataValues[i][0]) > 0 {
+			value = strings.TrimSpace(batchDataValues[i][0][0].(string))
+		}
+		value = strings.ReplaceAll(value, ",", ".")
+
+		expenseValues[i], err = strconv.ParseFloat(value, 10)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return expenseValues, nil
+}
+
+func (c *SpreadsheetClient) GetExpensesSheetTitles(ctx context.Context, spreadsheetID string) ([]string, error) {
 	spreadsheet, err := c.sheetsService.Spreadsheets.Get(spreadsheetID).Context(ctx).Do()
 	if err != nil {
 		return nil, err
@@ -144,17 +181,8 @@ func (c *SpreadsheetClient) getExpensesSheetTitles(ctx context.Context, spreadsh
 	return sheetTitles, nil
 }
 
-func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID string) ([]io.ReadSeeker, error) {
-	expensesSheetTitles, err := c.getExpensesSheetTitles(ctx, spreadsheetID)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(expensesSheetTitles) == 0 {
-		return nil, errors.New("no expenses")
-	}
-
-	spreadsheet, err := c.sheetsService.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Ranges(expensesSheetTitles...).Context(ctx).Do()
+func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID string, expensesTitles []string) ([]io.ReadSeeker, error) {
+	spreadsheet, err := c.sheetsService.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Ranges(expensesTitles...).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}
