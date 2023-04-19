@@ -64,6 +64,12 @@ func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID
 		{Range: "cont_email", Value: application.ContEmail},
 		{Range: "info_manufactured_goods", Value: application.InfoManufacturedGoods},
 		{Range: "name_of_goods", Value: application.NameOfGoods},
+		{Range: "spend_plan", Value: application.SpendPlan},
+		{Range: "spend_plan_other", Value: application.SpendPlanOther},
+		{Range: "metrics_2022", Value: application.Metrics2022},
+		{Range: "metrics_2023", Value: application.Metrics2023},
+		{Range: "metrics_2024", Value: application.Metrics2024},
+		{Range: "metrics_2025", Value: application.Metrics2025},
 		{Range: "has_agreement", Value: application.HasAgreement},
 		{Range: "agreement_file", Value: application.AgreementFile},
 	}

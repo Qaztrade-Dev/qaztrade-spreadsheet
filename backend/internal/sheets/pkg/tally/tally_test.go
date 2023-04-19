@@ -197,6 +197,45 @@ func TestEncode(t *testing.T) {
 							"size": 3028
 						}
 					]
+				},
+				{
+					"key": "question_wbPbD0",
+					"label": "Каким образом планируется использовать (освоить) государственные средства, полученные в рамках Правил?",
+					"type": "CHECKBOXES",
+					"value": [
+						"34dc2a19-ef4e-4e54-86eb-3a48f822cab5",
+						"2cffe574-2a31-4575-8310-88a41dc75ba6",
+						"db0663a5-e3bf-4888-9e3f-111bbb356183",
+						"decaf0a6-5597-435a-bc07-76c75096cf72",
+						"2bf7926c-0651-462b-81df-fe1d4c9d996a",
+						"b5f03059-ebb2-46fc-8de7-099a0f855793"
+					],
+					"options": [
+						{
+							"id": "34dc2a19-ef4e-4e54-86eb-3a48f822cab5",
+							"text": "Закупить сырье"
+						},
+						{
+							"id": "2cffe574-2a31-4575-8310-88a41dc75ba6",
+							"text": "Закупить горюче-смазочные материалы"
+						},
+						{
+							"id": "db0663a5-e3bf-4888-9e3f-111bbb356183",
+							"text": "Модернизировать оборудование"
+						},
+						{
+							"id": "decaf0a6-5597-435a-bc07-76c75096cf72",
+							"text": "Предоставить скидку на свою продукцию для потребителей"
+						},
+						{
+							"id": "2bf7926c-0651-462b-81df-fe1d4c9d996a",
+							"text": "Финансировать маркетинговые мероприятия"
+						},
+						{
+							"id": "b5f03059-ebb2-46fc-8de7-099a0f855793",
+							"text": "Другое"
+						}
+					]
 				}
 			  ]
 			}
@@ -230,6 +269,7 @@ func TestEncode(t *testing.T) {
 			ContEmail:             "a@gmail.com",
 			InfoManufacturedGoods: "Information",
 			NameOfGoods:           "Goods",
+			SpendPlan:             "Закупить сырье, Закупить горюче-смазочные материалы, Модернизировать оборудование, Предоставить скидку на свою продукцию для потребителей, Финансировать маркетинговые мероприятия, Другое",
 			AgreementFile:         "https://storage.googleapis.com/tally-response-assets/BbbVld/4c61ceca-fbaa-4e8b-bbd2-bf35321b62ae/sample.pdf",
 			Token:                 "token-1",
 		}

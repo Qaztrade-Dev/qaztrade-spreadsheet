@@ -30,6 +30,12 @@ type Application struct {
 	InfoManufacturedGoods string
 	NameOfGoods           string
 	HasAgreement          string
+	SpendPlan             string
+	SpendPlanOther        string
+	Metrics2022           string
+	Metrics2023           string
+	Metrics2024           string
+	Metrics2025           string
 	AgreementFile         string
 
 	Token string

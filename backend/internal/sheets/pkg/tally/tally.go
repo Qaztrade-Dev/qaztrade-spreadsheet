@@ -3,6 +3,7 @@ package tally
 import (
 	"encoding/json"
 	"strconv"
+	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
 )
@@ -67,6 +68,12 @@ func Decode(jsonBytes []byte) (*domain.Application, error) {
 		"Эл. адрес конт. лица":        &appl.ContEmail,
 		"Сведения о реализуемых отечественных товарах обрабатывающей промышленности и/или о предоставляемых ИКУ":                                &appl.InfoManufacturedGoods,
 		"Наименование товаров с указанием товарной позиции на уровне 6 и более знаков ЕТН ВЭД ЕАЭС и/или ИКУ на уровне не менее 4 знаков ОКВЭД": &appl.NameOfGoods,
+		"Каким образом планируется использовать (освоить) государственные средства, полученные в рамках Правил?":                                &appl.SpendPlan,
+		"Если выбрано \"Другое\"": &appl.SpendPlanOther,
+		"2022": &appl.Metrics2022,
+		"2023": &appl.Metrics2023,
+		"2024": &appl.Metrics2024,
+		"2025": &appl.Metrics2025,
 		"Наличие соглашения о промышленной сборке": &appl.HasAgreement,
 		"Файл соглашения": &appl.AgreementFile,
 		"token":           &appl.Token,
@@ -88,6 +95,8 @@ func extractValue(field *tallyField) string {
 		return extractDropdown(field)
 	case "FILE_UPLOAD":
 		return extractFileUpload(field)
+	case "CHECKBOXES":
+		return extractCheckboxes(field)
 	case "INPUT_NUMBER":
 		return extractNumber(field)
 	default:
@@ -105,6 +114,22 @@ func extractText(field *tallyField) string {
 func extractNumber(field *tallyField) string {
 	v := int(field.Value.(float64))
 	return strconv.Itoa(v)
+}
+
+func extractCheckboxes(field *tallyField) string {
+	if field.Value == nil {
+		return ""
+	}
+	values := field.Value.([]interface{})
+	result := []string{}
+	for _, option := range field.Options {
+		for _, value := range values {
+			if option.ID == value {
+				result = append(result, option.Text)
+			}
+		}
+	}
+	return strings.Join(result, ", ")
 }
 
 func extractDropdown(field *tallyField) string {
