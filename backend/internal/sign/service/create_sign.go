@@ -93,10 +93,10 @@ func createApplicationDate() string {
 
 	location, err := time.LoadLocation("Asia/Almaty")
 	if err != nil {
-		return now.Format(time.DateTime)
+		return now.Format("02.01.2006")
 	}
 
-	timeStr := now.In(location).Format(time.DateTime)
+	timeStr := now.In(location).Format("02.01.2006")
 	return timeStr
 }
 
