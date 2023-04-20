@@ -17,6 +17,7 @@ type StorageS3 struct {
 	accessKey  string
 	secretKey  string
 	bucketName string
+	endpoint   string
 	cli        *s3.Client
 }
 
@@ -25,6 +26,7 @@ func NewStorageS3(ctx context.Context, accessKey, secretKey, bucketName, endpoin
 		accessKey:  accessKey,
 		secretKey:  secretKey,
 		bucketName: bucketName,
+		endpoint:   endpoint,
 	}
 
 	cfg, err := config.LoadDefaultConfig(
@@ -55,7 +57,7 @@ func (s *StorageS3) Upload(ctx context.Context, folderName, fileName string, fil
 		return "", err
 	}
 
-	return fmt.Sprintf("https://%s.object.pscloud.io/%s", s.bucketName, key), nil
+	return fmt.Sprintf("%s/%s/%s", s.endpoint, s.bucketName, key), nil
 }
 
 func (s *StorageS3) Remove(ctx context.Context, filePath string) error {
@@ -84,7 +86,8 @@ func (s *StorageS3) customEndpointResolver(url string) func(service, region stri
 	return func(service, region string) (aws.Endpoint, error) {
 		if service == "S3" {
 			return aws.Endpoint{
-				URL: url,
+				URL:               url,
+				HostnameImmutable: true,
 			}, nil
 		}
 		return aws.Endpoint{}, fmt.Errorf("unknown service: %s", service)
