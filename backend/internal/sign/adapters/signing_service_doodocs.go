@@ -163,7 +163,7 @@ func (s *signingServiceDoodocsSession) uploadPDF(ctx context.Context, documentNa
 
 func (s *signingServiceDoodocsSession) configureWorkflow(ctx context.Context, documentID string) error {
 	var (
-		url         = fmt.Sprintf("%s/api/v1/documents/%s/workflow/anonymous", s.urlBase, documentID)
+		url         = fmt.Sprintf("%s/api/v1/documents/%s/workflow", s.urlBase, documentID)
 		jsonPayload = []byte(`{
 			"workflow": {
 			  "steps": [
