@@ -58,6 +58,18 @@ func (s *StorageS3) Upload(ctx context.Context, folderName, fileName string, fil
 	return fmt.Sprintf("https://%s.object.pscloud.io/%s", s.bucketName, key), nil
 }
 
+func (s *StorageS3) Remove(ctx context.Context, filePath string) error {
+	_, err := s.cli.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucketName),
+		Key:    aws.String(filePath),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *StorageS3) customCredentialProvider() aws.CredentialsProvider {
 	return aws.CredentialsProviderFunc(func(ctx context.Context) (aws.Credentials, error) {
 		return aws.Credentials{

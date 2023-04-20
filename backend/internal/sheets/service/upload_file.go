@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
 )
@@ -12,6 +13,7 @@ type UploadFileRequest struct {
 	SpreadsheetID string
 	SheetID       int64
 	SheetName     string
+	Hyperlink     string
 	RowIdx        int64
 	ColumnIdx     int64
 
@@ -21,11 +23,13 @@ type UploadFileRequest struct {
 }
 
 func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error {
-	// 1. check whether it is column for file.
-	// TODO
-
 	// 2. if the cell contains url, delete the file
-	// TODO
+	if req.Hyperlink != "" {
+		filePath := getFilePath(req.SpreadsheetID, req.Hyperlink)
+		if err := s.storage.Remove(ctx, filePath); err != nil {
+			return err
+		}
+	}
 
 	// 3. upload file, get url
 	folderName := fmt.Sprintf("%s/%s", req.SpreadsheetID, req.SheetName)
@@ -48,4 +52,25 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 	}
 
 	return nil
+}
+
+func getFilePath(spreadsheetID, hyperlink string) string {
+	afterHyperlink, ok := strings.CutPrefix(hyperlink, "=HYPERLINK(")
+	if !ok {
+		return ""
+	}
+
+	splittedArgs := strings.Split(afterHyperlink, ";")
+	if len(splittedArgs) == 0 {
+		return ""
+	}
+
+	var (
+		quotedLink       = splittedArgs[0]
+		link             = strings.ReplaceAll(quotedLink, "\"", "")
+		spreadsheetIDIdx = strings.Index(link, spreadsheetID)
+		filePath         = link[spreadsheetIDIdx:]
+	)
+
+	return filePath
 }

@@ -14,6 +14,7 @@ type UploadFileRequest struct {
 	SpreadsheetTokenStr string
 	SheetID             int64
 	SheetName           string
+	Hyperlink           string
 	RowIdx              int64
 	ColumnIdx           int64
 	FileReader          io.Reader
@@ -40,6 +41,7 @@ func MakeUploadFileEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint 
 			SpreadsheetID: claims.SpreadsheetID,
 			SheetID:       req.SheetID,
 			SheetName:     req.SheetName,
+			Hyperlink:     req.Hyperlink,
 			RowIdx:        req.RowIdx,
 			ColumnIdx:     req.ColumnIdx,
 			FileReader:    req.FileReader,

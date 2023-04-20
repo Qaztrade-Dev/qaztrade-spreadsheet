@@ -20,6 +20,7 @@ type (
 
 	Storage interface {
 		Upload(ctx context.Context, folderName, fileName string, fileSize int64, fileReader io.Reader) (string, error)
+		Remove(ctx context.Context, filePath string) error
 	}
 )
 

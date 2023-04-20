@@ -51,6 +51,7 @@ func DecodeUploadFileRequest(_ context.Context, r *http.Request) (interface{}, e
 		SheetID   int64  `json:"sheet_id"`
 		RowIdx    int64  `json:"row_idx"`
 		ColumnIdx int64  `json:"column_idx"`
+		Hyperlink string `json:"hyperlink"`
 	}
 
 	if err := json.Unmarshal([]byte(jsonData), &body); err != nil {
@@ -65,6 +66,7 @@ func DecodeUploadFileRequest(_ context.Context, r *http.Request) (interface{}, e
 		SpreadsheetTokenStr: tokenString,
 		SheetID:             body.SheetID,
 		SheetName:           body.SheetName,
+		Hyperlink:           body.Hyperlink,
 		RowIdx:              body.RowIdx,
 		ColumnIdx:           body.ColumnIdx,
 		FileReader:          fileReader,
