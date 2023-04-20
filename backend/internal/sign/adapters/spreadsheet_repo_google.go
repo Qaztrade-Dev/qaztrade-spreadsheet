@@ -192,13 +192,15 @@ func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID st
 	exportRequests := make([]*exportRequest, 0, len(sheets))
 	for _, sheet := range sheets {
 		nonEmptyRange := getNonEmptyRange(sheet)
-		if nonEmptyRange.RangeEnd <= 2 {
+		if nonEmptyRange.RowEnd <= 2 {
 			continue
 		}
 
 		exportRequests = append(exportRequests, &exportRequest{
-			RangeStart:    nonEmptyRange.RangeStart,
-			RangeEnd:      nonEmptyRange.RangeEnd,
+			RowStart:      nonEmptyRange.RowStart,
+			RowEnd:        nonEmptyRange.RowEnd,
+			ColumnStart:   nonEmptyRange.ColumnStart,
+			ColumnEnd:     nonEmptyRange.ColumnEnd,
 			sheetID:       sheet.Properties.SheetId,
 			spreadsheetID: spreadsheetID,
 		})
@@ -236,14 +238,17 @@ func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID st
 }
 
 type getNonEmptyRangeResponse struct {
-	RangeStart int64
-	RangeEnd   int64 // inclusive
+	RowStart    int64
+	RowEnd      int64 // inclusive
+	ColumnStart int64
+	ColumnEnd   int64
 }
 
 func getNonEmptyRange(sheet *sheets.Sheet) *getNonEmptyRangeResponse {
 	var (
 		sheetLength = len(sheet.Data[0].RowData)
-		rangeEnd    = sheetLength - 1
+		rowEnd      = sheetLength - 1
+		columnEnd   = -1
 	)
 
 	for i := sheetLength - 1; i >= 0; i-- {
@@ -269,30 +274,56 @@ func getNonEmptyRange(sheet *sheets.Sheet) *getNonEmptyRangeResponse {
 		}
 
 		if nonEmptyCellsCount > 0 {
-			rangeEnd = i
+			rowEnd = i
+			break
+		}
+	}
+
+	for i := 0; i < sheetLength; i++ {
+		var (
+			row = sheet.Data[0].RowData[i]
+		)
+
+		for j, cell := range row.Values {
+			if cell.UserEnteredValue == nil {
+				continue
+			}
+			if cell.UserEnteredValue.StringValue == nil {
+				continue
+			}
+			value := strings.TrimSpace(*cell.UserEnteredValue.StringValue)
+			if len(value) == 0 {
+				continue
+			}
+			if value == "Затраты заявленные Заявителем (по докум. заявки) без НДС и акцизы РК" {
+				columnEnd = j
+				break
+			}
+		}
+
+		if columnEnd != -1 {
 			break
 		}
 	}
 
 	return &getNonEmptyRangeResponse{
-		RangeStart: 0,
-		RangeEnd:   int64(rangeEnd),
+		RowStart:    0,
+		RowEnd:      int64(rowEnd),
+		ColumnStart: 0,
+		ColumnEnd:   int64(columnEnd),
 	}
 }
 
 type exportRequest struct {
 	spreadsheetID string
 	sheetID       int64
-	RangeStart    int64
-	RangeEnd      int64 // inclusive
+	RowStart      int64
+	RowEnd        int64 // inclusive
+	ColumnStart   int64
+	ColumnEnd     int64 // inclusive
 }
 
 func (p *exportRequest) getQueryParams() *url.Values {
-	var (
-		rangeStart = p.RangeStart + 1
-		rangeEnd   = p.RangeEnd + 1
-	)
-
 	queryParams := &url.Values{
 		"exportFormat":  {"pdf"},
 		"format":        {"pdf"},
@@ -309,7 +340,7 @@ func (p *exportRequest) getQueryParams() *url.Values {
 		"left_margin":   {"0"},
 		"right_margin":  {"0"},
 		"gid":           {fmt.Sprintf("%d", p.sheetID)},
-		"range":         {fmt.Sprintf("%d:%d", rangeStart, rangeEnd)},
+		"range":         {p.getRange()},
 	}
 
 	return queryParams
@@ -327,6 +358,18 @@ func (p *exportRequest) ExportURL() string {
 	)
 
 	return urlStr
+}
+
+func (p *exportRequest) getRange() string {
+	var (
+		columnStartA1 = numToColName(p.ColumnStart)
+		columnEndA1   = numToColName(p.ColumnEnd)
+		fromRangeA1   = fmt.Sprintf("%s%d", columnStartA1, p.RowStart+1)
+		toRangeA1     = fmt.Sprintf("%s%d", columnEndA1, p.RowEnd+1)
+		rangeA1       = fmt.Sprintf("%s:%s", fromRangeA1, toRangeA1)
+	)
+
+	return rangeA1
 }
 
 func (c *SpreadsheetClient) UpdateSigningTime(ctx context.Context, spreadsheetID, signingTime string) error {
@@ -368,4 +411,27 @@ func (s *SpreadsheetClient) SwitchModeRead(ctx context.Context, spreadsheetID st
 		return err
 	}
 	return nil
+}
+
+// numToColName converts a zero-indexed number to Google Sheets column name.
+func numToColName(num int64) string {
+	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	var colName strings.Builder
+
+	for num >= 0 {
+		remainder := num % 26
+		colName.WriteString(string(chars[remainder]))
+		num = (num / 26) - 1
+	}
+
+	return reverseString(colName.String())
+}
+
+// reverseString is a helper function to reverseString a string.
+func reverseString(s string) string {
+	runes := []rune(s)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+	return string(runes)
 }
