@@ -114,6 +114,7 @@ func (s *SpreadsheetServiceGoogle) copyFile(ctx context.Context, svc *drive.Serv
 
 func (s *SpreadsheetServiceGoogle) initSpreadsheet(ctx context.Context, svc *sheets.Service, spreadsheetID string) error {
 	templateSpreadsheet, err := svc.Spreadsheets.Get(s.templateSpreadsheetID).Context(ctx).Do()
+
 	if err != nil {
 		return err
 	}
@@ -172,7 +173,7 @@ func (s *SpreadsheetServiceGoogle) setReviewer(ctx context.Context, svc *drive.S
 		Role:         "writer",
 		EmailAddress: s.reviewerAccount,
 	}
-	_, err := svc.Permissions.Create(spreadsheetID, permission).Context(ctx).Do()
+	_, err := svc.Permissions.Create(spreadsheetID, permission).SendNotificationEmail(false).Context(ctx).Do()
 	if err != nil {
 		return err
 	}
