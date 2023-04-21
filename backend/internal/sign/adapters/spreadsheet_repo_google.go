@@ -153,7 +153,10 @@ func (c *SpreadsheetClient) GetExpenseValues(ctx context.Context, spreadsheetID 
 		if len(batchDataValues[i]) > 0 && len(batchDataValues[i][0]) > 0 {
 			value = strings.TrimSpace(batchDataValues[i][0][0].(string))
 		}
+
 		value = strings.ReplaceAll(value, ",", ".")
+		value = strings.ReplaceAll(value, " ", "")
+		value = strings.ReplaceAll(value, "\u00a0", "")
 
 		expenseValues[i], err = strconv.ParseFloat(value, 64)
 		if err != nil {
