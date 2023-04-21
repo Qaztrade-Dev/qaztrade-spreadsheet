@@ -236,3 +236,45 @@ func (c *SpreadsheetClient) UpdateCell(ctx context.Context, spreadsheetID string
 
 	return nil
 }
+
+func (c *SpreadsheetClient) AddRows(ctx context.Context, spreadsheetID string, input *domain.AddRowsInput) error {
+	var (
+		batch = NewBatchUpdate(c.service)
+	)
+
+	spreadsheet, err := c.service.Spreadsheets.Get(spreadsheetID).Do()
+	if err != nil {
+		return err
+	}
+
+	var sheet *sheets.Sheet
+
+	for _, s := range spreadsheet.Sheets {
+		if s.Properties.SheetId == input.SheetID {
+			sheet = s
+			break
+		}
+	}
+
+	lastRowIndex := int(sheet.Properties.GridProperties.RowCount)
+
+	insertDimensionRequest := &sheets.Request{
+		InsertDimension: &sheets.InsertDimensionRequest{
+			Range: &sheets.DimensionRange{
+				SheetId:    input.SheetID,
+				Dimension:  "ROWS",
+				StartIndex: int64(lastRowIndex),
+				EndIndex:   int64(lastRowIndex + input.RowsAmount),
+			},
+			InheritFromBefore: true,
+		},
+	}
+
+	batch.WithRequest(insertDimensionRequest)
+
+	if err := batch.Do(ctx, spreadsheetID); err != nil {
+		return err
+	}
+
+	return nil
+}

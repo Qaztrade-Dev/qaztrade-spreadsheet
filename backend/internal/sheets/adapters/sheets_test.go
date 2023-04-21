@@ -55,3 +55,24 @@ func TestUpdateApplication(t *testing.T) {
 		t.Fatal("UpdateApplication error:", err)
 	}
 }
+
+func TestAddRows(t *testing.T) {
+	var (
+		ctx           = context.Background()
+		spreadsheetID = "1M33nTTPHI2vi9DKKpbo9Y64_v2_WWzgfh11fMTYX6u4"
+		sheetID       = int64(1719011201)
+	)
+
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
+	if err != nil {
+		t.Fatal("NewSheetsClient error:", err)
+	}
+
+	err = cli.AddRows(ctx, spreadsheetID, &domain.AddRowsInput{
+		SheetID:    sheetID,
+		RowsAmount: 2,
+	})
+	if err != nil {
+		t.Fatal("UpdateApplication error:", err)
+	}
+}

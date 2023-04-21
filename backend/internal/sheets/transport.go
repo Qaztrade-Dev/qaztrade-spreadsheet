@@ -33,11 +33,18 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 			sheetsTransport.DecodeUploadFileRequest, common.EncodeResponse,
 			opts...,
 		)
+
+		addRowsHandler = kithttp.NewServer(
+			endpoint.MakeAddRowsEndpoint(svc, jwtcli),
+			sheetsTransport.DecodeAddRowsRequest, common.EncodeResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
 	r.Handle("/sheets/application", submitApplicationHandler).Methods("POST")
 	r.Handle("/sheets/file", uploadFileHandler).Methods("POST")
+	r.Handle("/sheets/rows", addRowsHandler).Methods("POST")
 
 	return r
 }

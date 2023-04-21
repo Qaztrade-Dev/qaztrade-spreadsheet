@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/url"
-	"strconv"
 	"strings"
 
+	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/endpoint"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/pkg/tally"
 )
@@ -75,6 +74,29 @@ func DecodeUploadFileRequest(_ context.Context, r *http.Request) (interface{}, e
 	}, nil
 }
 
+func DecodeAddRowsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var body struct {
+		SheetID    int64  `json:"sheet_id"`
+		SheetName  string `json:"sheet_name"`
+		RowsAmount int    `json:"rows_amount"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+
+	tokenString := extractHeaderToken(r)
+
+	return endpoint.AddRowsRequest{
+		Input: &domain.AddRowsInput{
+			SheetID:    body.SheetID,
+			SheetName:  body.SheetName,
+			RowsAmount: body.RowsAmount,
+		},
+		Token: tokenString,
+	}, nil
+}
+
 func extractHeaderToken(r *http.Request) string {
 	authorization := r.Header.Get("authorization")
 	if authorization == "" {
@@ -83,19 +105,4 @@ func extractHeaderToken(r *http.Request) string {
 
 	tokenString := strings.Split(authorization, " ")[1]
 	return tokenString
-}
-
-func extractHeaderSheetID(r *http.Request) (int64, error) {
-	sheetIDStr := r.Header.Get("x-sheet-id")
-	sheetID, err := strconv.ParseInt(sheetIDStr, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return sheetID, nil
-}
-
-func extractHeaderSheetName(r *http.Request) string {
-	sheetName := r.Header.Get("x-sheet-name")
-	unescaped, _ := url.QueryUnescape(sheetName)
-	return unescaped
 }

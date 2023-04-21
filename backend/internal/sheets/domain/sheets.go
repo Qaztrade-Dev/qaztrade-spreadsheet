@@ -13,9 +13,16 @@ type (
 		Value     string
 	}
 
+	AddRowsInput struct {
+		SheetID    int64
+		SheetName  string
+		RowsAmount int
+	}
+
 	SheetsRepository interface {
 		UpdateApplication(ctx context.Context, spreadsheetID string, application *Application) error
 		UpdateCell(ctx context.Context, spreadsheetID string, input *UpdateCellInput) error
+		AddRows(ctx context.Context, spreadsheetID string, input *AddRowsInput) error
 	}
 
 	Storage interface {

@@ -9,6 +9,7 @@ import (
 type Service interface {
 	SubmitApplication(ctx context.Context, req *SubmitApplicationRequest) error
 	UploadFile(ctx context.Context, req *UploadFileRequest) error
+	AddRows(ctx context.Context, req *AddRowsRequest) error
 }
 
 type service struct {
