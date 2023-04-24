@@ -46,7 +46,7 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 	}
 
 	application.ExpensesList = strings.Join(expensesTitles, ", ")
-	application.ExpensesSum = fmt.Sprintf("%v", sumFloats64(expensesValues))
+	application.ExpensesSum = fmt.Sprintf("%f", sumFloats64(expensesValues))
 	application.ApplicationDate = createApplicationDate()
 
 	attachments, err := s.spreadsheetRepo.GetAttachments(ctx, req.SpreadsheetID, expensesTitles)
