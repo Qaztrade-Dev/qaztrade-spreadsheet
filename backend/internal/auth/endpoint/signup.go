@@ -30,6 +30,6 @@ func MakeSignUpEndpoint(s service.Service) endpoint.Endpoint {
 			Password: req.Password,
 			OrgName:  req.OrgName,
 		})
-		return SignUpResponse{Credentials: credentials, Err: err}, nil
+		return &SignUpResponse{Credentials: credentials, Err: err}, nil
 	}
 }

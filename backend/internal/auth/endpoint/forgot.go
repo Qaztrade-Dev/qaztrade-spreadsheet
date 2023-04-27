@@ -24,6 +24,6 @@ func MakeForgotEndpoint(s service.Service) endpoint.Endpoint {
 		err := s.Forgot(ctx, &service.ForgotRequest{
 			Email: req.Email,
 		})
-		return ForgotResponse{Err: err}, nil
+		return &ForgotResponse{Err: err}, nil
 	}
 }

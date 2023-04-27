@@ -34,6 +34,6 @@ func MakeAddSheetEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
 			SheetName:     req.SheetName,
 		})
 
-		return AddSheetResponse{Err: err}, nil
+		return &AddSheetResponse{Err: err}, nil
 	}
 }

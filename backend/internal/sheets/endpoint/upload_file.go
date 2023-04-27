@@ -48,6 +48,6 @@ func MakeUploadFileEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint 
 			FileSize:      req.FileSize,
 			FileName:      req.FileName,
 		})
-		return UploadFileResponse{Err: err}, nil
+		return &UploadFileResponse{Err: err}, nil
 	}
 }

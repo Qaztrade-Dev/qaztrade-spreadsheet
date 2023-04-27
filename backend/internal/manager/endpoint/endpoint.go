@@ -41,7 +41,7 @@ func MakeSwitchStatusEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoin
 			StatusName:    req.StatusName,
 		})
 
-		return SwitchStatusResponse{
+		return &SwitchStatusResponse{
 			Err: err,
 		}, nil
 	}
@@ -78,7 +78,7 @@ func MakeListSpreadsheetsEndpoint(s service.Service, j *jwt.Client) endpoint.End
 			Offset: req.Offset,
 		})
 
-		return ListSpreadsheetsResponse{
+		return &ListSpreadsheetsResponse{
 			ApplicationList: jsonmanager.EncodeApplicationList(list),
 			Err:             err,
 		}, nil

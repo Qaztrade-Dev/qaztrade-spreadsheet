@@ -28,6 +28,9 @@ func MakeSignInEndpoint(s service.Service) endpoint.Endpoint {
 			Email:    req.Email,
 			Password: req.Password,
 		})
-		return SignInResponse{Credentials: credentials, Err: err}, nil
+
+		response := &SignInResponse{Credentials: credentials, Err: err}
+
+		return response, nil
 	}
 }

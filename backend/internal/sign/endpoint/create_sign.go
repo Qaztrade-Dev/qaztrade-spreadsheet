@@ -33,7 +33,7 @@ func MakeCreateSignEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint 
 			SpreadsheetID: claims.SpreadsheetID,
 		})
 
-		return CreateSignResponse{
+		return &CreateSignResponse{
 			Link: link,
 			Err:  err,
 		}, nil

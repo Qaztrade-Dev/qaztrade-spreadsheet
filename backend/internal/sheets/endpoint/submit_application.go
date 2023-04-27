@@ -33,6 +33,6 @@ func MakeSubmitApplicationEndpoint(s service.Service, j *jwt.Client) endpoint.En
 			Application:   req.Application,
 		})
 
-		return SubmitApplicationResponse{Err: err}, nil
+		return &SubmitApplicationResponse{Err: err}, nil
 	}
 }

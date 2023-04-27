@@ -17,7 +17,7 @@ func (r *GetRedirectLinkResponse) Error() error { return r.Err }
 func MakeGetRedirectLinkEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		redirectLink, err := s.GetRedirectLink(ctx)
-		return GetRedirectLinkResponse{Link: redirectLink, Err: err}, nil
+		return &GetRedirectLinkResponse{Link: redirectLink, Err: err}, nil
 	}
 }
 
@@ -35,6 +35,6 @@ func MakeUpdateTokenEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(UpdateTokenRequest)
 		err := s.UpdateToken(ctx, req.Code)
-		return UpdateTokenResponse{Err: err}, nil
+		return &UpdateTokenResponse{Err: err}, nil
 	}
 }

@@ -34,7 +34,7 @@ func MakeCreateSpreadsheetEndpoint(s service.Service, j *jwt.Client) endpoint.En
 			UserID: claims.UserID,
 		})
 
-		return CreateSpreadsheetResponse{
+		return &CreateSpreadsheetResponse{
 			Link: link,
 			Err:  err,
 		}, nil
@@ -69,7 +69,7 @@ func MakeListSpreadsheetsEndpoint(s service.Service, j *jwt.Client) endpoint.End
 			Offset: req.Offset,
 		})
 
-		return ListSpreadsheetsResponse{
+		return &ListSpreadsheetsResponse{
 			ApplicationList: jsonspreadsheets.EncodeApplicationList(list),
 			Err:             err,
 		}, nil

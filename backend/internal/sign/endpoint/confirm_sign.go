@@ -25,7 +25,7 @@ func MakeConfirmSignEndpoint(s service.Service) endpoint.Endpoint {
 			SignDocumentID: req.DocumentID,
 		})
 
-		return ConfirmSignResponse{
+		return &ConfirmSignResponse{
 			Err: err,
 		}, nil
 	}

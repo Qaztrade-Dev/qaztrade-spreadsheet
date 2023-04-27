@@ -33,6 +33,6 @@ func MakeRestoreEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
 			UserID:   claims.UserID,
 			Password: req.Password,
 		})
-		return RestoreResponse{Err: err}, nil
+		return &RestoreResponse{Err: err}, nil
 	}
 }

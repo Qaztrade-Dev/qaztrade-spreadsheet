@@ -34,6 +34,6 @@ func MakeAddRowsEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
 			Input:         req.Input,
 		})
 
-		return AddRowsResponse{Err: err}, nil
+		return &AddRowsResponse{Err: err}, nil
 	}
 }
