@@ -459,3 +459,85 @@ func (c *SpreadsheetServiceGoogle) getDataToCopy(ctx context.Context, svc *sheet
 
 	return result, nil
 }
+
+// func (s *SpreadsheetServiceGoogle) Test(ctx context.Context) error {
+// 	httpClient, err := s.getOauth2Client(ctx)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	driveSvc, err := drive.NewService(ctx, option.WithHTTPClient(httpClient))
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	spreadsheetsSvc, err := sheets.NewService(ctx, option.WithHTTPClient(httpClient))
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	query := fmt.Sprintf("mimeType!='application/vnd.google-apps.folder' and trashed = false and '%s' in parents", s.destinationFolderID)
+// 	fileListCall := driveSvc.Files.List().Q(query).Fields("nextPageToken, files(id, name)")
+
+// 	spreadsheetIDs := make([]string, 0)
+// 	err = fileListCall.Pages(ctx, func(filesList *drive.FileList) error {
+// 		for _, file := range filesList.Files {
+// 			spreadsheetIDs = append(spreadsheetIDs, file.Id)
+// 		}
+// 		return nil
+// 	})
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	for _, spreadsheetID := range spreadsheetIDs {
+// 		spreadsheetID := spreadsheetID
+
+// 		batch := NewBatchUpdate(spreadsheetsSvc)
+// 		batch.WithRequest(&sheets.Request{
+// 			FindReplace: &sheets.FindReplaceRequest{
+// 				Find:            "🟡 ",
+// 				Replacement:     "",
+// 				AllSheets:       true,
+// 				IncludeFormulas: true,
+// 			},
+// 		})
+// 		batch.WithRequest(&sheets.Request{
+// 			FindReplace: &sheets.FindReplaceRequest{
+// 				Find:            "⚠️ ",
+// 				Replacement:     "",
+// 				AllSheets:       true,
+// 				IncludeFormulas: true,
+// 			},
+// 		})
+// 		batch.WithRequest(&sheets.Request{
+// 			FindReplace: &sheets.FindReplaceRequest{
+// 				Find:            "⛔️ ",
+// 				Replacement:     "",
+// 				AllSheets:       true,
+// 				IncludeFormulas: true,
+// 			},
+// 		})
+// 		batch.WithRequest(&sheets.Request{
+// 			FindReplace: &sheets.FindReplaceRequest{
+// 				Find:            "✅",
+// 				Replacement:     "✓",
+// 				AllSheets:       true,
+// 				IncludeFormulas: true,
+// 			},
+// 		})
+// 		batch.WithRequest(&sheets.Request{
+// 			FindReplace: &sheets.FindReplaceRequest{
+// 				Find:            "❌",
+// 				Replacement:     "✗",
+// 				AllSheets:       true,
+// 				IncludeFormulas: true,
+// 			},
+// 		})
+// 		if err := batch.Do(ctx, spreadsheetID); err != nil {
+// 			return err
+// 		}
+// 	}
+
+// 	return nil
+// }

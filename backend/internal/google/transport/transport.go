@@ -17,7 +17,7 @@ func EncodeGetRedirectLinkResponse(ctx context.Context, w http.ResponseWriter, r
 		common.EncodeError(ctx, e.Error(), w)
 		return nil
 	}
-	resp := response.(endpoint.GetRedirectLinkResponse)
+	resp := response.(*endpoint.GetRedirectLinkResponse)
 	w.Header().Set("Location", resp.Link)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 	return nil
