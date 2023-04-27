@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -35,6 +36,7 @@ type Errorer interface {
 
 // encodeError from business-logic
 func EncodeError(_ context.Context, err error, w http.ResponseWriter) {
+	log.Println(err)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	switch err {
 	default:
