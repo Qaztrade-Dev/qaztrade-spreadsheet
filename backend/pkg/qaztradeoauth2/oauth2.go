@@ -51,7 +51,7 @@ func (cts *customTokenSource) Token() (*oauth2.Token, error) {
 		return nil, err
 	}
 
-	if cts.InitialToken.AccessToken != token.AccessToken || cts.InitialToken.RefreshToken != token.RefreshToken {
+	if token.RefreshToken != "" && cts.InitialToken.RefreshToken != token.RefreshToken {
 		if err := cts.qaztradeOAuth2.updateToken(cts.ctx, token); err != nil {
 			return nil, err
 		}
