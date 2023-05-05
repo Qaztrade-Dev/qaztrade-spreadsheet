@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
@@ -36,6 +37,7 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 
 	value, err := s.storage.Upload(ctx, folderName, req.FileName, req.FileSize, req.FileReader)
 	if err != nil {
+		log.Printf("storage.Upload error file: folderName - %s, fileName - %s\n", folderName, req.FileName)
 		return err
 	}
 
