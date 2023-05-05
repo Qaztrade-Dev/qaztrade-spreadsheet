@@ -7,6 +7,10 @@ import (
 )
 
 func (s *service) GetRedirectLink(ctx context.Context) (string, error) {
-	authURL := s.config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+	authURL := s.config.AuthCodeURL(
+		"state-token",
+		oauth2.AccessTypeOffline,
+		oauth2.ApprovalForce,
+	)
 	return authURL, nil
 }
