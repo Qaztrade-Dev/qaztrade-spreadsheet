@@ -2,23 +2,18 @@ package adapters
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
+	"github.com/doodocs/qaztrade/backend/pkg/qaztradeoauth2"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
 
 type SpreadsheetServiceGoogle struct {
-	pg                    *pgxpool.Pool
-	config                *oauth2.Config
+	oauth2                *qaztradeoauth2.Client
 	svcAccount            string
 	reviewerAccount       string
 	jwtcli                *jwt.Client
@@ -30,23 +25,16 @@ type SpreadsheetServiceGoogle struct {
 var _ domain.SpreadsheetService = (*SpreadsheetServiceGoogle)(nil)
 
 func NewSpreadsheetServiceGoogle(
-	clientSecretBytes []byte,
+	oauth2 *qaztradeoauth2.Client,
 	svcAccount string,
 	reviewerAccount string,
 	jwtcli *jwt.Client,
-	pg *pgxpool.Pool,
 	originSpreadsheetID string,
 	templateSpreadsheetID string,
 	destinationFolderID string,
-) (*SpreadsheetServiceGoogle, error) {
-	config, err := google.ConfigFromJSON(clientSecretBytes, drive.DriveScope, sheets.SpreadsheetsScope)
-	if err != nil {
-		return nil, err
-	}
-
+) *SpreadsheetServiceGoogle {
 	client := &SpreadsheetServiceGoogle{
-		pg:                    pg,
-		config:                config,
+		oauth2:                oauth2,
 		svcAccount:            svcAccount,
 		reviewerAccount:       reviewerAccount,
 		jwtcli:                jwtcli,
@@ -55,11 +43,11 @@ func NewSpreadsheetServiceGoogle(
 		destinationFolderID:   destinationFolderID,
 	}
 
-	return client, err
+	return client
 }
 
 func (s *SpreadsheetServiceGoogle) Create(ctx context.Context, user *domain.User) (string, error) {
-	httpClient, err := s.getOauth2Client(ctx)
+	httpClient, err := s.oauth2.GetClient(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -226,52 +214,6 @@ func (s *SpreadsheetServiceGoogle) setPublic(ctx context.Context, svc *drive.Ser
 	return nil
 }
 
-func (s *SpreadsheetServiceGoogle) getOauth2Client(ctx context.Context) (*http.Client, error) {
-	tokenStr, err := s.getOauthToken(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	tokenOauth2, err := tokenFromStr(tokenStr)
-	if err != nil {
-		return nil, err
-	}
-
-	httpCli := clientWithToken(s.config, tokenOauth2)
-	return httpCli, nil
-
-}
-
-func (s *SpreadsheetServiceGoogle) getOauthToken(ctx context.Context) (string, error) {
-	const sql = `
-		select 
-			token
-		from "oauth2_tokens"
-		where id = 1
-	`
-
-	var (
-		token string
-	)
-
-	err := s.pg.QueryRow(ctx, sql).Scan(&token)
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
-}
-
-func tokenFromStr(tokenStr string) (*oauth2.Token, error) {
-	tok := &oauth2.Token{}
-	err := json.Unmarshal([]byte(tokenStr), &tok)
-	return tok, err
-}
-
-func clientWithToken(config *oauth2.Config, token *oauth2.Token) *http.Client {
-	return config.Client(context.Background(), token)
-}
-
 func (s *SpreadsheetServiceGoogle) GetPublicLink(_ context.Context, spreadsheetID string) string {
 	url := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/edit?usp=sharing", spreadsheetID)
 	return url
@@ -298,7 +240,7 @@ func (c *SpreadsheetServiceGoogle) AddSheet(ctx context.Context, spreadsheetID s
 		sourceSheetID = mappings[sheetName]
 	)
 
-	httpClient, err := c.getOauth2Client(ctx)
+	httpClient, err := c.oauth2.GetClient(ctx)
 	if err != nil {
 		return err
 	}

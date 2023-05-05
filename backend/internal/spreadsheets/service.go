@@ -6,6 +6,7 @@ import (
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/adapters"
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/service"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
+	"github.com/doodocs/qaztrade/backend/pkg/qaztradeoauth2"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -16,21 +17,21 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		opt(deps)
 	}
 
-	spreadsheetSvc, err := adapters.NewSpreadsheetServiceGoogle(
-		deps.clientSecretBytes,
-		deps.svcAccount,
-		deps.reviewerAccount,
-		deps.jwtcli,
-		deps.pg,
-		deps.originSpreadsheetID,
-		deps.templateSpreadsheetID,
-		deps.destinationFolderID,
-	)
+	oauth2, err := qaztradeoauth2.NewClient(deps.clientSecretBytes, deps.pg)
 	if err != nil {
 		panic(err)
 	}
 
 	var (
+		spreadsheetSvc = adapters.NewSpreadsheetServiceGoogle(
+			oauth2,
+			deps.svcAccount,
+			deps.reviewerAccount,
+			deps.jwtcli,
+			deps.originSpreadsheetID,
+			deps.templateSpreadsheetID,
+			deps.destinationFolderID,
+		)
 		applicationRepo = adapters.NewApplicationRepositoryPostgre(deps.pg)
 		userRepo        = adapters.NewUserRepositoryPostgre(deps.pg)
 	)

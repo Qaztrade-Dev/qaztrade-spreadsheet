@@ -9,6 +9,7 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
+	"github.com/doodocs/qaztrade/backend/pkg/qaztradeoauth2"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stretchr/testify/require"
 )
@@ -40,17 +41,18 @@ func TestSpreadsheetCreate(t *testing.T) {
 	pg, err := pgxpool.Connect(ctx, postgresURL)
 	require.Nil(t, err)
 
-	svc, err := NewSpreadsheetServiceGoogle(
-		credentialsOAuth,
+	oauth2, err := qaztradeoauth2.NewClient(credentialsOAuth, pg)
+	require.Nil(t, err)
+
+	svc := NewSpreadsheetServiceGoogle(
+		oauth2,
 		svcAccount,
 		reviewerAccount,
 		jwtcli,
-		pg,
 		originSpreadsheetID,
 		templateSpreadsheetId,
 		destinationFolderId,
 	)
-	require.Nil(t, err)
 
 	id, err := svc.Create(ctx, user)
 	fmt.Println(id)
@@ -75,24 +77,26 @@ func TestAddSheet(t *testing.T) {
 		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
 
 		originSpreadsheetID = os.Getenv("ORIGIN_SPREADSHEET_ID")
-		spreadsheetID       = os.Getenv("TEMPLATE_SPREADSHEET_ID")
-		sheetName           = "Доставка ЖД транспортом"
+		// spreadsheetID       = os.Getenv("TEMPLATE_SPREADSHEET_ID")
+		spreadsheetID = "1ZGkQGlUFc6Fgj2yYCitE0KUCPwxbsxnwEhTrBxHeImY"
+		sheetName     = "Затраты на доставку транспортом"
 	)
 
 	pg, err := pgxpool.Connect(ctx, postgresURL)
 	require.Nil(t, err)
 
-	svc, err := NewSpreadsheetServiceGoogle(
-		credentialsOAuth,
+	oauth2, err := qaztradeoauth2.NewClient(credentialsOAuth, pg)
+	require.Nil(t, err)
+
+	svc := NewSpreadsheetServiceGoogle(
+		oauth2,
 		svcAccount,
 		reviewerAccount,
 		jwtcli,
-		pg,
 		originSpreadsheetID,
 		templateSpreadsheetId,
 		destinationFolderId,
 	)
-	require.Nil(t, err)
 
 	err = svc.AddSheet(ctx, spreadsheetID, sheetName)
 	if err != nil {
