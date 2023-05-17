@@ -40,6 +40,15 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 		return "", errors.New("no expenses")
 	}
 
+	hasMergedCells, err := s.spreadsheetRepo.HasMergedCells(ctx, req.SpreadsheetID, expensesTitles)
+	if err != nil {
+		return "", domain.ErrorAbsentExpenses
+	}
+
+	if hasMergedCells {
+		return "", domain.ErrorSpreadsheetHasMergedCells
+	}
+
 	expensesValues, err := s.spreadsheetRepo.GetExpenseValues(ctx, req.SpreadsheetID, expensesTitles)
 	if err != nil {
 		return "", err

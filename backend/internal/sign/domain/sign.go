@@ -2,6 +2,7 @@ package domain
 
 import (
 	"bytes"
+	"errors"
 	"io"
 
 	"golang.org/x/net/context"
@@ -11,6 +12,11 @@ type PDFService interface {
 	Create(application *Application, attachments []io.ReadSeeker) (*bytes.Buffer, error)
 }
 
+var (
+	ErrorSpreadsheetHasMergedCells = errors.New("Таблица содержит объединенные ячейки! ⛔️ Объединенные ячейки запрещены.")
+	ErrorAbsentExpenses            = errors.New("Таблица не содержит затраты!")
+)
+
 type SpreadsheetRepository interface {
 	GetApplication(ctx context.Context, spreadsheetID string) (*Application, error)
 	GetExpensesSheetTitles(ctx context.Context, spreadsheetID string) ([]string, error)
@@ -18,6 +24,7 @@ type SpreadsheetRepository interface {
 	GetAttachments(ctx context.Context, spreadsheetID string, expensesTitles []string) ([]io.ReadSeeker, error)
 	UpdateSigningTime(ctx context.Context, spreadsheetID, signingTime string) error
 	SwitchModeRead(ctx context.Context, spreadsheetID string) error
+	HasMergedCells(ctx context.Context, spreadsheetID string, expensesTitles []string) (bool, error)
 }
 
 type CreateSigningDocumentResponse struct {

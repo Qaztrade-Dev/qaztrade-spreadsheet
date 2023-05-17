@@ -75,3 +75,20 @@ func TestGetExpensesData(t *testing.T) {
 	require.Nil(t, err)
 	fmt.Println(expensesValues)
 }
+
+func TestHasMergedCells(t *testing.T) {
+	var (
+		ctx           = context.Background()
+		spreadsheetID = "15wAKoZVRz1FbayCTA9SjYvIs3v_vbTZB2_mgIlhJL0g"
+	)
+
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
+	require.Nil(t, err)
+
+	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)
+	require.Nil(t, err)
+
+	hasMergedCells, err := cli.HasMergedCells(ctx, spreadsheetID, expensesTitles)
+	require.Nil(t, err)
+	require.False(t, hasMergedCells)
+}

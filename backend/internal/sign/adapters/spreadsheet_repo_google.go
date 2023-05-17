@@ -416,6 +416,28 @@ func (s *SpreadsheetClient) SwitchModeRead(ctx context.Context, spreadsheetID st
 	return nil
 }
 
+func (s *SpreadsheetClient) HasMergedCells(ctx context.Context, spreadsheetID string, expensesTitles []string) (bool, error) {
+	resp, err := s.sheetsService.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Do()
+	if err != nil {
+		return false, err
+	}
+
+	// Check if the range has merged cells
+	for _, sheet := range resp.Sheets {
+		if !sliceContains(expensesTitles, sheet.Properties.Title) {
+			continue
+		}
+
+		for _, mergedCell := range sheet.Merges {
+			if mergedCell.StartRowIndex >= 3 {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}
+
 // numToColName converts a zero-indexed number to Google Sheets column name.
 func numToColName(num int64) string {
 	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -437,4 +459,14 @@ func reverseString(s string) string {
 		runes[i], runes[j] = runes[j], runes[i]
 	}
 	return string(runes)
+}
+
+func sliceContains(slice []string, input string) bool {
+	for _, element := range slice {
+		if element == input {
+			return true
+		}
+	}
+
+	return false
 }
