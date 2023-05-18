@@ -127,17 +127,18 @@ func TestAddSheet(t *testing.T) {
 // 	pg, err := pgxpool.Connect(ctx, postgresURL)
 // 	require.Nil(t, err)
 
-// 	svc, err := NewSpreadsheetServiceGoogle(
-// 		credentialsOAuth,
+// 	oauth2, err := qaztradeoauth2.NewClient(credentialsOAuth, pg)
+// 	require.Nil(t, err)
+
+// 	svc := NewSpreadsheetServiceGoogle(
+// 		oauth2,
 // 		svcAccount,
 // 		reviewerAccount,
 // 		jwtcli,
-// 		pg,
 // 		originSpreadsheetID,
 // 		templateSpreadsheetId,
 // 		destinationFolderId,
 // 	)
-// 	require.Nil(t, err)
 
 // 	err = svc.Test(ctx)
 // 	if err != nil {
