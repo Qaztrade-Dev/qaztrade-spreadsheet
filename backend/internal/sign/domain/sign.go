@@ -15,6 +15,7 @@ type PDFService interface {
 var (
 	ErrorSpreadsheetHasMergedCells = errors.New("Таблица содержит объединенные ячейки! ⛔️ Объединенные ячейки запрещены.")
 	ErrorAbsentExpenses            = errors.New("Таблица не содержит затраты!")
+	ErrorExpensesZero              = errors.New("Заявленные затраты равны нулю! ⛔️ Запрещено подавать заявку на сумму 0 тенге.")
 )
 
 type SpreadsheetRepository interface {

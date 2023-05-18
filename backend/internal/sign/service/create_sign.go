@@ -54,6 +54,10 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 		return "", err
 	}
 
+	if sumFloats64(expensesValues) == 0 {
+		return "", domain.ErrorExpensesZero
+	}
+
 	application.ExpensesList = strings.Join(expensesTitles, ", ")
 	application.ExpensesSum = fmt.Sprintf("%f", sumFloats64(expensesValues))
 	application.ApplicationDate = createApplicationDate()
