@@ -2,7 +2,9 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"io"
+	"net/http"
 	"time"
 )
 
@@ -15,12 +17,13 @@ const (
 )
 
 type Application struct {
-	ID            string
-	UserID        string
-	SpreadsheetID string
-	Link          string
-	Status        string
-	CreatedAt     time.Time
+	ID             string
+	UserID         string
+	SpreadsheetID  string
+	Link           string
+	Status         string
+	SignDocumentID string
+	CreatedAt      time.Time
 }
 
 type ApplicationList struct {
@@ -49,4 +52,12 @@ type RemoveFunction func() error
 
 type Storage interface {
 	DownloadArchive(ctx context.Context, folderName string) (io.ReadCloser, RemoveFunction, error)
+}
+
+var (
+	ErrorApplicationNotSigned = errors.New("Заявление еще не подписано!")
+)
+
+type SigningService interface {
+	GetDDCardResponse(ctx context.Context, documentID string) (*http.Response, error)
 }

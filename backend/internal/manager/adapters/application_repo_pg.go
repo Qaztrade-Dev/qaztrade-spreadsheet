@@ -83,6 +83,7 @@ func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domai
 			"ast.value",
 			"a.spreadsheet_id",
 			"a.link",
+			"a.sign_document_id",
 		).
 		From("applications a").
 		Join("application_statuses ast on ast.id = a.status_id").
@@ -137,11 +138,12 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 		applications = make([]*domain.Application, 0)
 
 		// scans
-		applID            *string
-		applCreatedAt     *time.Time
-		applStatus        *string
-		applSpreadsheetID *string
-		applLink          *string
+		applID             *string
+		applCreatedAt      *time.Time
+		applStatus         *string
+		applSpreadsheetID  *string
+		applLink           *string
+		applSignDocumentID *string
 	)
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
@@ -150,13 +152,15 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 		&applStatus,
 		&applSpreadsheetID,
 		&applLink,
+		&applSignDocumentID,
 	}, func(pgx.QueryFuncRow) error {
 		applications = append(applications, &domain.Application{
-			ID:            valueFromPointer(applID),
-			CreatedAt:     valueFromPointer(applCreatedAt),
-			Status:        valueFromPointer(applStatus),
-			SpreadsheetID: valueFromPointer(applSpreadsheetID),
-			Link:          valueFromPointer(applLink),
+			ID:             valueFromPointer(applID),
+			CreatedAt:      valueFromPointer(applCreatedAt),
+			Status:         valueFromPointer(applStatus),
+			SpreadsheetID:  valueFromPointer(applSpreadsheetID),
+			Link:           valueFromPointer(applLink),
+			SignDocumentID: valueFromPointer(applSignDocumentID),
 		})
 		return nil
 	})

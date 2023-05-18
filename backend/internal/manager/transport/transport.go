@@ -94,3 +94,48 @@ func EncodeDownloadArchiveResponse(ctx context.Context, w http.ResponseWriter, r
 
 	return nil
 }
+
+func DecodeGetDDCardResponse(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		applicationID = mux.Vars(r)["application_id"]
+		tokenString   = extractHeaderToken(r)
+	)
+
+	return endpoint.GetDDCardResponseRequest{
+		UserToken:     tokenString,
+		ApplicationID: applicationID,
+	}, nil
+}
+
+func EncodeGetDDCardResponseResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	if e, ok := response.(common.Errorer); ok && e.Error() != nil {
+		common.EncodeError(ctx, e.Error(), w)
+		return nil
+	}
+
+	var (
+		resp     = response.(*endpoint.GetDDCardResponseResponse)
+		httpResp = resp.HTTPResponse
+	)
+
+	defer httpResp.Body.Close()
+
+	// copy headers from the original response
+	for key, values := range httpResp.Header {
+		for _, value := range values {
+			w.Header().Add(key, value)
+		}
+	}
+
+	// copy the status code from the original response
+	w.WriteHeader(httpResp.StatusCode)
+
+	// copy the original response body
+	_, err := io.Copy(w, httpResp.Body)
+	if err != nil {
+		common.EncodeError(ctx, err, w)
+		return nil
+	}
+
+	return nil
+}

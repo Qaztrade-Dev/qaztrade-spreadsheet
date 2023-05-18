@@ -39,12 +39,19 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 			managerTransport.DecodeDownloadArchive, managerTransport.EncodeDownloadArchiveResponse,
 			opts...,
 		)
+
+		getDDCardResponseHandler = kithttp.NewServer(
+			endpoint.MakeGetDDCardResponseEndpoint(svc, jwtcli),
+			managerTransport.DecodeGetDDCardResponse, managerTransport.EncodeGetDDCardResponseResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
 	r.Handle("/manager/spreadsheets/", switchStatusHandler).Methods("PATCH")
 	r.Handle("/manager/spreadsheets/", listSpreadsheetsHandler).Methods("GET")
 	r.Handle("/manager/applications/{application_id}/archive", downloadArchiveHandler).Methods("GET")
+	r.Handle("/manager/applications/{application_id}/ddcard", getDDCardResponseHandler).Methods("GET")
 
 	return r
 }

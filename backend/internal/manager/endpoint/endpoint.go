@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/http"
 
 	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
@@ -124,6 +125,45 @@ func MakeDownloadArchiveEndpoint(s service.Service, j *jwt.Client) endpoint.Endp
 			ArchiveReader: result.ArchiveReader,
 			RemoveFunc:    result.RemoveFunc,
 			Err:           err,
+		}, nil
+	}
+}
+
+type GetDDCardResponseRequest struct {
+	UserToken     string
+	ApplicationID string
+}
+
+type GetDDCardResponseResponse struct {
+	HTTPResponse *http.Response
+	Err          error `json:"err,omitempty"`
+}
+
+func (r *GetDDCardResponseResponse) Error() error { return r.Err }
+
+func MakeGetDDCardResponseEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetDDCardResponseRequest)
+
+		claims, err := jwt.Parse[authDomain.UserClaims](j, req.UserToken)
+		if err != nil {
+			return nil, err
+		}
+
+		if claims.Role != authDomain.RoleManager {
+			return nil, errors.New("permission denied")
+		}
+
+		result, err := s.GetDDCardResponse(ctx, &service.GetDDCardResponseRequest{
+			ApplicationID: req.ApplicationID,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &GetDDCardResponseResponse{
+			HTTPResponse: result,
+			Err:          err,
 		}, nil
 	}
 }

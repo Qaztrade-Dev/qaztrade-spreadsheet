@@ -26,8 +26,9 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 	}
 
 	applicationRepo := adapters.NewApplicationRepositoryPostgre(deps.pg)
+	signSvc := adapters.NewSigningServiceDoodocs(deps.signUrlBase, deps.signLogin, deps.signPassword)
 
-	svc := service.NewService(spreadsheetSvc, applicationRepo, spreadsheetStorage)
+	svc := service.NewService(spreadsheetSvc, applicationRepo, spreadsheetStorage, signSvc)
 	return svc
 }
 
@@ -41,6 +42,10 @@ type dependencies struct {
 	s3SecretKey string
 	s3Endpoint  string
 	s3Bucket    string
+
+	signUrlBase  string
+	signLogin    string
+	signPassword string
 }
 
 func (d *dependencies) setDefaults() {
@@ -65,5 +70,13 @@ func WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket string) Option
 		d.s3SecretKey = s3SecretKey
 		d.s3Endpoint = s3Endpoint
 		d.s3Bucket = s3Bucket
+	}
+}
+
+func WithSignCredentials(signUrlBase, signLogin, signPassword string) Option {
+	return func(d *dependencies) {
+		d.signUrlBase = signUrlBase
+		d.signLogin = signLogin
+		d.signPassword = signPassword
 	}
 }
