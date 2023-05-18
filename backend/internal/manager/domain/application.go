@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"io"
 	"time"
 )
 
@@ -42,4 +43,10 @@ type ApplicationRepository interface {
 type SpreadsheetService interface {
 	SwitchModeRead(ctx context.Context, spreadsheetID string) error
 	SwitchModeEdit(ctx context.Context, spreadsheetID string) error
+}
+
+type RemoveFunction func() error
+
+type Storage interface {
+	DownloadArchive(ctx context.Context, folderName string) (io.ReadCloser, RemoveFunction, error)
 }

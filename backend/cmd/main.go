@@ -115,6 +115,7 @@ func main() {
 			ctx,
 			manager.WithPostgre(pg),
 			manager.WithCredentials(credentialsSA),
+			manager.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
 		)
 
 		signService = sign.MakeService(

@@ -33,11 +33,18 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 			managerTransport.DecodeListSpreadsheetsRequest, common.EncodeResponse,
 			opts...,
 		)
+
+		downloadArchiveHandler = kithttp.NewServer(
+			endpoint.MakeDownloadArchiveEndpoint(svc, jwtcli),
+			managerTransport.DecodeDownloadArchive, managerTransport.EncodeDownloadArchiveResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
 	r.Handle("/manager/spreadsheets/", switchStatusHandler).Methods("PATCH")
 	r.Handle("/manager/spreadsheets/", listSpreadsheetsHandler).Methods("GET")
+	r.Handle("/manager/applications/{application_id}/archive", downloadArchiveHandler).Methods("GET")
 
 	return r
 }
