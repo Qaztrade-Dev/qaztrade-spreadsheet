@@ -51,6 +51,7 @@ func main() {
 		mailPassword          = getenv("MAIL_PASSWORD")
 		svcAccount            = getenv("SERVICE_ACCOUNT")
 		reviewerAccount       = getenv("REVIEWER_ACCOUNT")
+		adminAccount          = getenv("ADMIN_ACCOUNT")
 		templateSpreadsheetID = getenv("TEMPLATE_SPREADSHEET_ID")
 		destinationFolderID   = getenv("DESTINATION_FOLDER_ID")
 		originSpreadsheetID   = getenv("ORIGIN_SPREADSHEET_ID")
@@ -117,6 +118,7 @@ func main() {
 			manager.WithCredentials(credentialsSA),
 			manager.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
 			manager.WithSignCredentials(signUrlBase, signLogin, signPassword),
+			manager.WithAdmin(adminAccount),
 		)
 
 		signService = sign.MakeService(
@@ -125,6 +127,7 @@ func main() {
 			sign.WithPostgre(pg),
 			sign.WithSignCredentials(signUrlBase, signLogin, signPassword),
 			sign.WithCredentialsSA(credentialsSA),
+			sign.WithAdmin(adminAccount),
 		)
 	)
 

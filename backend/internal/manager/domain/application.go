@@ -46,6 +46,8 @@ type ApplicationRepository interface {
 type SpreadsheetService interface {
 	SwitchModeRead(ctx context.Context, spreadsheetID string) error
 	SwitchModeEdit(ctx context.Context, spreadsheetID string) error
+	BlockImportantRanges(ctx context.Context, spreadsheetID string) error
+	UnlockImportantRanges(ctx context.Context, spreadsheetID string) error
 }
 
 type RemoveFunction func() error

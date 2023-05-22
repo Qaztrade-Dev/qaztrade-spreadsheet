@@ -58,6 +58,9 @@ func (b *BatchUpdate) WithRequest(requests ...*sheets.Request) {
 }
 
 func (b *BatchUpdate) Do(ctx context.Context, spreadsheetID string) error {
+	if len(b.requests) == 0 {
+		return nil
+	}
 	batchUpdateRequest := &sheets.BatchUpdateSpreadsheetRequest{Requests: b.requests}
 	_, err := b.service.Spreadsheets.BatchUpdate(spreadsheetID, batchUpdateRequest).Context(ctx).Do()
 	return err

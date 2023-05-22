@@ -15,7 +15,7 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		opt(deps)
 	}
 
-	spreadsheetSvc, err := adapters.NewSpreadsheetService(ctx, deps.credentials)
+	spreadsheetSvc, err := adapters.NewSpreadsheetService(ctx, deps.credentials, deps.adminAccount)
 	if err != nil {
 		panic(err)
 	}
@@ -46,6 +46,8 @@ type dependencies struct {
 	signUrlBase  string
 	signLogin    string
 	signPassword string
+
+	adminAccount string
 }
 
 func (d *dependencies) setDefaults() {
@@ -78,5 +80,11 @@ func WithSignCredentials(signUrlBase, signLogin, signPassword string) Option {
 		d.signUrlBase = signUrlBase
 		d.signLogin = signLogin
 		d.signPassword = signPassword
+	}
+}
+
+func WithAdmin(input string) Option {
+	return func(d *dependencies) {
+		d.adminAccount = input
 	}
 }

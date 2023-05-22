@@ -17,10 +17,11 @@ var credentialsSA []byte
 func TestGetApplication(t *testing.T) {
 	var (
 		ctx           = context.Background()
+		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
 		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount)
 	require.Nil(t, err)
 
 	application, err := cli.GetApplication(ctx, spreadsheetID)
@@ -32,10 +33,11 @@ func TestGetApplication(t *testing.T) {
 func TestGetAttachments(t *testing.T) {
 	var (
 		ctx           = context.Background()
+		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
 		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount)
 	require.Nil(t, err)
 
 	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)
@@ -61,10 +63,11 @@ func TestGetAttachments(t *testing.T) {
 func TestGetExpensesData(t *testing.T) {
 	var (
 		ctx           = context.Background()
+		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
 		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount)
 	require.Nil(t, err)
 
 	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)
@@ -79,10 +82,11 @@ func TestGetExpensesData(t *testing.T) {
 func TestHasMergedCells(t *testing.T) {
 	var (
 		ctx           = context.Background()
+		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
 		spreadsheetID = "15wAKoZVRz1FbayCTA9SjYvIs3v_vbTZB2_mgIlhJL0g"
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount)
 	require.Nil(t, err)
 
 	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)

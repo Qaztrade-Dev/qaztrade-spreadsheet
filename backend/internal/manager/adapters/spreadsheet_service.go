@@ -3,6 +3,7 @@ package adapters
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 	"google.golang.org/api/drive/v3"
@@ -11,13 +12,14 @@ import (
 )
 
 type SpreadsheetServiceGoogle struct {
-	driveSvc  *drive.Service
-	sheetsSvc *sheets.Service
+	driveSvc     *drive.Service
+	sheetsSvc    *sheets.Service
+	adminAccount string
 }
 
 var _ domain.SpreadsheetService = (*SpreadsheetServiceGoogle)(nil)
 
-func NewSpreadsheetService(ctx context.Context, credentialsJson []byte) (*SpreadsheetServiceGoogle, error) {
+func NewSpreadsheetService(ctx context.Context, credentialsJson []byte, adminAccount string) (*SpreadsheetServiceGoogle, error) {
 	driveSvc, err := drive.NewService(ctx, option.WithCredentialsJSON(credentialsJson))
 	if err != nil {
 		return nil, err
@@ -29,8 +31,9 @@ func NewSpreadsheetService(ctx context.Context, credentialsJson []byte) (*Spread
 	}
 
 	return &SpreadsheetServiceGoogle{
-		driveSvc:  driveSvc,
-		sheetsSvc: sheetsSvc,
+		driveSvc:     driveSvc,
+		sheetsSvc:    sheetsSvc,
+		adminAccount: adminAccount,
 	}, err
 }
 
@@ -55,6 +58,73 @@ func (s *SpreadsheetServiceGoogle) SwitchModeEdit(ctx context.Context, spreadshe
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *SpreadsheetServiceGoogle) BlockImportantRanges(ctx context.Context, spreadsheetID string) error {
+	spreadsheet, err := s.sheetsSvc.Spreadsheets.Get(spreadsheetID).Do()
+	if err != nil {
+		return err
+	}
+
+	batch := NewBatchUpdate(s.sheetsSvc)
+
+	for _, namedRange := range spreadsheet.NamedRanges {
+		namedRange := namedRange
+		if strings.Contains(namedRange.Name, "_blocked_") {
+			batch.WithRequest(
+				&sheets.Request{
+					AddProtectedRange: &sheets.AddProtectedRangeRequest{
+						ProtectedRange: &sheets.ProtectedRange{
+							Description: namedRange.Name,
+							Editors: &sheets.Editors{
+								Users: []string{s.adminAccount},
+							},
+							Range: &sheets.GridRange{
+								SheetId:          namedRange.Range.SheetId,
+								StartColumnIndex: namedRange.Range.StartColumnIndex,
+								EndColumnIndex:   namedRange.Range.EndColumnIndex,
+							},
+						},
+					},
+				},
+			)
+		}
+	}
+
+	if err := batch.Do(ctx, spreadsheetID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SpreadsheetServiceGoogle) UnlockImportantRanges(ctx context.Context, spreadsheetID string) error {
+	spreadsheet, err := s.sheetsSvc.Spreadsheets.Get(spreadsheetID).Do()
+	if err != nil {
+		return err
+	}
+
+	batch := NewBatchUpdate(s.sheetsSvc)
+
+	for _, sheet := range spreadsheet.Sheets {
+		for _, protectedRange := range sheet.ProtectedRanges {
+			if strings.Contains(protectedRange.Description, "_blocked_") {
+				batch.WithRequest(
+					&sheets.Request{
+						DeleteProtectedRange: &sheets.DeleteProtectedRangeRequest{
+							ProtectedRangeId: protectedRange.ProtectedRangeId,
+						},
+					},
+				)
+			}
+		}
+	}
+
+	if err := batch.Do(ctx, spreadsheetID); err != nil {
+		return err
+	}
+
 	return nil
 }
 

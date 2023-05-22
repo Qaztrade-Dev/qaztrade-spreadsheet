@@ -24,16 +24,50 @@ func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) er
 	}
 
 	var (
-		isUserFilling = (req.StatusName == domain.StatusUserFilling)
-		isUserFixing  = (req.StatusName == domain.StatusUserFixing)
+		isManagerReviewing = (req.StatusName == domain.StatusManagerReviewing)
+		isUserFilling      = (req.StatusName == domain.StatusUserFilling)
+		isUserFixing       = (req.StatusName == domain.StatusUserFixing)
+
+		mustSwitchModeEdit        = false
+		mustSwitchModeRead        = false
+		mustBlockImportantRanges  = false
+		mustUnlockImportantRanges = false
 	)
 
-	if isUserFilling || isUserFixing {
+	switch {
+	case isUserFilling:
+		mustSwitchModeEdit = true
+		mustUnlockImportantRanges = true
+	case isUserFixing:
+		mustSwitchModeEdit = true
+		mustUnlockImportantRanges = true
+	case isManagerReviewing:
+		mustSwitchModeRead = true
+		mustBlockImportantRanges = true
+	default:
+		mustSwitchModeRead = true
+	}
+
+	if mustSwitchModeEdit {
 		if err := s.spreadsheetSvc.SwitchModeEdit(ctx, application.SpreadsheetID); err != nil {
 			return err
 		}
-	} else {
+	}
+
+	if mustSwitchModeRead {
 		if err := s.spreadsheetSvc.SwitchModeRead(ctx, application.SpreadsheetID); err != nil {
+			return err
+		}
+	}
+
+	if mustBlockImportantRanges {
+		if err := s.spreadsheetSvc.BlockImportantRanges(ctx, application.SpreadsheetID); err != nil {
+			return err
+		}
+	}
+
+	if mustUnlockImportantRanges {
+		if err := s.spreadsheetSvc.UnlockImportantRanges(ctx, application.SpreadsheetID); err != nil {
 			return err
 		}
 	}

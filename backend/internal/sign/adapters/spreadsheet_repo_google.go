@@ -21,11 +21,12 @@ type SpreadsheetClient struct {
 	sheetsService *sheets.Service
 	driveService  *drive.Service
 	credentials   *google.Credentials
+	adminAccount  string
 }
 
 var _ domain.SpreadsheetRepository = (*SpreadsheetClient)(nil)
 
-func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte) (*SpreadsheetClient, error) {
+func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte, adminAccount string) (*SpreadsheetClient, error) {
 	sheetsService, err := sheets.NewService(
 		ctx,
 		option.WithCredentialsJSON(credentialsJson),
@@ -55,6 +56,7 @@ func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte) (*Spreads
 		sheetsService: sheetsService,
 		driveService:  driveService,
 		credentials:   credentials,
+		adminAccount:  adminAccount,
 	}, nil
 }
 
@@ -413,6 +415,44 @@ func (s *SpreadsheetClient) SwitchModeRead(ctx context.Context, spreadsheetID st
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *SpreadsheetClient) BlockImportantRanges(ctx context.Context, spreadsheetID string) error {
+	spreadsheet, err := s.sheetsService.Spreadsheets.Get(spreadsheetID).Do()
+	if err != nil {
+		return err
+	}
+
+	batch := NewBatchUpdate(s.sheetsService)
+
+	for _, namedRange := range spreadsheet.NamedRanges {
+		namedRange := namedRange
+		if strings.Contains(namedRange.Name, "_blocked_") {
+			batch.WithRequest(
+				&sheets.Request{
+					AddProtectedRange: &sheets.AddProtectedRangeRequest{
+						ProtectedRange: &sheets.ProtectedRange{
+							Description: namedRange.Name,
+							Editors: &sheets.Editors{
+								Users: []string{s.adminAccount},
+							},
+							Range: &sheets.GridRange{
+								SheetId:          namedRange.Range.SheetId,
+								StartColumnIndex: namedRange.Range.StartColumnIndex,
+								EndColumnIndex:   namedRange.Range.EndColumnIndex,
+							},
+						},
+					},
+				},
+			)
+		}
+	}
+
+	if err := batch.Do(ctx, spreadsheetID); err != nil {
+		return err
+	}
+
 	return nil
 }
 
