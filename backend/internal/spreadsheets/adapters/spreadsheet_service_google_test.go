@@ -140,9 +140,9 @@ func TestTest(t *testing.T) {
 		destinationFolderId,
 	)
 
-	err = svc.Test(ctx)
+	err = svc.ActivateBlockedRanges(ctx)
 	if err != nil {
-		t.Fatal("AddSheet error:", err)
+		t.Fatal("Test error:", err)
 	}
 }
 
