@@ -22,7 +22,7 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		panic(err)
 	}
 
-	spreadsheetSvc, err := adapters.NewSpreadsheetClient(ctx, deps.credentialsSA, deps.adminAccount)
+	spreadsheetSvc, err := adapters.NewSpreadsheetClient(ctx, deps.credentialsSA, deps.adminAccount, deps.svcAccount)
 	if err != nil {
 		panic(err)
 	}
@@ -47,6 +47,7 @@ type dependencies struct {
 	jwtcli        *jwt.Client
 
 	adminAccount string
+	svcAccount   string
 }
 
 func (d *dependencies) setDefaults() {
@@ -82,5 +83,11 @@ func WithSignCredentials(signUrlBase, signLogin, signPassword string) Option {
 func WithAdmin(input string) Option {
 	return func(d *dependencies) {
 		d.adminAccount = input
+	}
+}
+
+func WithServiceAccount(input string) Option {
+	return func(d *dependencies) {
+		d.svcAccount = input
 	}
 }

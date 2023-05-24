@@ -18,10 +18,11 @@ func TestGetApplication(t *testing.T) {
 	var (
 		ctx           = context.Background()
 		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
+		svcAccount    = os.Getenv("SERVICE_ACCOUNT")
 		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
 	require.Nil(t, err)
 
 	application, err := cli.GetApplication(ctx, spreadsheetID)
@@ -34,10 +35,11 @@ func TestGetAttachments(t *testing.T) {
 	var (
 		ctx           = context.Background()
 		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
+		svcAccount    = os.Getenv("SERVICE_ACCOUNT")
 		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
 	require.Nil(t, err)
 
 	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)
@@ -64,10 +66,11 @@ func TestGetExpensesData(t *testing.T) {
 	var (
 		ctx           = context.Background()
 		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
+		svcAccount    = os.Getenv("SERVICE_ACCOUNT")
 		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
 	require.Nil(t, err)
 
 	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)
@@ -83,10 +86,11 @@ func TestHasMergedCells(t *testing.T) {
 	var (
 		ctx           = context.Background()
 		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
+		svcAccount    = os.Getenv("SERVICE_ACCOUNT")
 		spreadsheetID = "15wAKoZVRz1FbayCTA9SjYvIs3v_vbTZB2_mgIlhJL0g"
 	)
 
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount)
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
 	require.Nil(t, err)
 
 	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)
@@ -95,4 +99,19 @@ func TestHasMergedCells(t *testing.T) {
 	hasMergedCells, err := cli.HasMergedCells(ctx, spreadsheetID, expensesTitles)
 	require.Nil(t, err)
 	require.False(t, hasMergedCells)
+}
+
+func TestBlockImportantRanges(t *testing.T) {
+	var (
+		ctx           = context.Background()
+		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
+		svcAccount    = os.Getenv("SERVICE_ACCOUNT")
+		spreadsheetID = "13mbVQopQziZO4lEok42y-ThyVdX8Fk8AHF5qbrVR0nw"
+	)
+
+	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
+	require.Nil(t, err)
+
+	err = cli.BlockImportantRanges(ctx, spreadsheetID)
+	require.Nil(t, err)
 }

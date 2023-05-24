@@ -128,6 +128,7 @@ func main() {
 			sign.WithSignCredentials(signUrlBase, signLogin, signPassword),
 			sign.WithCredentialsSA(credentialsSA),
 			sign.WithAdmin(adminAccount),
+			sign.WithServiceAccount(svcAccount),
 		)
 	)
 

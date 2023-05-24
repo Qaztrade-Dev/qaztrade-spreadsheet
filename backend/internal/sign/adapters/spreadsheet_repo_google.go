@@ -22,11 +22,12 @@ type SpreadsheetClient struct {
 	driveService  *drive.Service
 	credentials   *google.Credentials
 	adminAccount  string
+	svcAccount    string
 }
 
 var _ domain.SpreadsheetRepository = (*SpreadsheetClient)(nil)
 
-func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte, adminAccount string) (*SpreadsheetClient, error) {
+func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte, adminAccount, svcAccount string) (*SpreadsheetClient, error) {
 	sheetsService, err := sheets.NewService(
 		ctx,
 		option.WithCredentialsJSON(credentialsJson),
@@ -57,6 +58,7 @@ func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte, adminAcco
 		driveService:  driveService,
 		credentials:   credentials,
 		adminAccount:  adminAccount,
+		svcAccount:    svcAccount,
 	}, nil
 }
 
@@ -435,7 +437,10 @@ func (s *SpreadsheetClient) BlockImportantRanges(ctx context.Context, spreadshee
 						ProtectedRange: &sheets.ProtectedRange{
 							Description: namedRange.Name,
 							Editors: &sheets.Editors{
-								Users: []string{s.adminAccount},
+								Users: []string{
+									s.adminAccount,
+									s.svcAccount,
+								},
 							},
 							Range: &sheets.GridRange{
 								SheetId:          namedRange.Range.SheetId,
