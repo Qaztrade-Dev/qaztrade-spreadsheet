@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -44,6 +45,8 @@ func DecodeUploadFileRequest(_ context.Context, r *http.Request) (interface{}, e
 		fileSize = header.Size
 		jsonData = r.FormValue("selected_cell")
 	)
+
+	log.Printf("filename: %q\n", fileName)
 
 	var body struct {
 		SheetName string `json:"sheet_name"`
