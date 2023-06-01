@@ -112,7 +112,7 @@ func (s *SigningServiceDoodocs) authenticate(ctx context.Context) (*signingServi
 func (s *signingServiceDoodocsSession) uploadPDF(ctx context.Context, documentName string, fileReader io.Reader) (string, error) {
 	var (
 		teamspaceID = "09852313-811c-43aa-bd63-529b3cf539af"
-		url         = fmt.Sprintf("%s/api/v1/partners/documents/pdf", s.urlBase)
+		url         = fmt.Sprintf("%s/api/v1/documents/pdf", s.urlBase)
 		body        = &bytes.Buffer{}
 		writer      = multipart.NewWriter(body)
 	)
