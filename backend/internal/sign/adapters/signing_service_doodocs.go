@@ -111,9 +111,10 @@ func (s *SigningServiceDoodocs) authenticate(ctx context.Context) (*signingServi
 
 func (s *signingServiceDoodocsSession) uploadPDF(ctx context.Context, documentName string, fileReader io.Reader) (string, error) {
 	var (
-		url    = fmt.Sprintf("%s/api/v1/partners/documents/pdf", s.urlBase)
-		body   = &bytes.Buffer{}
-		writer = multipart.NewWriter(body)
+		teamspaceID = "09852313-811c-43aa-bd63-529b3cf539af"
+		url         = fmt.Sprintf("%s/api/v1/partners/documents/pdf", s.urlBase)
+		body        = &bytes.Buffer{}
+		writer      = multipart.NewWriter(body)
 	)
 
 	part, err := writer.CreateFormFile("file", "file.pdf")
@@ -127,6 +128,10 @@ func (s *signingServiceDoodocsSession) uploadPDF(ctx context.Context, documentNa
 	}
 
 	if err := writer.WriteField("document_name", documentName); err != nil {
+		return "", err
+	}
+
+	if err := writer.WriteField("teamspace_id", teamspaceID); err != nil {
 		return "", err
 	}
 
