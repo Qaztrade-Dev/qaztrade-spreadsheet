@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"time"
 
 	"golang.org/x/net/context"
 )
@@ -35,6 +36,7 @@ type CreateSigningDocumentResponse struct {
 }
 
 type SigningService interface {
+	GetSigningTime(ctx context.Context, documentID string) (time.Time, error)
 	CreateSigningDocument(ctx context.Context, documentName string, documentReader io.Reader) (*CreateSigningDocumentResponse, error)
 }
 
@@ -54,7 +56,7 @@ type SignApplication struct {
 
 type ApplicationRepository interface {
 	AssignSigningInfo(ctx context.Context, spreadsheetID string, info *CreateSigningDocumentResponse) error
-	ConfirmSigningInfo(ctx context.Context, spreadsheetID string) error
+	ConfirmSigningInfo(ctx context.Context, spreadsheetID, signedAtStr string) error
 	GetApplication(ctx context.Context, spreadsheetID string) (*SignApplication, error)
 	EditStatus(ctx context.Context, spreadsheetID, statusName string) error
 	GetApplicationByDocumentID(ctx context.Context, documentID string) (*SignApplication, error)

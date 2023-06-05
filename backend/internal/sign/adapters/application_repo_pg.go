@@ -35,16 +35,16 @@ func (r *ApplicationRepositoryPostgre) AssignSigningInfo(ctx context.Context, sp
 	return nil
 }
 
-func (r *ApplicationRepositoryPostgre) ConfirmSigningInfo(ctx context.Context, spreadsheetID string) error {
+func (r *ApplicationRepositoryPostgre) ConfirmSigningInfo(ctx context.Context, spreadsheetID, signedAtStr string) error {
 	const sql = `
 		update "applications" set
 			is_signed=true,
-			sign_at=now()
+			sign_at=$2
 		where 
 			spreadsheet_id=$1
 	`
 
-	if _, err := r.pg.Exec(ctx, sql, spreadsheetID); err != nil {
+	if _, err := r.pg.Exec(ctx, sql, spreadsheetID, signedAtStr); err != nil {
 		return err
 	}
 

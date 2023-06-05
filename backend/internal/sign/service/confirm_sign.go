@@ -12,7 +12,7 @@ type ConfirmSignRequest struct {
 }
 
 func (s *service) ConfirmSign(ctx context.Context, req *ConfirmSignRequest) error {
-	signingTime, err := createSigningTime()
+	signingTime, err := s.signSvc.GetSigningTime(ctx, req.SignDocumentID)
 	if err != nil {
 		return err
 	}
@@ -22,11 +22,16 @@ func (s *service) ConfirmSign(ctx context.Context, req *ConfirmSignRequest) erro
 		return err
 	}
 
-	if err := s.spreadsheetRepo.UpdateSigningTime(ctx, application.SpreadsheetID, signingTime); err != nil {
+	signingTimeStr, err := createSigningTimeStr(signingTime)
+	if err != nil {
 		return err
 	}
 
-	if err := s.applicationRepo.ConfirmSigningInfo(ctx, application.SpreadsheetID); err != nil {
+	if err := s.spreadsheetRepo.UpdateSigningTime(ctx, application.SpreadsheetID, signingTimeStr); err != nil {
+		return err
+	}
+
+	if err := s.applicationRepo.ConfirmSigningInfo(ctx, application.SpreadsheetID, signingTimeStr); err != nil {
 		return err
 	}
 
@@ -45,14 +50,12 @@ func (s *service) ConfirmSign(ctx context.Context, req *ConfirmSignRequest) erro
 	return nil
 }
 
-func createSigningTime() (string, error) {
-	now := time.Now()
-
+func createSigningTimeStr(tm time.Time) (string, error) {
 	location, err := time.LoadLocation("Asia/Almaty")
 	if err != nil {
 		return "", err
 	}
 
-	timeStr := now.In(location).Format("02.01.2006")
+	timeStr := tm.In(location).Format("02.01.2006")
 	return timeStr, nil
 }

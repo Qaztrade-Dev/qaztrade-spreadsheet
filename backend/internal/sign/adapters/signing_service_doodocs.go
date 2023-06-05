@@ -5,11 +5,13 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
 )
@@ -65,6 +67,31 @@ func (s *SigningServiceDoodocs) CreateSigningDocument(ctx context.Context, docum
 	}
 
 	return result, nil
+}
+
+func (s *SigningServiceDoodocs) GetSigningTime(ctx context.Context, documentID string) (time.Time, error) {
+	session, err := s.authenticate(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	resp, err := session.getRecipients(ctx, documentID)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	if len(resp.Recipients) == 0 {
+		return time.Time{}, errors.New("no recipients")
+	}
+
+	layout := "2006-01-02T15:04:05.00-0700"
+	signingTime := resp.Recipients[0].ResultAt
+	resultTime, err := time.Parse(layout, signingTime)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return resultTime, nil
 }
 
 type signingServiceDoodocsSession struct {
@@ -231,6 +258,7 @@ func (s *signingServiceDoodocsSession) launchDocument(ctx context.Context, docum
 type recipientsResponse struct {
 	Recipients []struct {
 		OriginID string `json:"origin_id"`
+		ResultAt string `json:"result_at"`
 	} `json:"recipients"`
 }
 
