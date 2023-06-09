@@ -140,7 +140,7 @@ func TestTest(t *testing.T) {
 		destinationFolderId,
 	)
 
-	err = svc.ActivateBlockedRanges(ctx)
+	err = svc.GetExpoCount(ctx)
 	if err != nil {
 		t.Fatal("Test error:", err)
 	}

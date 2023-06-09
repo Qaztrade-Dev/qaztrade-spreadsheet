@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"google.golang.org/api/drive/v3"
@@ -622,6 +623,59 @@ func (s *SpreadsheetServiceGoogle) ActivateBlockedRanges(ctx context.Context) er
 		}
 
 		fmt.Printf("%v/%v\n", i+1, len(spreadsheetIDs))
+	}
+
+	return nil
+}
+
+func (s *SpreadsheetServiceGoogle) GetExpoCount(ctx context.Context) error {
+	httpClient, err := s.oauth2.GetClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	driveSvc, err := drive.NewService(ctx, option.WithHTTPClient(httpClient))
+	if err != nil {
+		return err
+	}
+
+	spreadsheetsSvc, err := sheets.NewService(ctx, option.WithHTTPClient(httpClient))
+	if err != nil {
+		return err
+	}
+
+	query := fmt.Sprintf("mimeType!='application/vnd.google-apps.folder' and trashed = false and '%s' in parents", s.destinationFolderID)
+	fileListCall := driveSvc.Files.List().Q(query).Fields("nextPageToken, files(id, name)").OrderBy("createdTime asc")
+
+	spreadsheetIDs := make([]string, 0)
+	err = fileListCall.Pages(ctx, func(filesList *drive.FileList) error {
+		for _, file := range filesList.Files {
+			spreadsheetIDs = append(spreadsheetIDs, file.Id)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	count := 18
+	spreadsheetIDs = spreadsheetIDs[268:]
+	for i, spreadsheetID := range spreadsheetIDs {
+		spreadsheetID := spreadsheetID
+
+		spreadsheet, err := spreadsheetsSvc.Spreadsheets.Get(spreadsheetID).Do()
+		if err != nil {
+			return err
+		}
+
+		for _, sheet := range spreadsheet.Sheets {
+			if sheet.Properties.Title == "Затраты на участие в выставках" {
+				count++
+			}
+		}
+
+		fmt.Printf("%v/%v, count: %v\n", i+1, len(spreadsheetIDs), count)
+		time.Sleep(time.Second)
 	}
 
 	return nil
