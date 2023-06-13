@@ -236,6 +236,7 @@ func (c *SpreadsheetServiceGoogle) AddSheet(ctx context.Context, spreadsheetID s
 			"Затраты на перевод":                          545808572,
 			"Затраты на рекламу товаров за рубежом":       1112839101,
 			"Затраты на участие в выставках":              662810845,
+			"Затраты на участие в выставках ИКУ":          1197759146,
 		}
 		sourceSheetID = mappings[sheetName]
 	)
