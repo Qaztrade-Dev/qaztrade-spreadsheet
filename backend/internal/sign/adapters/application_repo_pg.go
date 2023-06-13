@@ -39,7 +39,7 @@ func (r *ApplicationRepositoryPostgre) ConfirmSigningInfo(ctx context.Context, s
 	const sql = `
 		update "applications" set
 			is_signed=true,
-			sign_at=$2
+			sign_at=TO_TIMESTAMP($2, 'DD.MM.YYYY')
 		where 
 			spreadsheet_id=$1
 	`
