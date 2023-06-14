@@ -84,9 +84,8 @@ func (s *SigningServiceDoodocs) GetSigningTime(ctx context.Context, documentID s
 		return time.Time{}, errors.New("no recipients")
 	}
 
-	layout := "2006-01-02T15:04:05.00-0700"
 	signingTime := resp.Recipients[0].ResultAt
-	resultTime, err := time.Parse(layout, signingTime)
+	resultTime, err := time.Parse(domain.TimestampLayout, signingTime)
 	if err != nil {
 		return time.Time{}, err
 	}

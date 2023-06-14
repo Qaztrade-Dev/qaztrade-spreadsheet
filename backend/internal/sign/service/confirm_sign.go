@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
 )
@@ -12,7 +11,7 @@ type ConfirmSignRequest struct {
 }
 
 func (s *service) ConfirmSign(ctx context.Context, req *ConfirmSignRequest) error {
-	signingTime, err := s.signSvc.GetSigningTime(ctx, req.SignDocumentID)
+	signedAt, err := s.signSvc.GetSigningTime(ctx, req.SignDocumentID)
 	if err != nil {
 		return err
 	}
@@ -22,16 +21,11 @@ func (s *service) ConfirmSign(ctx context.Context, req *ConfirmSignRequest) erro
 		return err
 	}
 
-	signingTimeStr, err := createSigningTimeStr(signingTime)
-	if err != nil {
+	if err := s.spreadsheetRepo.UpdateSigningTime(ctx, application.SpreadsheetID, signedAt); err != nil {
 		return err
 	}
 
-	if err := s.spreadsheetRepo.UpdateSigningTime(ctx, application.SpreadsheetID, signingTimeStr); err != nil {
-		return err
-	}
-
-	if err := s.applicationRepo.ConfirmSigningInfo(ctx, application.SpreadsheetID, signingTimeStr); err != nil {
+	if err := s.applicationRepo.ConfirmSigningInfo(ctx, application.SpreadsheetID, signedAt); err != nil {
 		return err
 	}
 
@@ -48,14 +42,4 @@ func (s *service) ConfirmSign(ctx context.Context, req *ConfirmSignRequest) erro
 	}
 
 	return nil
-}
-
-func createSigningTimeStr(tm time.Time) (string, error) {
-	location, err := time.LoadLocation("Asia/Almaty")
-	if err != nil {
-		return "", err
-	}
-
-	timeStr := tm.In(location).Format("02.01.2006")
-	return timeStr, nil
 }

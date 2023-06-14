@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
 	"golang.org/x/oauth2/google"
@@ -420,12 +421,13 @@ func (p *exportRequest) getRange() string {
 	return rangeA1
 }
 
-func (c *SpreadsheetClient) UpdateSigningTime(ctx context.Context, spreadsheetID, signingTime string) error {
+func (c *SpreadsheetClient) UpdateSigningTime(ctx context.Context, spreadsheetID string, signedAt time.Time) error {
+	signedAtStr := domain.GetDate(signedAt)
 	var mappings = []struct {
 		Range string
 		Value string
 	}{
-		{Range: "signing_time", Value: signingTime},
+		{Range: "signing_time", Value: signedAtStr},
 	}
 
 	data := make([]*sheets.ValueRange, 0, len(mappings))

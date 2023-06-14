@@ -73,14 +73,7 @@ func SheetsAgg(input []*Sheet) *Sheet {
 
 func GetApplicationDate() string {
 	now := time.Now()
-
-	location, err := time.LoadLocation("Asia/Almaty")
-	if err != nil {
-		return now.Format("02.01.2006")
-	}
-
-	timeStr := now.In(location).Format("02.01.2006")
-	return timeStr
+	return GetDate(now)
 }
 
 func GetDocumentName(bin string) string {
@@ -89,6 +82,16 @@ func GetDocumentName(bin string) string {
 		documentName = fmt.Sprintf("Заявление %s %s", bin, timeStr)
 	)
 	return documentName
+}
+
+func GetDate(tm time.Time) string {
+	location, err := time.LoadLocation("Asia/Almaty")
+	if err == nil {
+		tm = tm.In(location)
+	}
+
+	timeStr := tm.Format("02.01.2006")
+	return timeStr
 }
 
 type ApplicationAttrs struct {
@@ -104,7 +107,7 @@ type SpreadsheetRepository interface {
 	GetSheets(ctx context.Context, spreadsheetID string) ([]*Sheet, error)
 
 	GetAttachments(ctx context.Context, spreadsheetID string, sheets []*Sheet) ([]io.ReadSeeker, error)
-	UpdateSigningTime(ctx context.Context, spreadsheetID, signingTime string) error
+	UpdateSigningTime(ctx context.Context, spreadsheetID string, signedAt time.Time) error
 	SwitchModeRead(ctx context.Context, spreadsheetID string) error
 	BlockImportantRanges(ctx context.Context, spreadsheetID string) error
 	HasMergedCells(ctx context.Context, spreadsheetID string, sheets []*Sheet) (bool, error)
@@ -114,6 +117,8 @@ type CreateSigningDocumentResponse struct {
 	DocumentID string
 	SignLink   string
 }
+
+var TimestampLayout = "2006-01-02T15:04:05.00-0700"
 
 type SigningService interface {
 	GetSigningTime(ctx context.Context, documentID string) (time.Time, error)
@@ -137,7 +142,7 @@ type SignApplication struct {
 type ApplicationRepository interface {
 	AssignSigningInfo(ctx context.Context, spreadsheetID string, info *CreateSigningDocumentResponse) error
 	AssignAttrs(ctx context.Context, spreadsheetID string, input *ApplicationAttrs) error
-	ConfirmSigningInfo(ctx context.Context, spreadsheetID, signedAtStr string) error
+	ConfirmSigningInfo(ctx context.Context, spreadsheetID string, signedAt time.Time) error
 	GetApplication(ctx context.Context, spreadsheetID string) (*SignApplication, error)
 	EditStatus(ctx context.Context, spreadsheetID, statusName string) error
 	GetApplicationByDocumentID(ctx context.Context, documentID string) (*SignApplication, error)

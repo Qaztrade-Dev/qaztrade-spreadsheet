@@ -3,6 +3,7 @@ package adapters
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
 	"github.com/doodocs/qaztrade/backend/internal/sign/pkg/jsondomain"
@@ -58,11 +59,12 @@ func (r *ApplicationRepositoryPostgre) AssignAttrs(ctx context.Context, spreadsh
 	return nil
 }
 
-func (r *ApplicationRepositoryPostgre) ConfirmSigningInfo(ctx context.Context, spreadsheetID, signedAtStr string) error {
+func (r *ApplicationRepositoryPostgre) ConfirmSigningInfo(ctx context.Context, spreadsheetID string, signedAt time.Time) error {
+	signedAtStr := signedAt.Format(domain.TimestampLayout)
 	const sql = `
 		update "applications" set
 			is_signed=true,
-			sign_at=TO_TIMESTAMP($2, 'DD.MM.YYYY')
+			sign_at=$2
 		where 
 			spreadsheet_id=$1
 	`
