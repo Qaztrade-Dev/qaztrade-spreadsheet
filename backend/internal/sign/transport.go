@@ -50,8 +50,8 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 	r := mux.NewRouter()
 	r.Handle("/sign/", createSignHandler).Methods("POST")
 	r.Handle("/sign/callback", confirmSignHandler).Methods("POST")
-	r.Handle("/sync/spreadsheets", syncSpreadsheetsHandler).Methods("POST")
-	r.Handle("/sync/sign", syncSigningTimeHandler).Methods("POST")
+	r.Handle("/sign/sync/spreadsheets", syncSpreadsheetsHandler).Methods("POST")
+	r.Handle("/sign/sync/sign", syncSigningTimeHandler).Methods("POST")
 
 	return r
 }
