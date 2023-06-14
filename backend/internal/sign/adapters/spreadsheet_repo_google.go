@@ -140,10 +140,15 @@ func (c *SpreadsheetClient) getDataFromRanges(ctx context.Context, spreadsheetID
 	return datas, nil
 }
 
-func (c *SpreadsheetClient) GetExpenseValues(ctx context.Context, spreadsheetID string, expensesTitles []string) ([]float64, error) {
-	strRanges := make([]string, 0, len(expensesTitles))
-	for i := range expensesTitles {
-		strRanges = append(strRanges, fmt.Sprintf("'%s'!%s_expense_value", expensesTitles[i], strings.ReplaceAll(expensesTitles[i], " ", "_")))
+func (c *SpreadsheetClient) getExpenseValues(ctx context.Context, spreadsheetID string, sheetTitles []string) ([]float64, error) {
+	strRanges := make([]string, 0, len(sheetTitles))
+	for i := range sheetTitles {
+		strRange := fmt.Sprintf(
+			"'%s'!%s_expense_value",
+			sheetTitles[i],
+			strings.ReplaceAll(sheetTitles[i], " ", "_"),
+		)
+		strRanges = append(strRanges, strRange)
 	}
 
 	batchDataValues, err := c.getDataFromRanges(ctx, spreadsheetID, strRanges)
@@ -151,7 +156,7 @@ func (c *SpreadsheetClient) GetExpenseValues(ctx context.Context, spreadsheetID 
 		return nil, err
 	}
 
-	expenseValues := make([]float64, len(expensesTitles))
+	expenseValues := make([]float64, len(sheetTitles))
 	for i := range batchDataValues {
 		var value string
 		if len(batchDataValues[i]) > 0 && len(batchDataValues[i][0]) > 0 {
@@ -171,49 +176,85 @@ func (c *SpreadsheetClient) GetExpenseValues(ctx context.Context, spreadsheetID 
 	return expenseValues, nil
 }
 
-func (c *SpreadsheetClient) GetExpensesSheetTitles(ctx context.Context, spreadsheetID string) ([]string, error) {
+func (c *SpreadsheetClient) GetSheets(ctx context.Context, spreadsheetID string) ([]*domain.Sheet, error) {
 	spreadsheet, err := c.sheetsService.Spreadsheets.Get(spreadsheetID).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	sheetTitles := make([]string, 0)
+	sheets := make([]*domain.Sheet, 0, len(spreadsheet.Sheets))
 	for _, sheet := range spreadsheet.Sheets {
 		switch sheet.Properties.Title {
 		case "Заявление", "ТНВЭД", "ОКВЭД":
 			continue
 		}
-		sheetTitles = append(sheetTitles, sheet.Properties.Title)
+		sheets = append(sheets, &domain.Sheet{
+			Title:   sheet.Properties.Title,
+			SheetID: sheet.Properties.SheetId,
+		})
 	}
-	return sheetTitles, nil
+
+	sheetTitles := domain.SheetTitles(sheets)
+
+	sheetExpenses, err := c.getExpenseValues(ctx, spreadsheetID, sheetTitles)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range sheetExpenses {
+		sheets[i].Expenses = sheetExpenses[i]
+	}
+
+	dataRanges, err := c.getDataRanges(ctx, spreadsheetID, sheetTitles)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range sheetExpenses {
+		sheets[i].Rows = (dataRanges[i].RowEnd - dataRanges[i].RowStart) - 3 + 1
+	}
+
+	return sheets, nil
 }
 
-func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID string, expensesTitles []string) ([]io.ReadSeeker, error) {
-	spreadsheet, err := c.sheetsService.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Ranges(expensesTitles...).Context(ctx).Do()
+func (c *SpreadsheetClient) getDataRanges(ctx context.Context, spreadsheetID string, sheetTitles []string) ([]*getDataRangeResponse, error) {
+	spreadsheet, err := c.sheetsService.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Ranges(sheetTitles...).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}
 
 	sheets := spreadsheet.Sheets
-
-	exportRequests := make([]*exportRequest, 0, len(sheets))
+	result := make([]*getDataRangeResponse, 0, len(sheets))
 	for _, sheet := range sheets {
-		nonEmptyRange := getNonEmptyRange(sheet)
-		if nonEmptyRange.RowEnd <= 2 {
+		result = append(result, getDataRange(sheet))
+	}
+	return result, nil
+}
+
+func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID string, inputSheets []*domain.Sheet) ([]io.ReadSeeker, error) {
+	sheetTitles := domain.SheetTitles(inputSheets)
+	dataRanges, err := c.getDataRanges(ctx, spreadsheetID, sheetTitles)
+	if err != nil {
+		return nil, err
+	}
+
+	exportRequests := make([]*exportRequest, 0, len(dataRanges))
+	for i, dataRange := range dataRanges {
+		if dataRange.RowEnd <= 2 {
 			continue
 		}
 
 		exportRequests = append(exportRequests, &exportRequest{
-			RowStart:      nonEmptyRange.RowStart,
-			RowEnd:        nonEmptyRange.RowEnd,
-			ColumnStart:   nonEmptyRange.ColumnStart,
-			ColumnEnd:     nonEmptyRange.ColumnEnd,
-			sheetID:       sheet.Properties.SheetId,
+			RowStart:      dataRange.RowStart,
+			RowEnd:        dataRange.RowEnd,
+			ColumnStart:   dataRange.ColumnStart,
+			ColumnEnd:     dataRange.ColumnEnd,
+			sheetID:       inputSheets[i].SheetID,
 			spreadsheetID: spreadsheetID,
 		})
 	}
 
-	attachments := make([]io.ReadSeeker, 0, len(sheets))
+	attachments := make([]io.ReadSeeker, 0, len(exportRequests))
 	for _, exportReq := range exportRequests {
 		req, err := http.NewRequestWithContext(ctx, "GET", exportReq.ExportURL(), nil)
 		if err != nil {
@@ -244,14 +285,14 @@ func (c *SpreadsheetClient) GetAttachments(ctx context.Context, spreadsheetID st
 	return attachments, nil
 }
 
-type getNonEmptyRangeResponse struct {
+type getDataRangeResponse struct {
 	RowStart    int64
 	RowEnd      int64 // inclusive
 	ColumnStart int64
 	ColumnEnd   int64
 }
 
-func getNonEmptyRange(sheet *sheets.Sheet) *getNonEmptyRangeResponse {
+func getDataRange(sheet *sheets.Sheet) *getDataRangeResponse {
 	var (
 		sheetLength = len(sheet.Data[0].RowData)
 		rowEnd      = sheetLength - 1
@@ -313,7 +354,7 @@ func getNonEmptyRange(sheet *sheets.Sheet) *getNonEmptyRangeResponse {
 		}
 	}
 
-	return &getNonEmptyRangeResponse{
+	return &getDataRangeResponse{
 		RowStart:    0,
 		RowEnd:      int64(rowEnd),
 		ColumnStart: 0,
@@ -461,15 +502,16 @@ func (s *SpreadsheetClient) BlockImportantRanges(ctx context.Context, spreadshee
 	return nil
 }
 
-func (s *SpreadsheetClient) HasMergedCells(ctx context.Context, spreadsheetID string, expensesTitles []string) (bool, error) {
+func (s *SpreadsheetClient) HasMergedCells(ctx context.Context, spreadsheetID string, sheets []*domain.Sheet) (bool, error) {
 	resp, err := s.sheetsService.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Do()
 	if err != nil {
 		return false, err
 	}
+	sheetTitles := domain.SheetTitles(sheets)
 
 	// Check if the range has merged cells
 	for _, sheet := range resp.Sheets {
-		if !sliceContains(expensesTitles, sheet.Properties.Title) {
+		if !sliceContains(sheetTitles, sheet.Properties.Title) {
 			continue
 		}
 

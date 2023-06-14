@@ -2,8 +2,10 @@ package adapters
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
+	"github.com/doodocs/qaztrade/backend/internal/sign/pkg/jsondomain"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -19,7 +21,7 @@ func NewApplicationRepositoryPostgre(pg *pgxpool.Pool) *ApplicationRepositoryPos
 	}
 }
 
-func (r *ApplicationRepositoryPostgre) AssignSigningInfo(ctx context.Context, spreadsheetID string, info *domain.CreateSigningDocumentResponse) error {
+func (r *ApplicationRepositoryPostgre) AssignSigningInfo(ctx context.Context, spreadsheetID string, input *domain.CreateSigningDocumentResponse) error {
 	const sql = `
 		update "applications" set
 			sign_link=$1,
@@ -28,7 +30,28 @@ func (r *ApplicationRepositoryPostgre) AssignSigningInfo(ctx context.Context, sp
 			spreadsheet_id=$3
 	`
 
-	if _, err := r.pg.Exec(ctx, sql, info.SignLink, info.DocumentID, spreadsheetID); err != nil {
+	if _, err := r.pg.Exec(ctx, sql, input.SignLink, input.DocumentID, spreadsheetID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *ApplicationRepositoryPostgre) AssignAttrs(ctx context.Context, spreadsheetID string, input *domain.ApplicationAttrs) error {
+	const sql = `
+		update "applications" set
+			attrs=$2
+		where 
+			spreadsheet_id=$1
+	`
+
+	attrs := jsondomain.EncodeApplicationAttrs(input)
+	attrsBytes, err := json.Marshal(attrs)
+	if err != nil {
+		return err
+	}
+
+	if _, err := r.pg.Exec(ctx, sql, spreadsheetID, string(attrsBytes)); err != nil {
 		return err
 	}
 

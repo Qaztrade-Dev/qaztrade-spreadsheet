@@ -42,15 +42,14 @@ func TestGetAttachments(t *testing.T) {
 	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
 	require.Nil(t, err)
 
-	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)
+	sheets, err := cli.GetSheets(ctx, spreadsheetID)
 	require.Nil(t, err)
 
-	fmt.Println(expensesTitles)
-	if len(expensesTitles) == 0 {
+	if len(sheets) == 0 {
 		return
 	}
 
-	attachments, err := cli.GetAttachments(ctx, spreadsheetID, expensesTitles)
+	attachments, err := cli.GetAttachments(ctx, spreadsheetID, sheets)
 	if err != nil {
 		t.Fatal("GetAttachments error:", err)
 	}
@@ -62,7 +61,7 @@ func TestGetAttachments(t *testing.T) {
 	}
 }
 
-func TestGetExpensesData(t *testing.T) {
+func TestGetSheets(t *testing.T) {
 	var (
 		ctx           = context.Background()
 		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
@@ -73,13 +72,10 @@ func TestGetExpensesData(t *testing.T) {
 	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
 	require.Nil(t, err)
 
-	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)
+	sheets, err := cli.GetSheets(ctx, spreadsheetID)
 	require.Nil(t, err)
-	fmt.Println(expensesTitles)
-
-	expensesValues, err := cli.GetExpenseValues(ctx, spreadsheetID, expensesTitles)
-	require.Nil(t, err)
-	fmt.Println(expensesValues)
+	fmt.Println(sheets)
+	fmt.Printf("%#v\n", sheets[0])
 }
 
 func TestHasMergedCells(t *testing.T) {
@@ -93,10 +89,10 @@ func TestHasMergedCells(t *testing.T) {
 	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
 	require.Nil(t, err)
 
-	expensesTitles, err := cli.GetExpensesSheetTitles(ctx, spreadsheetID)
+	sheets, err := cli.GetSheets(ctx, spreadsheetID)
 	require.Nil(t, err)
 
-	hasMergedCells, err := cli.HasMergedCells(ctx, spreadsheetID, expensesTitles)
+	hasMergedCells, err := cli.HasMergedCells(ctx, spreadsheetID, sheets)
 	require.Nil(t, err)
 	require.False(t, hasMergedCells)
 }

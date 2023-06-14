@@ -2,10 +2,7 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
 )
@@ -26,53 +23,47 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 		return linkbase + signApplication.SignLink, nil
 	}
 
+	sheets, err := s.spreadsheetRepo.GetSheets(ctx, req.SpreadsheetID)
+	if err != nil {
+		return "", err
+	}
+	if len(sheets) == 0 {
+		return "", domain.ErrorEmptySpreadsheet
+	}
+
+	hasMergedCells, err := s.spreadsheetRepo.HasMergedCells(ctx, req.SpreadsheetID, sheets)
+	if err != nil {
+		return "", domain.ErrorAbsentExpenses
+	}
+	if hasMergedCells {
+		return "", domain.ErrorSpreadsheetHasMergedCells
+	}
+
 	application, err := s.spreadsheetRepo.GetApplication(ctx, req.SpreadsheetID)
 	if err != nil {
 		return "", err
 	}
 
-	expensesTitles, err := s.spreadsheetRepo.GetExpensesSheetTitles(ctx, req.SpreadsheetID)
-	if err != nil {
-		return "", err
-	}
+	var (
+		aggSheetTitles   string  = domain.SheetTitlesJoined(sheets)
+		aggSheetExpenses float64 = domain.SheetsTotalExpenses(sheets)
+		documentName             = domain.GetDocumentName(application.Bin)
+	)
 
-	if len(expensesTitles) == 0 {
-		return "", errors.New("no expenses")
-	}
-
-	hasMergedCells, err := s.spreadsheetRepo.HasMergedCells(ctx, req.SpreadsheetID, expensesTitles)
-	if err != nil {
-		return "", domain.ErrorAbsentExpenses
-	}
-
-	if hasMergedCells {
-		return "", domain.ErrorSpreadsheetHasMergedCells
-	}
-
-	expensesValues, err := s.spreadsheetRepo.GetExpenseValues(ctx, req.SpreadsheetID, expensesTitles)
-	if err != nil {
-		return "", err
-	}
-
-	if sumFloats64(expensesValues) == 0 {
+	if aggSheetExpenses == 0 {
 		return "", domain.ErrorExpensesZero
 	}
 
-	application.ExpensesList = strings.Join(expensesTitles, ", ")
-	application.ExpensesSum = fmt.Sprintf("%f", sumFloats64(expensesValues))
-	application.ApplicationDate = createApplicationDate()
+	application.ExpensesList = aggSheetTitles
+	application.ExpensesSum = fmt.Sprintf("%f", aggSheetExpenses)
+	application.ApplicationDate = domain.GetApplicationDate()
 
-	attachments, err := s.spreadsheetRepo.GetAttachments(ctx, req.SpreadsheetID, expensesTitles)
+	attachments, err := s.spreadsheetRepo.GetAttachments(ctx, req.SpreadsheetID, sheets)
 	if err != nil {
 		return "", err
 	}
 
 	pdfToSign, err := s.pdfSvc.Create(application, attachments)
-	if err != nil {
-		return "", err
-	}
-
-	documentName, err := createDocumentName(application)
 	if err != nil {
 		return "", err
 	}
@@ -86,37 +77,13 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 		return "", err
 	}
 
-	return linkbase + resp.SignLink, nil
-}
-
-func createDocumentName(application *domain.Application) (string, error) {
-	now := time.Now()
-
-	location, err := time.LoadLocation("Asia/Almaty")
-	if err != nil {
+	if err := s.applicationRepo.AssignAttrs(ctx, req.SpreadsheetID, &domain.ApplicationAttrs{
+		Application: application,
+		SheetsAgg:   domain.SheetsAgg(sheets),
+		Sheets:      sheets,
+	}); err != nil {
 		return "", err
 	}
 
-	timeStr := now.In(location).Format(time.DateTime)
-	return fmt.Sprintf("Заявление %s %s", application.Bin, timeStr), nil
-}
-
-func createApplicationDate() string {
-	now := time.Now()
-
-	location, err := time.LoadLocation("Asia/Almaty")
-	if err != nil {
-		return now.Format("02.01.2006")
-	}
-
-	timeStr := now.In(location).Format("02.01.2006")
-	return timeStr
-}
-
-func sumFloats64(ints []float64) float64 {
-	result := float64(0)
-	for _, v := range ints {
-		result += v
-	}
-	return result
+	return linkbase + resp.SignLink, nil
 }
