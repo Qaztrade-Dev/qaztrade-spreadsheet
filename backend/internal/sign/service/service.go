@@ -9,6 +9,8 @@ import (
 type Service interface {
 	CreateSign(ctx context.Context, req *CreateSignRequest) (string, error)
 	ConfirmSign(ctx context.Context, req *ConfirmSignRequest) error
+	SyncSpreadsheets(ctx context.Context, req *SyncSpreadsheetsRequest) error
+	SyncSigningTime(ctx context.Context, req *SyncSigningTimeRequest) error
 }
 
 type service struct {

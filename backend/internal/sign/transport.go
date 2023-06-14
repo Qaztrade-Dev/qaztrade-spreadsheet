@@ -33,11 +33,25 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 			signTransport.DecodeConfirmSignRequest, common.EncodeResponse,
 			opts...,
 		)
+
+		syncSpreadsheetsHandler = kithttp.NewServer(
+			endpoint.MakeSyncSpreadsheetsEndpoint(svc),
+			signTransport.DecodeSyncSpreadsheetsRequest, common.EncodeResponse,
+			opts...,
+		)
+
+		syncSigningTimeHandler = kithttp.NewServer(
+			endpoint.MakeSyncSigningTimeEndpoint(svc),
+			signTransport.DecodeSyncSigningTimeRequest, common.EncodeResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
 	r.Handle("/sign/", createSignHandler).Methods("POST")
 	r.Handle("/sign/callback", confirmSignHandler).Methods("POST")
+	r.Handle("/sync/spreadsheets", syncSpreadsheetsHandler).Methods("POST")
+	r.Handle("/sync/sign", syncSigningTimeHandler).Methods("POST")
 
 	return r
 }
