@@ -7,11 +7,12 @@ import (
 )
 
 type Application struct {
-	ID            string    `json:"id"`
-	SpreadsheetID string    `json:"spreadsheet_id"`
-	Link          string    `json:"link"`
-	Status        string    `json:"status,omitempty"`
-	CreatedAt     time.Time `json:"created_at,omitempty"`
+	ID            string      `json:"id"`
+	SpreadsheetID string      `json:"spreadsheet_id"`
+	Link          string      `json:"link"`
+	Status        string      `json:"status,omitempty"`
+	CreatedAt     time.Time   `json:"created_at,omitempty"`
+	Attrs         interface{} `json:"attrs,omitempty"`
 }
 
 type ApplicationList struct {
@@ -30,6 +31,7 @@ func EncodeApplication(input *domain.Application) *Application {
 		Link:          input.Link,
 		Status:        input.Status,
 		CreatedAt:     input.CreatedAt,
+		Attrs:         input.Attrs,
 	}
 }
 

@@ -23,6 +23,7 @@ type Application struct {
 	Link           string
 	Status         string
 	SignDocumentID string
+	Attrs          interface{}
 	CreatedAt      time.Time
 }
 

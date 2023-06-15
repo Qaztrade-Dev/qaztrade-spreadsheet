@@ -84,6 +84,7 @@ func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domai
 			"a.spreadsheet_id",
 			"a.link",
 			"a.sign_document_id",
+			"a.attrs",
 		).
 		From("applications a").
 		Join("application_statuses ast on ast.id = a.status_id").
@@ -144,6 +145,7 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 		applSpreadsheetID  *string
 		applLink           *string
 		applSignDocumentID *string
+		applAttrs          *interface{}
 	)
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
@@ -153,6 +155,7 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 		&applSpreadsheetID,
 		&applLink,
 		&applSignDocumentID,
+		&applAttrs,
 	}, func(pgx.QueryFuncRow) error {
 		applications = append(applications, &domain.Application{
 			ID:             valueFromPointer(applID),
@@ -161,6 +164,7 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 			SpreadsheetID:  valueFromPointer(applSpreadsheetID),
 			Link:           valueFromPointer(applLink),
 			SignDocumentID: valueFromPointer(applSignDocumentID),
+			Attrs:          valueFromPointer(applAttrs),
 		})
 		return nil
 	})
