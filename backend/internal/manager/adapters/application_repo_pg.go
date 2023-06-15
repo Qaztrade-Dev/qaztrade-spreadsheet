@@ -84,6 +84,7 @@ func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domai
 			"a.spreadsheet_id",
 			"a.link",
 			"a.sign_document_id",
+			"a.sign_at",
 			"a.attrs",
 		).
 		From("applications a").
@@ -145,6 +146,7 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 		applSpreadsheetID  *string
 		applLink           *string
 		applSignDocumentID *string
+		applSignAt         *time.Time
 		applAttrs          *interface{}
 	)
 
@@ -155,6 +157,7 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 		&applSpreadsheetID,
 		&applLink,
 		&applSignDocumentID,
+		&applSignAt,
 		&applAttrs,
 	}, func(pgx.QueryFuncRow) error {
 		applications = append(applications, &domain.Application{
@@ -164,6 +167,7 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 			SpreadsheetID:  valueFromPointer(applSpreadsheetID),
 			Link:           valueFromPointer(applLink),
 			SignDocumentID: valueFromPointer(applSignDocumentID),
+			SignedAt:       valueFromPointer(applSignAt),
 			Attrs:          valueFromPointer(applAttrs),
 		})
 		return nil

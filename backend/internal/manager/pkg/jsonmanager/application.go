@@ -12,6 +12,7 @@ type Application struct {
 	Link          string      `json:"link"`
 	Status        string      `json:"status,omitempty"`
 	CreatedAt     time.Time   `json:"created_at,omitempty"`
+	SignedAt      time.Time   `json:"signed_at,omitempty"`
 	Attrs         interface{} `json:"attrs,omitempty"`
 }
 
@@ -31,6 +32,7 @@ func EncodeApplication(input *domain.Application) *Application {
 		Link:          input.Link,
 		Status:        input.Status,
 		CreatedAt:     input.CreatedAt,
+		SignedAt:      input.SignedAt,
 		Attrs:         input.Attrs,
 	}
 }

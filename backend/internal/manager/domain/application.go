@@ -24,6 +24,7 @@ type Application struct {
 	Status         string
 	SignDocumentID string
 	Attrs          interface{}
+	SignedAt       time.Time
 	CreatedAt      time.Time
 }
 
