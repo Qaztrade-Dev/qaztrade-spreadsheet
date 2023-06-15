@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/internal/manager/endpoint"
@@ -25,50 +24,33 @@ func DecodeSwitchStatusRequest(_ context.Context, r *http.Request) (interface{},
 		return nil, err
 	}
 
-	tokenString := extractHeaderToken(r)
-
 	return endpoint.SwitchStatusRequest{
-		UserToken:     tokenString,
 		ApplicationID: body.ApplicationID,
 		StatusName:    body.StatusName,
 	}, nil
 }
 
-func extractHeaderToken(r *http.Request) string {
-	authorization := r.Header.Get("authorization")
-	if authorization == "" {
-		return ""
-	}
-
-	tokenString := strings.Split(authorization, " ")[1]
-	return tokenString
-}
-
 func DecodeListSpreadsheetsRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var (
-		limitStr    = r.URL.Query().Get("limit")
-		offsetStr   = r.URL.Query().Get("offset")
-		tokenString = extractHeaderToken(r)
+		limitStr  = r.URL.Query().Get("limit")
+		offsetStr = r.URL.Query().Get("offset")
 
 		limit, _  = strconv.ParseUint(limitStr, 10, 0)
 		offset, _ = strconv.ParseUint(offsetStr, 10, 0)
 	)
 
 	return endpoint.ListSpreadsheetsRequest{
-		UserToken: tokenString,
-		Limit:     limit,
-		Offset:    offset,
+		Limit:  limit,
+		Offset: offset,
 	}, nil
 }
 
 func DecodeDownloadArchive(_ context.Context, r *http.Request) (interface{}, error) {
 	var (
 		applicationID = mux.Vars(r)["application_id"]
-		tokenString   = extractHeaderToken(r)
 	)
 
 	return endpoint.DownloadArchiveRequest{
-		UserToken:     tokenString,
 		ApplicationID: applicationID,
 	}, nil
 }
@@ -98,11 +80,9 @@ func EncodeDownloadArchiveResponse(ctx context.Context, w http.ResponseWriter, r
 func DecodeGetDDCardResponse(_ context.Context, r *http.Request) (interface{}, error) {
 	var (
 		applicationID = mux.Vars(r)["application_id"]
-		tokenString   = extractHeaderToken(r)
 	)
 
 	return endpoint.GetDDCardResponseRequest{
-		UserToken:     tokenString,
 		ApplicationID: applicationID,
 	}, nil
 }

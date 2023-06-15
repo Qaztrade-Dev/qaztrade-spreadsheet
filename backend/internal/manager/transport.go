@@ -20,28 +20,37 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 		opts = []kithttp.ServerOption{
 			kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 			kithttp.ServerErrorEncoder(common.EncodeError),
+			kithttp.ServerBefore(managerTransport.WithRequestToken),
 		}
 
 		switchStatusHandler = kithttp.NewServer(
-			endpoint.MakeSwitchStatusEndpoint(svc, jwtcli),
+			endpoint.AuthManagerMiddleware(jwtcli)(
+				endpoint.MakeSwitchStatusEndpoint(svc),
+			),
 			managerTransport.DecodeSwitchStatusRequest, common.EncodeResponse,
 			opts...,
 		)
 
 		listSpreadsheetsHandler = kithttp.NewServer(
-			endpoint.MakeListSpreadsheetsEndpoint(svc, jwtcli),
+			endpoint.AuthManagerMiddleware(jwtcli)(
+				endpoint.MakeListSpreadsheetsEndpoint(svc),
+			),
 			managerTransport.DecodeListSpreadsheetsRequest, common.EncodeResponse,
 			opts...,
 		)
 
 		downloadArchiveHandler = kithttp.NewServer(
-			endpoint.MakeDownloadArchiveEndpoint(svc, jwtcli),
+			endpoint.AuthManagerMiddleware(jwtcli)(
+				endpoint.MakeDownloadArchiveEndpoint(svc),
+			),
 			managerTransport.DecodeDownloadArchive, managerTransport.EncodeDownloadArchiveResponse,
 			opts...,
 		)
 
 		getDDCardResponseHandler = kithttp.NewServer(
-			endpoint.MakeGetDDCardResponseEndpoint(svc, jwtcli),
+			endpoint.AuthManagerMiddleware(jwtcli)(
+				endpoint.MakeGetDDCardResponseEndpoint(svc),
+			),
 			managerTransport.DecodeGetDDCardResponse, managerTransport.EncodeGetDDCardResponseResponse,
 			opts...,
 		)

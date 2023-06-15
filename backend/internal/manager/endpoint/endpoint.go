@@ -2,20 +2,16 @@ package endpoint
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net/http"
 
-	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 	"github.com/doodocs/qaztrade/backend/internal/manager/pkg/jsonmanager"
 	"github.com/doodocs/qaztrade/backend/internal/manager/service"
-	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/kit/endpoint"
 )
 
 type SwitchStatusRequest struct {
-	UserToken     string
 	ApplicationID string
 	StatusName    string
 }
@@ -26,20 +22,11 @@ type SwitchStatusResponse struct {
 
 func (r *SwitchStatusResponse) Error() error { return r.Err }
 
-func MakeSwitchStatusEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
+func MakeSwitchStatusEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(SwitchStatusRequest)
 
-		claims, err := jwt.Parse[authDomain.UserClaims](j, req.UserToken)
-		if err != nil {
-			return nil, err
-		}
-
-		if claims.Role != authDomain.RoleManager {
-			return nil, errors.New("permission denied")
-		}
-
-		err = s.SwitchStatus(ctx, &service.SwitchStatusRequest{
+		err := s.SwitchStatus(ctx, &service.SwitchStatusRequest{
 			ApplicationID: req.ApplicationID,
 			StatusName:    req.StatusName,
 		})
@@ -51,9 +38,8 @@ func MakeSwitchStatusEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoin
 }
 
 type ListSpreadsheetsRequest struct {
-	UserToken string
-	Limit     uint64
-	Offset    uint64
+	Limit  uint64
+	Offset uint64
 }
 
 type ListSpreadsheetsResponse struct {
@@ -63,18 +49,9 @@ type ListSpreadsheetsResponse struct {
 
 func (r *ListSpreadsheetsResponse) Error() error { return r.Err }
 
-func MakeListSpreadsheetsEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
+func MakeListSpreadsheetsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListSpreadsheetsRequest)
-
-		claims, err := jwt.Parse[authDomain.UserClaims](j, req.UserToken)
-		if err != nil {
-			return nil, err
-		}
-
-		if claims.Role != authDomain.RoleManager {
-			return nil, errors.New("permission denied")
-		}
 
 		list, err := s.ListSpreadsheets(ctx, &service.ListSpreadsheetsRequest{
 			Limit:  req.Limit,
@@ -89,7 +66,6 @@ func MakeListSpreadsheetsEndpoint(s service.Service, j *jwt.Client) endpoint.End
 }
 
 type DownloadArchiveRequest struct {
-	UserToken     string
 	ApplicationID string
 }
 
@@ -101,18 +77,9 @@ type DownloadArchiveResponse struct {
 
 func (r *DownloadArchiveResponse) Error() error { return r.Err }
 
-func MakeDownloadArchiveEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
+func MakeDownloadArchiveEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DownloadArchiveRequest)
-
-		claims, err := jwt.Parse[authDomain.UserClaims](j, req.UserToken)
-		if err != nil {
-			return nil, err
-		}
-
-		if claims.Role != authDomain.RoleManager {
-			return nil, errors.New("permission denied")
-		}
 
 		result, err := s.DownloadArchive(ctx, &service.DownloadArchiveRequest{
 			ApplicationID: req.ApplicationID,
@@ -130,7 +97,6 @@ func MakeDownloadArchiveEndpoint(s service.Service, j *jwt.Client) endpoint.Endp
 }
 
 type GetDDCardResponseRequest struct {
-	UserToken     string
 	ApplicationID string
 }
 
@@ -141,18 +107,9 @@ type GetDDCardResponseResponse struct {
 
 func (r *GetDDCardResponseResponse) Error() error { return r.Err }
 
-func MakeGetDDCardResponseEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
+func MakeGetDDCardResponseEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetDDCardResponseRequest)
-
-		claims, err := jwt.Parse[authDomain.UserClaims](j, req.UserToken)
-		if err != nil {
-			return nil, err
-		}
-
-		if claims.Role != authDomain.RoleManager {
-			return nil, errors.New("permission denied")
-		}
 
 		result, err := s.GetDDCardResponse(ctx, &service.GetDDCardResponseRequest{
 			ApplicationID: req.ApplicationID,
