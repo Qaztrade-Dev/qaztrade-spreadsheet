@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 	"github.com/doodocs/qaztrade/backend/internal/manager/pkg/jsonmanager"
@@ -38,8 +39,11 @@ func MakeSwitchStatusEndpoint(s service.Service) endpoint.Endpoint {
 }
 
 type ListSpreadsheetsRequest struct {
-	Limit  uint64
-	Offset uint64
+	Limit            uint64
+	Offset           uint64
+	BIN              string
+	CompensationType string
+	SignedAt         time.Time
 }
 
 type ListSpreadsheetsResponse struct {
@@ -54,8 +58,11 @@ func MakeListSpreadsheetsEndpoint(s service.Service) endpoint.Endpoint {
 		req := request.(ListSpreadsheetsRequest)
 
 		list, err := s.ListSpreadsheets(ctx, &service.ListSpreadsheetsRequest{
-			Limit:  req.Limit,
-			Offset: req.Offset,
+			Limit:            req.Limit,
+			Offset:           req.Offset,
+			BIN:              req.BIN,
+			CompensationType: req.CompensationType,
+			SignedAt:         req.SignedAt,
 		})
 
 		return &ListSpreadsheetsResponse{

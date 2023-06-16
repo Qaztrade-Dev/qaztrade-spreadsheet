@@ -73,9 +73,7 @@ func (r *ApplicationRepositoryPostgre) GetMany(ctx context.Context, query *domai
 	return result, nil
 }
 
-var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
-
-func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domain.ApplicationQuery) ([]*domain.Application, error) {
+func getApplicationQueryStatement(input *domain.ApplicationQuery) squirrel.SelectBuilder {
 	mainStmt := psql.
 		Select(
 			"a.id",
@@ -90,13 +88,40 @@ func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domai
 		From("applications a").
 		Join("application_statuses ast on ast.id = a.status_id").
 		OrderBy("a.created_at desc").
-		Limit(query.Limit).Offset(query.Offset)
+		Limit(input.Limit).Offset(input.Offset)
 
-	if query.ApplicationID != "" {
-		mainStmt = mainStmt.Where("a.id = ?", query.ApplicationID)
+	if input.BIN != "" {
+		mainStmt = mainStmt.Where("a.attrs->'application'->>'bin' = ?", input.BIN)
 	}
 
-	sql, args, err := mainStmt.ToSql()
+	if input.CompensationType != "" {
+		mainStmt = mainStmt.Where(`EXISTS (
+			select 1
+			from jsonb_array_elements(a.attrs->'sheets') as j(sheet)
+			where sheet->>'title' = ?
+		)`, input.CompensationType)
+	}
+
+	if !input.SignedAt.IsZero() {
+		timeStr := input.SignedAt.
+			Truncate(time.Second).
+			Truncate(time.Minute).
+			Truncate(time.Hour * 24).Format(time.DateOnly)
+		mainStmt = mainStmt.Where("date(a.sign_at) = ?", timeStr)
+	}
+
+	if input.ApplicationID != "" {
+		mainStmt = mainStmt.Where("a.id = ?", input.ApplicationID)
+	}
+
+	return mainStmt
+}
+
+var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+
+func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domain.ApplicationQuery) ([]*domain.Application, error) {
+	stmt := getApplicationQueryStatement(query)
+	sql, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -114,18 +139,19 @@ func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domai
 }
 
 func (r *ApplicationRepositoryPostgre) getCount(ctx context.Context, query *domain.ApplicationQuery) (uint64, error) {
-	const sql = `
-		select 
-			count(*)
-		from "applications"
-	`
-
-	var count uint64
-	if err := r.pg.QueryRow(ctx, sql).Scan(&count); err != nil {
-		return 0, err
+	stmt := getApplicationQueryStatement(query)
+	sql, args, err := psql.Select("count(*)").FromSelect(stmt, "q").ToSql()
+	if err != nil {
+		return 0, fmt.Errorf("countRows %w", err)
 	}
 
-	return count, nil
+	var tmp uint64
+	err = r.pg.QueryRow(ctx, sql, args...).Scan(&tmp)
+	if err != nil {
+		err = fmt.Errorf("count query %w", err)
+	}
+
+	return tmp, err
 }
 
 type querier interface {

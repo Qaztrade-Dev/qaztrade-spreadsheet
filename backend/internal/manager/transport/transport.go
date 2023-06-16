@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/internal/manager/endpoint"
@@ -32,16 +33,23 @@ func DecodeSwitchStatusRequest(_ context.Context, r *http.Request) (interface{},
 
 func DecodeListSpreadsheetsRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var (
-		limitStr  = r.URL.Query().Get("limit")
-		offsetStr = r.URL.Query().Get("offset")
+		limitStr               = r.URL.Query().Get("limit")
+		offsetStr              = r.URL.Query().Get("offset")
+		filterBIN              = r.URL.Query().Get("bin")
+		filterCompensationType = r.URL.Query().Get("compensation_type")
+		filterSignedAtStr      = r.URL.Query().Get("signed_at")
 
-		limit, _  = strconv.ParseUint(limitStr, 10, 0)
-		offset, _ = strconv.ParseUint(offsetStr, 10, 0)
+		limit, _          = strconv.ParseUint(limitStr, 10, 0)
+		offset, _         = strconv.ParseUint(offsetStr, 10, 0)
+		filterSignedAt, _ = time.Parse(time.DateOnly, filterSignedAtStr)
 	)
 
 	return endpoint.ListSpreadsheetsRequest{
-		Limit:  limit,
-		Offset: offset,
+		Limit:            limit,
+		Offset:           offset,
+		BIN:              filterBIN,
+		CompensationType: filterCompensationType,
+		SignedAt:         filterSignedAt,
 	}, nil
 }
 

@@ -37,6 +37,10 @@ type ApplicationQuery struct {
 	ApplicationID string
 	Limit         uint64
 	Offset        uint64
+
+	BIN              string
+	CompensationType string
+	SignedAt         time.Time
 }
 
 type ApplicationRepository interface {
