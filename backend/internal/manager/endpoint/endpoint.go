@@ -43,7 +43,8 @@ type ListSpreadsheetsRequest struct {
 	Offset           uint64
 	BIN              string
 	CompensationType string
-	SignedAt         time.Time
+	SignedAtFrom     time.Time
+	SignedAtUntil    time.Time
 }
 
 type ListSpreadsheetsResponse struct {
@@ -62,7 +63,8 @@ func MakeListSpreadsheetsEndpoint(s service.Service) endpoint.Endpoint {
 			Offset:           req.Offset,
 			BIN:              req.BIN,
 			CompensationType: req.CompensationType,
-			SignedAt:         req.SignedAt,
+			SignedAtFrom:     req.SignedAtFrom,
+			SignedAtUntil:    req.SignedAtUntil,
 		})
 
 		return &ListSpreadsheetsResponse{

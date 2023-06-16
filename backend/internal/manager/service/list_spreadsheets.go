@@ -12,7 +12,8 @@ type ListSpreadsheetsRequest struct {
 	Offset           uint64
 	BIN              string
 	CompensationType string
-	SignedAt         time.Time
+	SignedAtFrom     time.Time
+	SignedAtUntil    time.Time
 }
 
 func (s *service) ListSpreadsheets(ctx context.Context, req *ListSpreadsheetsRequest) (*domain.ApplicationList, error) {
@@ -21,7 +22,8 @@ func (s *service) ListSpreadsheets(ctx context.Context, req *ListSpreadsheetsReq
 		Offset:           req.Offset,
 		BIN:              req.BIN,
 		CompensationType: req.CompensationType,
-		SignedAt:         req.SignedAt,
+		SignedAtFrom:     req.SignedAtFrom,
+		SignedAtUntil:    req.SignedAtUntil,
 	})
 	if err != nil {
 		return nil, err

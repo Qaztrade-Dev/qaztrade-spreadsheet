@@ -40,7 +40,8 @@ type ApplicationQuery struct {
 
 	BIN              string
 	CompensationType string
-	SignedAt         time.Time
+	SignedAtFrom     time.Time
+	SignedAtUntil    time.Time
 }
 
 type ApplicationRepository interface {

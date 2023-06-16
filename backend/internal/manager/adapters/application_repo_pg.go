@@ -102,12 +102,20 @@ func getApplicationQueryStatement(input *domain.ApplicationQuery) squirrel.Selec
 		)`, input.CompensationType)
 	}
 
-	if !input.SignedAt.IsZero() {
-		timeStr := input.SignedAt.
+	if !input.SignedAtFrom.IsZero() {
+		timeFromStr := input.SignedAtFrom.
 			Truncate(time.Second).
 			Truncate(time.Minute).
 			Truncate(time.Hour * 24).Format(time.DateOnly)
-		mainStmt = mainStmt.Where("date(a.sign_at) = ?", timeStr)
+		mainStmt = mainStmt.Where("date(a.sign_at) >= ?", timeFromStr)
+	}
+
+	if !input.SignedAtUntil.IsZero() {
+		timeUntilStr := input.SignedAtUntil.
+			Truncate(time.Second).
+			Truncate(time.Minute).
+			Truncate(time.Hour * 24).Format(time.DateOnly)
+		mainStmt = mainStmt.Where("date(a.sign_at) <= ?", timeUntilStr)
 	}
 
 	if input.ApplicationID != "" {

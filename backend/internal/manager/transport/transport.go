@@ -37,11 +37,13 @@ func DecodeListSpreadsheetsRequest(_ context.Context, r *http.Request) (interfac
 		offsetStr              = r.URL.Query().Get("offset")
 		filterBIN              = r.URL.Query().Get("bin")
 		filterCompensationType = r.URL.Query().Get("compensation_type")
-		filterSignedAtStr      = r.URL.Query().Get("signed_at")
+		filterSignedAtFromStr  = r.URL.Query().Get("signed_at[from]")
+		filterSignedAtUntilStr = r.URL.Query().Get("signed_at[until]")
 
-		limit, _          = strconv.ParseUint(limitStr, 10, 0)
-		offset, _         = strconv.ParseUint(offsetStr, 10, 0)
-		filterSignedAt, _ = time.Parse(time.DateOnly, filterSignedAtStr)
+		limit, _               = strconv.ParseUint(limitStr, 10, 0)
+		offset, _              = strconv.ParseUint(offsetStr, 10, 0)
+		filterSignedAtFrom, _  = time.Parse(time.DateOnly, filterSignedAtFromStr)
+		filterSignedAtUntil, _ = time.Parse(time.DateOnly, filterSignedAtUntilStr)
 	)
 
 	return endpoint.ListSpreadsheetsRequest{
@@ -49,7 +51,8 @@ func DecodeListSpreadsheetsRequest(_ context.Context, r *http.Request) (interfac
 		Offset:           offset,
 		BIN:              filterBIN,
 		CompensationType: filterCompensationType,
-		SignedAt:         filterSignedAt,
+		SignedAtFrom:     filterSignedAtFrom,
+		SignedAtUntil:    filterSignedAtUntil,
 	}, nil
 }
 
