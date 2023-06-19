@@ -87,8 +87,7 @@ func getApplicationQueryStatement(input *domain.ApplicationQuery) squirrel.Selec
 		).
 		From("applications a").
 		Join("application_statuses ast on ast.id = a.status_id").
-		OrderBy("a.created_at desc").
-		Limit(input.Limit).Offset(input.Offset)
+		OrderBy("a.created_at desc")
 
 	if input.BIN != "" {
 		mainStmt = mainStmt.Where("a.attrs->'application'->>'bin' = ?", input.BIN)
@@ -127,8 +126,8 @@ func getApplicationQueryStatement(input *domain.ApplicationQuery) squirrel.Selec
 
 var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
-func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domain.ApplicationQuery) ([]*domain.Application, error) {
-	stmt := getApplicationQueryStatement(query)
+func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, input *domain.ApplicationQuery) ([]*domain.Application, error) {
+	stmt := getApplicationQueryStatement(input).Limit(input.Limit).Offset(input.Offset)
 	sql, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, err
