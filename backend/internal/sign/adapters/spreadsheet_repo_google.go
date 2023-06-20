@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -213,6 +214,8 @@ func (c *SpreadsheetClient) GetSheets(ctx context.Context, spreadsheetID string)
 
 	for i := range sheetExpenses {
 		sheets[i].Rows = (dataRanges[i].RowEnd - dataRanges[i].RowStart) - 3 + 1
+		sheets[i].Data = dataRanges[i].Data
+		sheets[i].Header = dataRanges[i].Header
 	}
 
 	return sheets, nil
@@ -290,7 +293,9 @@ type getDataRangeResponse struct {
 	RowStart    int64
 	RowEnd      int64 // inclusive
 	ColumnStart int64
-	ColumnEnd   int64
+	ColumnEnd   int64 // inclusive
+	Data        [][]string
+	Header      [][]string
 }
 
 func getDataRange(sheet *sheets.Sheet) *getDataRangeResponse {
@@ -355,12 +360,57 @@ func getDataRange(sheet *sheets.Sheet) *getDataRangeResponse {
 		}
 	}
 
+	data := make([][]string, rowEnd-3)
+	for i := 3; i < rowEnd; i++ {
+		idx := i - 3
+		data[idx] = make([]string, columnEnd+1)
+		row := sheet.Data[0].RowData[i]
+		for j := 0; j <= columnEnd; j++ {
+			data[idx][j] = getCellValue(row.Values[j])
+		}
+	}
+
+	header := make([][]string, 2)
+	for i := 1; i < 3; i++ {
+		idx := i - 1
+		header[idx] = make([]string, columnEnd+1)
+		row := sheet.Data[0].RowData[i]
+		for j := 0; j <= columnEnd; j++ {
+			header[idx][j] = getCellValue(row.Values[j])
+		}
+	}
+
 	return &getDataRangeResponse{
 		RowStart:    0,
 		RowEnd:      int64(rowEnd),
 		ColumnStart: 0,
 		ColumnEnd:   int64(columnEnd),
+		Data:        data,
+		Header:      header,
 	}
+}
+
+func getCellValue(cell *sheets.CellData) string {
+	if cell == nil || cell.UserEnteredValue == nil {
+		return ""
+	}
+
+	switch {
+	case cell.UserEnteredValue.StringValue != nil:
+		return *cell.UserEnteredValue.StringValue
+	case cell.UserEnteredValue.NumberValue != nil:
+		return floatToString(*cell.UserEnteredValue.NumberValue)
+	case cell.Hyperlink != "":
+		return cell.Hyperlink
+	}
+	return ""
+}
+
+func floatToString(number float64) string {
+	if math.Mod(number, 1.0) == 0 {
+		return fmt.Sprintf("%.0f", number)
+	}
+	return strconv.FormatFloat(number, 'f', -1, 64)
 }
 
 type exportRequest struct {

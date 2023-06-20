@@ -3,10 +3,12 @@ package jsondomain
 import "github.com/doodocs/qaztrade/backend/internal/sign/domain"
 
 type Sheet struct {
-	Title    string  `json:"title,omitempty"`
-	SheetID  int64   `json:"sheet_id,omitempty"`
-	Expenses float64 `json:"expenses"`
-	Rows     int64   `json:"rows"`
+	Title    string     `json:"title,omitempty"`
+	SheetID  int64      `json:"sheet_id,omitempty"`
+	Expenses float64    `json:"expenses"`
+	Rows     int64      `json:"rows"`
+	Data     [][]string `json:"data"`
+	Header   [][]string `json:"header"`
 }
 
 type Application struct {
@@ -63,6 +65,8 @@ func EncodeSheet(input *domain.Sheet) *Sheet {
 		SheetID:  input.SheetID,
 		Expenses: input.Expenses,
 		Rows:     input.Rows,
+		Data:     input.Data,
+		Header:   input.Header,
 	}
 }
 

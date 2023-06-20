@@ -27,6 +27,8 @@ type Sheet struct {
 	SheetID  int64
 	Expenses float64
 	Rows     int64
+	Data     [][]string
+	Header   [][]string
 }
 
 func SheetTitles(input []*Sheet) []string {

@@ -63,10 +63,11 @@ func TestGetAttachments(t *testing.T) {
 
 func TestGetSheets(t *testing.T) {
 	var (
-		ctx           = context.Background()
-		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
-		svcAccount    = os.Getenv("SERVICE_ACCOUNT")
-		spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
+		ctx          = context.Background()
+		adminAccount = os.Getenv("ADMIN_ACCOUNT")
+		svcAccount   = os.Getenv("SERVICE_ACCOUNT")
+		// spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
+		spreadsheetID = "12BFz2hEBE9Su9-ahPX8L9tK6EkLb22dP1vnvOZMixO4"
 	)
 
 	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
@@ -74,7 +75,6 @@ func TestGetSheets(t *testing.T) {
 
 	sheets, err := cli.GetSheets(ctx, spreadsheetID)
 	require.Nil(t, err)
-	fmt.Println(sheets)
 	fmt.Printf("%#v\n", sheets[0])
 }
 
