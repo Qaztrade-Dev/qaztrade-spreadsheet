@@ -5,6 +5,7 @@ create table "assignments" (
   "created_at" timestamptz default now(),
   "user_id" uuid,
   "application_id" uuid,
+  "type" text, -- 'digitalization', 'finance', 'legal'
   "sheet_title" text,
   "sheet_id" bigint,
   "rows_from" bigint,
@@ -14,6 +15,7 @@ create table "assignments" (
 );
 
 create index assignments_id_idx on "assignments" using hash ("id");
+create index assignments_type_idx on "assignments" using hash ("type");
 create index assignments_user_id_idx on "assignments" using hash ("user_id");
 create index assignments_application_id_idx on "assignments" using hash ("application_id");
 
