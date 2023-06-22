@@ -1,6 +1,7 @@
 begin;
 
 delete from "user_roles" where "value" in (
+    'admin',
     'digital',
     'finance',
     'legal'

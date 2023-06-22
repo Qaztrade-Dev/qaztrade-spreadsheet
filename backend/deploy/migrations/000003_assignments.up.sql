@@ -65,9 +65,10 @@ create index user_role_bindings_user_id_idx on "user_role_bindings" using hash (
 insert into "user_roles" 
   ("id", "value")
 values
-  (3, 'digital'),
-  (4, 'finance'),
-  (5, 'legal')
+  (3, 'admin'),
+  (4, 'digital'),
+  (5, 'finance'),
+  (6, 'legal')
 ;
 
 insert into "user_role_bindings" ("user_id", "role_id")
