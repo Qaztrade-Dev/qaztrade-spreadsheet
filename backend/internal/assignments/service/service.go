@@ -10,10 +10,10 @@ type Service interface {
 	CreateBatch(ctx context.Context) error
 
 	// GetUserAssignments returns assignments of a user.
-	GetUserAssignments(ctx context.Context, input *GetUserAssignmentsInput) ([]*domain.Assignment, error)
+	GetUserAssignments(ctx context.Context, input *GetUserAssignmentsInput) (*GetUserAssignmentsOutput, error)
 
 	// GetAssignments returns all assignments.
-	GetAssignments(ctx context.Context, input *GetAssignmentsInput) ([]*domain.Assignment, error)
+	GetAssignments(ctx context.Context, input *GetAssignmentsInput) (*GetAssignmentsOutput, error)
 }
 
 type service struct {
@@ -37,8 +37,13 @@ type GetUserAssignmentsInput struct {
 	Offset int
 }
 
-func (s *service) GetUserAssignments(ctx context.Context, input *GetUserAssignmentsInput) ([]*domain.Assignment, error) {
-	assignments, err := s.assignmentRepo.GetMany(ctx, &domain.AssignmentSearchInput{
+type GetUserAssignmentsOutput struct {
+	AssignmentsList *domain.AssignmentsList
+	AssignmentsInfo *domain.AssignmentsInfo
+}
+
+func (s *service) GetUserAssignments(ctx context.Context, input *GetUserAssignmentsInput) (*GetUserAssignmentsOutput, error) {
+	assignmentsList, err := s.assignmentRepo.GetMany(ctx, &domain.AssignmentSearchInput{
 		UserID: input.UserID,
 		Limit:  input.Limit,
 		Offset: input.Offset,
@@ -46,7 +51,20 @@ func (s *service) GetUserAssignments(ctx context.Context, input *GetUserAssignme
 	if err != nil {
 		return nil, err
 	}
-	return assignments, nil
+
+	assignmentsInfo, err := s.assignmentRepo.GetInfo(ctx, &domain.InfoSearchInput{
+		UserID: input.UserID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	output := &GetUserAssignmentsOutput{
+		AssignmentsList: assignmentsList,
+		AssignmentsInfo: assignmentsInfo,
+	}
+
+	return output, nil
 }
 
 type GetAssignmentsInput struct {
@@ -54,15 +72,31 @@ type GetAssignmentsInput struct {
 	Offset int
 }
 
-func (s *service) GetAssignments(ctx context.Context, input *GetAssignmentsInput) ([]*domain.Assignment, error) {
-	assignments, err := s.assignmentRepo.GetMany(ctx, &domain.AssignmentSearchInput{
+type GetAssignmentsOutput struct {
+	AssignmentsList *domain.AssignmentsList
+	AssignmentsInfo *domain.AssignmentsInfo
+}
+
+func (s *service) GetAssignments(ctx context.Context, input *GetAssignmentsInput) (*GetAssignmentsOutput, error) {
+	assignmentsList, err := s.assignmentRepo.GetMany(ctx, &domain.AssignmentSearchInput{
 		Limit:  input.Limit,
 		Offset: input.Offset,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return assignments, nil
+
+	assignmentsInfo, err := s.assignmentRepo.GetInfo(ctx, &domain.InfoSearchInput{})
+	if err != nil {
+		return nil, err
+	}
+
+	output := &GetAssignmentsOutput{
+		AssignmentsList: assignmentsList,
+		AssignmentsInfo: assignmentsInfo,
+	}
+
+	return output, nil
 }
 
 func NewService() Service {

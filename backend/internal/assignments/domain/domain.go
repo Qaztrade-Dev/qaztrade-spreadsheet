@@ -6,20 +6,6 @@ import (
 	"time"
 )
 
-type Assignment struct {
-	UserID        int
-	ApplicationID string
-	SpreadsheetID string
-	Type          string
-	SheetTitle    string
-	SheetID       int
-	RowsFrom      int
-	RowsUntil     int
-	RowsTotal     int
-	IsCompleted   bool
-	CompletedAt   time.Time
-}
-
 type Sheet struct {
 	SheetTitle string
 	SheetID    int
@@ -32,16 +18,47 @@ type Application struct {
 	Sheets        []*Sheet
 }
 
-type AssignmentSearchInput struct {
-	UserID string
-	Limit  int
-	Offset int
+type Assignment struct {
+	ID            int
+	UserID        int
+	ApplicationID string
+	SpreadsheetID string
+	Type          string
+	SheetTitle    string
+	SheetID       int
+	RowsFrom      int
+	RowsUntil     int
+	RowsTotal     int
+	RowsCompleted int
+	IsCompleted   bool
+	CompletedAt   time.Time
+}
+
+type AssignmentsInfo struct {
+	Total     int
+	Completed int
+}
+
+type AssignmentsList struct {
+	Total   int
+	Objects []*Assignment
 }
 
 var (
 	ErrAssignmentNotFound = fmt.Errorf("assignment not found")
 )
 
+type AssignmentSearchInput struct {
+	UserID string
+	Limit  int
+	Offset int
+}
+
+type InfoSearchInput struct {
+	UserID string
+}
+
 type AssignmentRepository interface {
-	GetMany(ctx context.Context, input *AssignmentSearchInput) ([]*Assignment, error)
+	GetInfo(ctx context.Context, input *InfoSearchInput) (*AssignmentsInfo, error)
+	GetMany(ctx context.Context, input *AssignmentSearchInput) (*AssignmentsList, error)
 }
