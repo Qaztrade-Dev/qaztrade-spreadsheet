@@ -24,8 +24,8 @@ func DecodeGetAssignmentsRequest(_ context.Context, r *http.Request) (interface{
 	}
 
 	return endpoint.GetAssignmentsRequest{
-		Limit:  int(limit),
-		Offset: int(offset),
+		Limit:  limit,
+		Offset: offset,
 		UserID: userID,
 	}, nil
 }
@@ -40,7 +40,7 @@ func DecodeGetUserAssignmentsRequest(_ context.Context, r *http.Request) (interf
 	)
 
 	return endpoint.GetUserAssignmentsRequest{
-		Limit:  int(limit),
-		Offset: int(offset),
+		Limit:  limit,
+		Offset: offset,
 	}, nil
 }

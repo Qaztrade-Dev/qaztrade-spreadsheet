@@ -7,8 +7,8 @@ import (
 
 type GetUserAssignmentsRequest struct {
 	UserID string
-	Limit  int
-	Offset int
+	Limit  uint64
+	Offset uint64
 }
 
 type GetUserAssignmentsResponse struct {

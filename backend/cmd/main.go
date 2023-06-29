@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/doodocs/qaztrade/backend/internal/assignments"
 	"github.com/doodocs/qaztrade/backend/internal/auth"
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/internal/google"
@@ -130,6 +131,11 @@ func main() {
 			sign.WithAdmin(adminAccount),
 			sign.WithServiceAccount(svcAccount),
 		)
+
+		assignmentsService = assignments.MakeService(
+			ctx,
+			assignments.WithPostgres(pg),
+		)
 	)
 
 	var (
@@ -143,6 +149,7 @@ func main() {
 	mux.Handle("/spreadsheets/", spreadsheets.MakeHandler(spreadsheetsService, jwtcli, httpLogger))
 	mux.Handle("/manager/", manager.MakeHandler(managerService, jwtcli, httpLogger))
 	mux.Handle("/sign/", sign.MakeHandler(signService, jwtcli, httpLogger))
+	mux.Handle("/assignments/", assignments.MakeHandler(assignmentsService, jwtcli, httpLogger))
 
 	http.Handle("/", common.AccessControl(mux))
 

@@ -1,4 +1,4 @@
-package manager
+package assignments
 
 import (
 	"net/http"

@@ -17,7 +17,7 @@ type Service interface {
 }
 
 type service struct {
-	assignmentRepo domain.AssignmentRepository
+	assignmentRepo domain.AssignmentsRepository
 }
 
 func (s *service) CreateBatch(ctx context.Context) error {
@@ -31,6 +31,8 @@ func (s *service) CreateBatch(ctx context.Context) error {
 	return nil
 }
 
-func NewService() Service {
+func NewService(
+	assignmentRepo domain.AssignmentsRepository,
+) Service {
 	return &service{}
 }

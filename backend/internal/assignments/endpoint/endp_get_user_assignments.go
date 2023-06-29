@@ -5,20 +5,20 @@ import (
 
 	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 
-	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
+	"github.com/doodocs/qaztrade/backend/internal/assignments/pkg/jsondomain"
 	"github.com/doodocs/qaztrade/backend/internal/assignments/service"
 	"github.com/go-kit/kit/endpoint"
 )
 
 type GetUserAssignmentsRequest struct {
-	Limit  int
-	Offset int
+	Limit  uint64
+	Offset uint64
 }
 
 type GetUserAssignmentsResponse struct {
-	Err             error                   `json:"err,omitempty"`
-	AssignmentsList *domain.AssignmentsList `json:"assignments_list"`
-	AssignmentsInfo *domain.AssignmentsInfo `json:"assignments_info"`
+	Err             error                       `json:"err,omitempty"`
+	AssignmentsList *jsondomain.AssignmentsList `json:"assignments_list"`
+	AssignmentsInfo *jsondomain.AssignmentsInfo `json:"assignments_info"`
 }
 
 func (r *GetUserAssignmentsResponse) Error() error { return r.Err }
@@ -40,8 +40,8 @@ func MakeGetUserAssignmentsEndpoint(s service.Service) endpoint.Endpoint {
 
 		return &GetUserAssignmentsResponse{
 			Err:             err,
-			AssignmentsList: response.AssignmentsList,
-			AssignmentsInfo: response.AssignmentsInfo,
+			AssignmentsList: jsondomain.EncodeAssignmentsList(response.AssignmentsList),
+			AssignmentsInfo: jsondomain.EncodeAssignmentsInfo(response.AssignmentsInfo),
 		}, nil
 	}
 }

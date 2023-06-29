@@ -29,6 +29,7 @@ type AssignmentView struct {
 	ApplicantName  string
 	ApplicantBIN   string
 	SheetTitle     string
+	SheetID        uint64
 	AssignmentType string
 	Link           string
 	AssigneeName   string
@@ -41,8 +42,8 @@ type AssignmentView struct {
 }
 
 type AssignmentsInfo struct {
-	Total     int
-	Completed int
+	Total     uint64
+	Completed uint64
 }
 
 type AssignmentsList struct {
@@ -56,15 +57,15 @@ var (
 
 type GetManyInput struct {
 	UserID *string
-	Limit  int
-	Offset int
+	Limit  uint64
+	Offset uint64
 }
 
 type GetInfoInput struct {
 	UserID *string
 }
 
-type AssignmentRepository interface {
+type AssignmentsRepository interface {
 	GetInfo(ctx context.Context, input *GetInfoInput) (*AssignmentsInfo, error)
 	GetMany(ctx context.Context, input *GetManyInput) (*AssignmentsList, error)
 }
