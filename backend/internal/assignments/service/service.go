@@ -10,10 +10,10 @@ type Service interface {
 	CreateBatch(ctx context.Context) error
 
 	// GetUserAssignments returns assignments of a user.
-	GetUserAssignments(ctx context.Context, input *GetUserAssignmentsInput) (*GetUserAssignmentsOutput, error)
+	GetUserAssignments(ctx context.Context, input *GetUserAssignmentsRequest) (*GetUserAssignmentsResponse, error)
 
 	// GetAssignments returns all assignments.
-	GetAssignments(ctx context.Context, input *GetAssignmentsInput) (*GetAssignmentsOutput, error)
+	GetAssignments(ctx context.Context, input *GetAssignmentsRequest) (*GetAssignmentsResponse, error)
 }
 
 type service struct {

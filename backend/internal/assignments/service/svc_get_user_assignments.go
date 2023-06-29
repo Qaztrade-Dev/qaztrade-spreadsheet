@@ -5,20 +5,20 @@ import (
 	"golang.org/x/net/context"
 )
 
-type GetUserAssignmentsInput struct {
+type GetUserAssignmentsRequest struct {
 	UserID string
 	Limit  int
 	Offset int
 }
 
-type GetUserAssignmentsOutput struct {
+type GetUserAssignmentsResponse struct {
 	AssignmentsList *domain.AssignmentsList
 	AssignmentsInfo *domain.AssignmentsInfo
 }
 
-func (s *service) GetUserAssignments(ctx context.Context, input *GetUserAssignmentsInput) (*GetUserAssignmentsOutput, error) {
+func (s *service) GetUserAssignments(ctx context.Context, input *GetUserAssignmentsRequest) (*GetUserAssignmentsResponse, error) {
 	assignmentsList, err := s.assignmentRepo.GetMany(ctx, &domain.GetManyInput{
-		UserID: input.UserID,
+		UserID: &input.UserID,
 		Limit:  input.Limit,
 		Offset: input.Offset,
 	})
@@ -27,13 +27,13 @@ func (s *service) GetUserAssignments(ctx context.Context, input *GetUserAssignme
 	}
 
 	assignmentsInfo, err := s.assignmentRepo.GetInfo(ctx, &domain.GetInfoInput{
-		UserID: input.UserID,
+		UserID: &input.UserID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	output := &GetUserAssignmentsOutput{
+	output := &GetUserAssignmentsResponse{
 		AssignmentsList: assignmentsList,
 		AssignmentsInfo: assignmentsInfo,
 	}

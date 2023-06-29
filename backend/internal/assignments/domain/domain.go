@@ -55,13 +55,13 @@ var (
 )
 
 type GetManyInput struct {
-	UserID string
+	UserID *string
 	Limit  int
 	Offset int
 }
 
 type GetInfoInput struct {
-	UserID string
+	UserID *string
 }
 
 type AssignmentRepository interface {
