@@ -4,12 +4,14 @@ import (
 	"net/http"
 
 	authEndpoint "github.com/doodocs/qaztrade/backend/internal/auth/endpoint"
+	authTransport "github.com/doodocs/qaztrade/backend/internal/auth/transport"
 	spreadsheetsDomain "github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
 
-	"github.com/doodocs/qaztrade/backend/internal/common"
 	signEndpoint "github.com/doodocs/qaztrade/backend/internal/sign/endpoint"
 	signService "github.com/doodocs/qaztrade/backend/internal/sign/service"
 	signTransport "github.com/doodocs/qaztrade/backend/internal/sign/transport"
+
+	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/transport"
@@ -24,6 +26,7 @@ func MakeHandler(svc signService.Service, jwtcli *jwt.Client, logger kitlog.Logg
 		opts = []kithttp.ServerOption{
 			kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 			kithttp.ServerErrorEncoder(common.EncodeError),
+			kithttp.ServerBefore(authTransport.WithRequestToken),
 		}
 
 		mdlwChainSpreadsheet = endpoint.Chain(

@@ -7,12 +7,13 @@ import (
 	authEndpoint "github.com/doodocs/qaztrade/backend/internal/auth/endpoint"
 	authService "github.com/doodocs/qaztrade/backend/internal/auth/service"
 	authTransport "github.com/doodocs/qaztrade/backend/internal/auth/transport"
+
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
-	"github.com/gorilla/mux"
-
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/transport"
+	"github.com/gorilla/mux"
+
 	kithttp "github.com/go-kit/kit/transport/http"
 	kitlog "github.com/go-kit/log"
 )

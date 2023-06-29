@@ -3,13 +3,16 @@ package spreadsheets
 import (
 	"net/http"
 
+	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	authEndpoint "github.com/doodocs/qaztrade/backend/internal/auth/endpoint"
 	authTransport "github.com/doodocs/qaztrade/backend/internal/auth/transport"
-	"github.com/doodocs/qaztrade/backend/internal/common"
+
 	spreadsheetsDomain "github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
 	spreadsheetsEndpoint "github.com/doodocs/qaztrade/backend/internal/spreadsheets/endpoint"
 	spreadsheetsService "github.com/doodocs/qaztrade/backend/internal/spreadsheets/service"
 	spreadsheetsTransport "github.com/doodocs/qaztrade/backend/internal/spreadsheets/transport"
+
+	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/transport"
@@ -28,7 +31,7 @@ func MakeHandler(svc spreadsheetsService.Service, jwtcli *jwt.Client, logger kit
 		}
 
 		mdlwChainUser = endpoint.Chain(
-			authEndpoint.MakeClaimsMiddleware[spreadsheetsDomain.SpreadsheetClaims](jwtcli),
+			authEndpoint.MakeClaimsMiddleware[authDomain.UserClaims](jwtcli),
 		)
 
 		mdlwChainSpreadsheet = endpoint.Chain(

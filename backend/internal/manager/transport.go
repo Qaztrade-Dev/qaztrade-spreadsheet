@@ -6,10 +6,12 @@ import (
 	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	authEndpoint "github.com/doodocs/qaztrade/backend/internal/auth/endpoint"
 	authTransport "github.com/doodocs/qaztrade/backend/internal/auth/transport"
-	"github.com/doodocs/qaztrade/backend/internal/common"
+
 	managerEndpoint "github.com/doodocs/qaztrade/backend/internal/manager/endpoint"
 	managerService "github.com/doodocs/qaztrade/backend/internal/manager/service"
 	managerTransport "github.com/doodocs/qaztrade/backend/internal/manager/transport"
+
+	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/transport"

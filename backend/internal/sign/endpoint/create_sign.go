@@ -4,8 +4,9 @@ import (
 	"context"
 
 	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
-	"github.com/doodocs/qaztrade/backend/internal/sign/service"
 	spreadheetsDomain "github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
+
+	"github.com/doodocs/qaztrade/backend/internal/sign/service"
 	"github.com/go-kit/kit/endpoint"
 )
 
