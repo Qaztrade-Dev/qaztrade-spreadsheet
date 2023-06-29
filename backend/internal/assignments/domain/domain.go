@@ -18,20 +18,26 @@ type Application struct {
 	Sheets        []*Sheet
 }
 
-type Assignment struct {
-	ID            int
-	UserID        int
-	ApplicationID string
-	SpreadsheetID string
-	Type          string
-	SheetTitle    string
-	SheetID       int
-	RowsFrom      int
-	RowsUntil     int
-	RowsTotal     int
-	RowsCompleted int
-	IsCompleted   bool
-	CompletedAt   time.Time
+const (
+	TypeDigital = "digital"
+	TypeFinance = "finance"
+	TypeLegal   = "legal"
+)
+
+type AssignmentView struct {
+	ID             int
+	ApplicantName  string
+	ApplicantBIN   string
+	SheetTitle     string
+	AssignmentType string
+	Link           string
+	AssigneeName   string
+	RowsFrom       int
+	RowsUntil      int
+	RowsTotal      int
+	RowsCompleted  int
+	IsCompleted    bool
+	CompletedAt    time.Time
 }
 
 type AssignmentsInfo struct {
@@ -41,7 +47,7 @@ type AssignmentsInfo struct {
 
 type AssignmentsList struct {
 	Total   int
-	Objects []*Assignment
+	Objects []*AssignmentView
 }
 
 var (

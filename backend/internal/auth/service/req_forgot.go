@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/auth/domain"
 )
@@ -10,20 +11,28 @@ type ForgotRequest struct {
 	Email string
 }
 
-func (s *service) Forgot(ctx context.Context, req *ForgotRequest) error {
-	user, err := s.authRepo.GetOne(ctx, &domain.GetQuery{
-		Email: req.Email,
+func (s *service) Forgot(ctx context.Context, input *ForgotRequest) error {
+	email := strings.TrimSpace(input.Email)
+
+	user, err := s.authRepo.GetOne(ctx, &domain.GetQuery{Email: email})
+	if err != nil {
+		return err
+	}
+
+	roles, err := s.authRepo.GetRoles(ctx, user.ID)
+	if err != nil {
+		return err
+	}
+
+	creds, err := s.credsRepo.Create(ctx, &domain.UserClaims{
+		UserID: user.ID,
+		Roles:  roles,
 	})
 	if err != nil {
 		return err
 	}
 
-	creds, err := s.credsRepo.Create(ctx, user)
-	if err != nil {
-		return err
-	}
-
-	if err := s.emailSvc.Send(ctx, req.Email, mailName, &MailPayload{
+	if err := s.emailSvc.Send(ctx, input.Email, mailName, &MailPayload{
 		Credentials: creds,
 	}); err != nil {
 		return err

@@ -10,8 +10,7 @@ import (
 )
 
 type RestoreRequest struct {
-	AccessToken string
-	Password    string
+	Password string
 }
 
 type RestoreResponse struct {
@@ -20,16 +19,16 @@ type RestoreResponse struct {
 
 func (r *RestoreResponse) Error() error { return r.Err }
 
-func MakeRestoreEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
+func MakeRestoreEndpoint(svc service.Service, jc *jwt.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(RestoreRequest)
 
-		claims, err := jwt.Parse[domain.UserClaims](j, req.AccessToken)
+		claims, err := domain.ExtractClaims(ctx, jc)
 		if err != nil {
 			return nil, err
 		}
 
-		err = s.Restore(ctx, &service.RestoreRequest{
+		err = svc.Restore(ctx, &service.RestoreRequest{
 			UserID:   claims.UserID,
 			Password: req.Password,
 		})

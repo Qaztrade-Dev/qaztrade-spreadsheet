@@ -3,6 +3,9 @@ package manager
 import (
 	"net/http"
 
+	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
+	authEndpoint "github.com/doodocs/qaztrade/backend/internal/auth/endpoint"
+	authTransport "github.com/doodocs/qaztrade/backend/internal/auth/transport"
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/internal/manager/endpoint"
 	"github.com/doodocs/qaztrade/backend/internal/manager/service"
@@ -20,11 +23,11 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 		opts = []kithttp.ServerOption{
 			kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 			kithttp.ServerErrorEncoder(common.EncodeError),
-			kithttp.ServerBefore(managerTransport.WithRequestToken),
+			kithttp.ServerBefore(authTransport.WithRequestToken),
 		}
 
 		switchStatusHandler = kithttp.NewServer(
-			endpoint.AuthManagerMiddleware(jwtcli)(
+			authEndpoint.MakeAuthMiddleware(jwtcli, authDomain.RoleManager)(
 				endpoint.MakeSwitchStatusEndpoint(svc),
 			),
 			managerTransport.DecodeSwitchStatusRequest, common.EncodeResponse,
@@ -32,7 +35,7 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 		)
 
 		listSpreadsheetsHandler = kithttp.NewServer(
-			endpoint.AuthManagerMiddleware(jwtcli)(
+			authEndpoint.MakeAuthMiddleware(jwtcli, authDomain.RoleManager)(
 				endpoint.MakeListSpreadsheetsEndpoint(svc),
 			),
 			managerTransport.DecodeListSpreadsheetsRequest, common.EncodeResponse,
@@ -40,7 +43,7 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 		)
 
 		downloadArchiveHandler = kithttp.NewServer(
-			endpoint.AuthManagerMiddleware(jwtcli)(
+			authEndpoint.MakeAuthMiddleware(jwtcli, authDomain.RoleManager)(
 				endpoint.MakeDownloadArchiveEndpoint(svc),
 			),
 			managerTransport.DecodeDownloadArchive, managerTransport.EncodeDownloadArchiveResponse,
@@ -48,7 +51,7 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 		)
 
 		getDDCardResponseHandler = kithttp.NewServer(
-			endpoint.AuthManagerMiddleware(jwtcli)(
+			authEndpoint.MakeAuthMiddleware(jwtcli, authDomain.RoleManager)(
 				endpoint.MakeGetDDCardResponseEndpoint(svc),
 			),
 			managerTransport.DecodeGetDDCardResponse, managerTransport.EncodeGetDDCardResponseResponse,

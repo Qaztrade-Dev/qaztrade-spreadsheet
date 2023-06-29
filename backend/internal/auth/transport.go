@@ -20,6 +20,7 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 		opts = []kithttp.ServerOption{
 			kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 			kithttp.ServerErrorEncoder(common.EncodeError),
+			kithttp.ServerBefore(authTransport.WithRequestToken),
 		}
 
 		signUpHandler = kithttp.NewServer(
