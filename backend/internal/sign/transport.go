@@ -3,11 +3,15 @@ package sign
 import (
 	"net/http"
 
+	authEndpoint "github.com/doodocs/qaztrade/backend/internal/auth/endpoint"
+	spreadsheetsDomain "github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
+
 	"github.com/doodocs/qaztrade/backend/internal/common"
-	"github.com/doodocs/qaztrade/backend/internal/sign/endpoint"
-	"github.com/doodocs/qaztrade/backend/internal/sign/service"
+	signEndpoint "github.com/doodocs/qaztrade/backend/internal/sign/endpoint"
+	signService "github.com/doodocs/qaztrade/backend/internal/sign/service"
 	signTransport "github.com/doodocs/qaztrade/backend/internal/sign/transport"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/transport"
 	"github.com/gorilla/mux"
 
@@ -15,33 +19,39 @@ import (
 	kitlog "github.com/go-kit/log"
 )
 
-func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) http.Handler {
+func MakeHandler(svc signService.Service, jwtcli *jwt.Client, logger kitlog.Logger) http.Handler {
 	var (
 		opts = []kithttp.ServerOption{
 			kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 			kithttp.ServerErrorEncoder(common.EncodeError),
 		}
 
+		mdlwChainSpreadsheet = endpoint.Chain(
+			authEndpoint.MakeClaimsMiddleware[spreadsheetsDomain.SpreadsheetClaims](jwtcli),
+		)
+
 		createSignHandler = kithttp.NewServer(
-			endpoint.MakeCreateSignEndpoint(svc, jwtcli),
+			mdlwChainSpreadsheet(
+				signEndpoint.MakeCreateSignEndpoint(svc),
+			),
 			signTransport.DecodeCreateSignRequest, common.EncodeResponse,
 			opts...,
 		)
 
 		confirmSignHandler = kithttp.NewServer(
-			endpoint.MakeConfirmSignEndpoint(svc),
+			signEndpoint.MakeConfirmSignEndpoint(svc),
 			signTransport.DecodeConfirmSignRequest, common.EncodeResponse,
 			opts...,
 		)
 
 		syncSpreadsheetsHandler = kithttp.NewServer(
-			endpoint.MakeSyncSpreadsheetsEndpoint(svc),
+			signEndpoint.MakeSyncSpreadsheetsEndpoint(svc),
 			signTransport.DecodeSyncSpreadsheetsRequest, common.EncodeResponse,
 			opts...,
 		)
 
 		syncSigningTimeHandler = kithttp.NewServer(
-			endpoint.MakeSyncSigningTimeEndpoint(svc),
+			signEndpoint.MakeSyncSigningTimeEndpoint(svc),
 			signTransport.DecodeSyncSigningTimeRequest, common.EncodeResponse,
 			opts...,
 		)

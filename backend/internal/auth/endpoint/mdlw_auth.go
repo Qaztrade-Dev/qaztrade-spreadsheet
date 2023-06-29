@@ -8,10 +8,30 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
-func MakeAuthMiddleware(jc *jwt.Client, requiredRoles ...string) endpoint.Middleware {
+func MakeClaimsMiddleware[T any](jc *jwt.Client) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
-			claims, err := domain.ExtractClaims(ctx, jc)
+			token, err := domain.ExtractToken(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			claims, err := jwt.Parse[T](jc, token)
+			if err != nil {
+				return nil, err
+			}
+
+			newCtx := domain.WithClaims(ctx, claims)
+
+			return next(newCtx, request)
+		}
+	}
+}
+
+func MakeAuthMiddleware(requiredRoles ...string) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (interface{}, error) {
+			claims, err := domain.ExtractClaims[domain.UserClaims](ctx)
 			if err != nil {
 				return nil, err
 			}

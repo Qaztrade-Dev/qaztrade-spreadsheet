@@ -3,15 +3,11 @@ package endpoint
 import (
 	"context"
 
-	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
+	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	"github.com/doodocs/qaztrade/backend/internal/sign/service"
-	"github.com/doodocs/qaztrade/backend/pkg/jwt"
+	spreadheetsDomain "github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
 	"github.com/go-kit/kit/endpoint"
 )
-
-type CreateSignRequest struct {
-	Token string
-}
 
 type CreateSignResponse struct {
 	Link string `json:"link,omitempty"`
@@ -20,11 +16,9 @@ type CreateSignResponse struct {
 
 func (r *CreateSignResponse) Error() error { return r.Err }
 
-func MakeCreateSignEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
+func MakeCreateSignEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(CreateSignRequest)
-
-		claims, err := jwt.Parse[domain.SpreadsheetClaims](j, req.Token)
+		claims, err := authDomain.ExtractClaims[spreadheetsDomain.SpreadsheetClaims](ctx)
 		if err != nil {
 			return nil, err
 		}

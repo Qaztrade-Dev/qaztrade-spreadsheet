@@ -3,15 +3,14 @@ package endpoint
 import (
 	"context"
 
+	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/service"
-	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/kit/endpoint"
 )
 
 type AddSheetRequest struct {
-	TokenString string
-	SheetName   string
+	SheetName string
 }
 
 type AddSheetResponse struct {
@@ -20,11 +19,11 @@ type AddSheetResponse struct {
 
 func (r *AddSheetResponse) Error() error { return r.Err }
 
-func MakeAddSheetEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
+func MakeAddSheetEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddSheetRequest)
 
-		claims, err := jwt.Parse[domain.SpreadsheetClaims](j, req.TokenString)
+		claims, err := authDomain.ExtractClaims[domain.SpreadsheetClaims](ctx)
 		if err != nil {
 			return nil, err
 		}

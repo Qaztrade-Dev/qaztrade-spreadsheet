@@ -7,10 +7,11 @@ import (
 	authEndpoint "github.com/doodocs/qaztrade/backend/internal/auth/endpoint"
 	authTransport "github.com/doodocs/qaztrade/backend/internal/auth/transport"
 	"github.com/doodocs/qaztrade/backend/internal/common"
-	"github.com/doodocs/qaztrade/backend/internal/manager/endpoint"
-	"github.com/doodocs/qaztrade/backend/internal/manager/service"
+	managerEndpoint "github.com/doodocs/qaztrade/backend/internal/manager/endpoint"
+	managerService "github.com/doodocs/qaztrade/backend/internal/manager/service"
 	managerTransport "github.com/doodocs/qaztrade/backend/internal/manager/transport"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/transport"
 	"github.com/gorilla/mux"
 
@@ -18,7 +19,7 @@ import (
 	kitlog "github.com/go-kit/log"
 )
 
-func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) http.Handler {
+func MakeHandler(svc managerService.Service, jwtcli *jwt.Client, logger kitlog.Logger) http.Handler {
 	var (
 		opts = []kithttp.ServerOption{
 			kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
@@ -26,34 +27,31 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 			kithttp.ServerBefore(authTransport.WithRequestToken),
 		}
 
+		mdlwChain = endpoint.Chain(
+			authEndpoint.MakeClaimsMiddleware[authDomain.UserClaims](jwtcli),
+			authEndpoint.MakeAuthMiddleware(authDomain.RoleManager),
+		)
+
 		switchStatusHandler = kithttp.NewServer(
-			authEndpoint.MakeAuthMiddleware(jwtcli, authDomain.RoleManager)(
-				endpoint.MakeSwitchStatusEndpoint(svc),
-			),
+			mdlwChain(managerEndpoint.MakeSwitchStatusEndpoint(svc)),
 			managerTransport.DecodeSwitchStatusRequest, common.EncodeResponse,
 			opts...,
 		)
 
 		listSpreadsheetsHandler = kithttp.NewServer(
-			authEndpoint.MakeAuthMiddleware(jwtcli, authDomain.RoleManager)(
-				endpoint.MakeListSpreadsheetsEndpoint(svc),
-			),
+			mdlwChain(managerEndpoint.MakeListSpreadsheetsEndpoint(svc)),
 			managerTransport.DecodeListSpreadsheetsRequest, common.EncodeResponse,
 			opts...,
 		)
 
 		downloadArchiveHandler = kithttp.NewServer(
-			authEndpoint.MakeAuthMiddleware(jwtcli, authDomain.RoleManager)(
-				endpoint.MakeDownloadArchiveEndpoint(svc),
-			),
+			mdlwChain(managerEndpoint.MakeDownloadArchiveEndpoint(svc)),
 			managerTransport.DecodeDownloadArchive, managerTransport.EncodeDownloadArchiveResponse,
 			opts...,
 		)
 
 		getDDCardResponseHandler = kithttp.NewServer(
-			authEndpoint.MakeAuthMiddleware(jwtcli, authDomain.RoleManager)(
-				endpoint.MakeGetDDCardResponseEndpoint(svc),
-			),
+			mdlwChain(managerEndpoint.MakeGetDDCardResponseEndpoint(svc)),
 			managerTransport.DecodeGetDDCardResponse, managerTransport.EncodeGetDDCardResponseResponse,
 			opts...,
 		)

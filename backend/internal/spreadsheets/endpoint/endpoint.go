@@ -3,16 +3,11 @@ package endpoint
 import (
 	"context"
 
-	"github.com/doodocs/qaztrade/backend/internal/auth/domain"
+	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/pkg/jsonspreadsheets"
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/service"
-	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/kit/endpoint"
 )
-
-type CreateSpreadsheetRequest struct {
-	UserToken string
-}
 
 type CreateSpreadsheetResponse struct {
 	Link string `json:"link,omitempty"`
@@ -21,11 +16,9 @@ type CreateSpreadsheetResponse struct {
 
 func (r *CreateSpreadsheetResponse) Error() error { return r.Err }
 
-func MakeCreateSpreadsheetEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(CreateSpreadsheetRequest)
-
-		claims, err := jwt.Parse[domain.UserClaims](j, req.UserToken)
+func MakeCreateSpreadsheetEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, _ interface{}) (interface{}, error) {
+		claims, err := authDomain.ExtractClaims[authDomain.UserClaims](ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -42,9 +35,8 @@ func MakeCreateSpreadsheetEndpoint(s service.Service, j *jwt.Client) endpoint.En
 }
 
 type ListSpreadsheetsRequest struct {
-	UserToken string
-	Limit     uint64
-	Offset    uint64
+	Limit  uint64
+	Offset uint64
 }
 
 type ListSpreadsheetsResponse struct {
@@ -54,11 +46,11 @@ type ListSpreadsheetsResponse struct {
 
 func (r *ListSpreadsheetsResponse) Error() error { return r.Err }
 
-func MakeListSpreadsheetsEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint {
+func MakeListSpreadsheetsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListSpreadsheetsRequest)
 
-		claims, err := jwt.Parse[domain.UserClaims](j, req.UserToken)
+		claims, err := authDomain.ExtractClaims[authDomain.UserClaims](ctx)
 		if err != nil {
 			return nil, err
 		}

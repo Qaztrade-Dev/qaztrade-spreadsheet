@@ -5,7 +5,6 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	"github.com/doodocs/qaztrade/backend/internal/auth/service"
-	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/kit/endpoint"
 )
 
@@ -19,11 +18,11 @@ type RestoreResponse struct {
 
 func (r *RestoreResponse) Error() error { return r.Err }
 
-func MakeRestoreEndpoint(svc service.Service, jc *jwt.Client) endpoint.Endpoint {
+func MakeRestoreEndpoint(svc service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(RestoreRequest)
 
-		claims, err := domain.ExtractClaims(ctx, jc)
+		claims, err := domain.ExtractClaims[domain.UserClaims](ctx)
 		if err != nil {
 			return nil, err
 		}

@@ -149,7 +149,3 @@ type ApplicationRepository interface {
 	EditStatus(ctx context.Context, spreadsheetID, statusName string) error
 	GetApplicationByDocumentID(ctx context.Context, documentID string) (*SignApplication, error)
 }
-
-type SpreadsheetClaims struct {
-	SpreadsheetID string `json:"sid"`
-}

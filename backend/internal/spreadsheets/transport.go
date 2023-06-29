@@ -3,11 +3,15 @@ package spreadsheets
 import (
 	"net/http"
 
+	authEndpoint "github.com/doodocs/qaztrade/backend/internal/auth/endpoint"
+	authTransport "github.com/doodocs/qaztrade/backend/internal/auth/transport"
 	"github.com/doodocs/qaztrade/backend/internal/common"
-	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/endpoint"
-	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/service"
+	spreadsheetsDomain "github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
+	spreadsheetsEndpoint "github.com/doodocs/qaztrade/backend/internal/spreadsheets/endpoint"
+	spreadsheetsService "github.com/doodocs/qaztrade/backend/internal/spreadsheets/service"
 	spreadsheetsTransport "github.com/doodocs/qaztrade/backend/internal/spreadsheets/transport"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/transport"
 	"github.com/gorilla/mux"
 
@@ -15,26 +19,40 @@ import (
 	kitlog "github.com/go-kit/log"
 )
 
-func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) http.Handler {
+func MakeHandler(svc spreadsheetsService.Service, jwtcli *jwt.Client, logger kitlog.Logger) http.Handler {
 	var (
 		opts = []kithttp.ServerOption{
 			kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 			kithttp.ServerErrorEncoder(common.EncodeError),
+			kithttp.ServerBefore(authTransport.WithRequestToken),
 		}
 
+		mdlwChainUser = endpoint.Chain(
+			authEndpoint.MakeClaimsMiddleware[spreadsheetsDomain.SpreadsheetClaims](jwtcli),
+		)
+
+		mdlwChainSpreadsheet = endpoint.Chain(
+			authEndpoint.MakeClaimsMiddleware[spreadsheetsDomain.SpreadsheetClaims](jwtcli),
+		)
+
 		createSpreadsheetHandler = kithttp.NewServer(
-			endpoint.MakeCreateSpreadsheetEndpoint(svc, jwtcli),
+			mdlwChainUser(
+				spreadsheetsEndpoint.MakeCreateSpreadsheetEndpoint(svc),
+			),
 			spreadsheetsTransport.DecodeCreateSpreadsheetRequest, common.EncodeResponse,
 			opts...,
 		)
-
 		listSpreadsheetsHandler = kithttp.NewServer(
-			endpoint.MakeListSpreadsheetsEndpoint(svc, jwtcli),
+			mdlwChainUser(
+				spreadsheetsEndpoint.MakeListSpreadsheetsEndpoint(svc),
+			),
 			spreadsheetsTransport.DecodeListSpreadsheetsRequest, common.EncodeResponse,
 			opts...,
 		)
 		addSheetHandler = kithttp.NewServer(
-			endpoint.MakeAddSheetEndpoint(svc, jwtcli),
+			mdlwChainSpreadsheet(
+				spreadsheetsEndpoint.MakeAddSheetEndpoint(svc),
+			),
 			spreadsheetsTransport.DecodeAddSheetRequest, common.EncodeResponse,
 			opts...,
 		)

@@ -3,19 +3,21 @@ package auth
 import (
 	"net/http"
 
-	"github.com/doodocs/qaztrade/backend/internal/auth/endpoint"
-	"github.com/doodocs/qaztrade/backend/internal/auth/service"
+	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
+	authEndpoint "github.com/doodocs/qaztrade/backend/internal/auth/endpoint"
+	authService "github.com/doodocs/qaztrade/backend/internal/auth/service"
 	authTransport "github.com/doodocs/qaztrade/backend/internal/auth/transport"
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/gorilla/mux"
 
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/transport"
 	kithttp "github.com/go-kit/kit/transport/http"
 	kitlog "github.com/go-kit/log"
 )
 
-func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) http.Handler {
+func MakeHandler(svc authService.Service, jwtcli *jwt.Client, logger kitlog.Logger) http.Handler {
 	var (
 		opts = []kithttp.ServerOption{
 			kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
@@ -23,23 +25,27 @@ func MakeHandler(svc service.Service, jwtcli *jwt.Client, logger kitlog.Logger) 
 			kithttp.ServerBefore(authTransport.WithRequestToken),
 		}
 
+		mdlwChain = endpoint.Chain(
+			authEndpoint.MakeClaimsMiddleware[authDomain.UserClaims](jwtcli),
+		)
+
 		signUpHandler = kithttp.NewServer(
-			endpoint.MakeSignUpEndpoint(svc),
+			authEndpoint.MakeSignUpEndpoint(svc),
 			authTransport.DecodeSignUpRequest, common.EncodeResponse,
 			opts...,
 		)
 		signInHandler = kithttp.NewServer(
-			endpoint.MakeSignInEndpoint(svc),
+			authEndpoint.MakeSignInEndpoint(svc),
 			authTransport.DecodeSignInRequest, common.EncodeResponse,
 			opts...,
 		)
 		forgotHandler = kithttp.NewServer(
-			endpoint.MakeForgotEndpoint(svc),
+			authEndpoint.MakeForgotEndpoint(svc),
 			authTransport.DecodeForgotRequest, common.EncodeResponse,
 			opts...,
 		)
 		restoreHandler = kithttp.NewServer(
-			endpoint.MakeRestoreEndpoint(svc, jwtcli),
+			mdlwChain(authEndpoint.MakeRestoreEndpoint(svc)),
 			authTransport.DecodeRestoreRequest, common.EncodeResponse,
 			opts...,
 		)
