@@ -93,7 +93,6 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 			"u.attrs->>'name'",
 			"ass.rows_from",
 			"ass.rows_until",
-			"ass.rows_total",
 			"assres.total_completed",
 			"ass.is_completed",
 			"ass.completed_at",
@@ -127,6 +126,7 @@ func (r *AssignmentsRepositoryPostgres) getMany(ctx context.Context, input *doma
 
 	for i := range objects {
 		objects[i].Link = fmt.Sprintf("%s#gid=%v", objects[i].Link, objects[i].SheetID)
+		objects[i].RowsTotal = (objects[i].RowsUntil - objects[i].RowsFrom) + 1
 		objects[i].RowsFrom += 3
 		objects[i].RowsUntil += 3
 	}
@@ -172,7 +172,6 @@ func queryAssignmentViews(ctx context.Context, q querier, sqlQuery string, args 
 		tmpAssigneeName   *string
 		tmpRowsFrom       *int
 		tmpRowsUntil      *int
-		tmpRowsTotal      *int
 		tmpRowsCompleted  *int
 		tmpIsCompleted    *bool
 		tmpCompletedAt    *time.Time
@@ -189,7 +188,6 @@ func queryAssignmentViews(ctx context.Context, q querier, sqlQuery string, args 
 		&tmpAssigneeName,
 		&tmpRowsFrom,
 		&tmpRowsUntil,
-		&tmpRowsTotal,
 		&tmpRowsCompleted,
 		&tmpIsCompleted,
 		&tmpCompletedAt,
@@ -205,7 +203,6 @@ func queryAssignmentViews(ctx context.Context, q querier, sqlQuery string, args 
 			AssigneeName:   valueFromPointer(tmpAssigneeName),
 			RowsFrom:       valueFromPointer(tmpRowsFrom),
 			RowsUntil:      valueFromPointer(tmpRowsUntil),
-			RowsTotal:      valueFromPointer(tmpRowsTotal),
 			RowsCompleted:  valueFromPointer(tmpRowsCompleted),
 			IsCompleted:    valueFromPointer(tmpIsCompleted),
 			CompletedAt:    valueFromPointer(tmpCompletedAt),

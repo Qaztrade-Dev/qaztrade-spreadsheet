@@ -32,7 +32,6 @@ create table "assignments" (
   "sheet_id" bigint,
   "rows_from" bigint,
   "rows_until" bigint,
-  "rows_total" bigint GENERATED ALWAYS AS ("rows_until" - "rows_from" +1) STORED,
   "is_completed" boolean default false,
   "completed_at" timestamptz default null,
   "last_result_id" uuid default null,
