@@ -6,17 +6,17 @@ import (
 	"time"
 )
 
-type Sheet struct {
-	SheetTitle string
-	SheetID    int
-	TotalRows  int
-}
+// type Sheet struct {
+// 	SheetTitle string
+// 	SheetID    int
+// 	TotalRows  int
+// }
 
-type Application struct {
-	ApplicationID string
-	SpreadsheetID string
-	Sheets        []*Sheet
-}
+// type Application struct {
+// 	ApplicationID string
+// 	SpreadsheetID string
+// 	Sheets        []*Sheet
+// }
 
 const (
 	TypeDigital = "digital"
@@ -54,17 +54,17 @@ var (
 	ErrAssignmentNotFound = fmt.Errorf("assignment not found")
 )
 
-type AssignmentSearchInput struct {
+type GetManyInput struct {
 	UserID string
 	Limit  int
 	Offset int
 }
 
-type InfoSearchInput struct {
+type GetInfoInput struct {
 	UserID string
 }
 
 type AssignmentRepository interface {
-	GetInfo(ctx context.Context, input *InfoSearchInput) (*AssignmentsInfo, error)
-	GetMany(ctx context.Context, input *AssignmentSearchInput) (*AssignmentsList, error)
+	GetInfo(ctx context.Context, input *GetInfoInput) (*AssignmentsInfo, error)
+	GetMany(ctx context.Context, input *GetManyInput) (*AssignmentsList, error)
 }

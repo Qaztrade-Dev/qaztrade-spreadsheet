@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/auth/domain"
@@ -20,12 +21,12 @@ func (s *service) SignIn(ctx context.Context, input *SignInRequest) (*domain.Cre
 		Password: input.Password,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error SignIn: %w", err)
 	}
 
 	roles, err := s.authRepo.GetRoles(ctx, user.ID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error GetRoles: %w", err)
 	}
 
 	creds, err := s.credsRepo.Create(ctx, &domain.UserClaims{
@@ -33,7 +34,7 @@ func (s *service) SignIn(ctx context.Context, input *SignInRequest) (*domain.Cre
 		Roles:  roles,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error Create: %w", err)
 	}
 
 	return creds, nil

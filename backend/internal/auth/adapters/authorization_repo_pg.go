@@ -120,7 +120,6 @@ func (r *AuthorizationRepositoryPostgre) SignIn(ctx context.Context, input *doma
 			u.id,
 			u.hashed_password
 		from "users" u
-		join "user_roles" ur on ur.id = u.role_id
 		where 
 			u.email = $1
 	`
@@ -128,10 +127,9 @@ func (r *AuthorizationRepositoryPostgre) SignIn(ctx context.Context, input *doma
 	var (
 		userID     string
 		hashedPass string
-		userRole   string
 	)
 
-	err := r.pg.QueryRow(ctx, sql, input.Email).Scan(&userID, &hashedPass, &userRole)
+	err := r.pg.QueryRow(ctx, sql, input.Email).Scan(&userID, &hashedPass)
 	if err != nil {
 		return nil, err
 	}
@@ -165,20 +163,17 @@ func (r *AuthorizationRepositoryPostgre) UpdatePassword(ctx context.Context, use
 func (r *AuthorizationRepositoryPostgre) GetOne(ctx context.Context, input *domain.GetQuery) (*domain.User, error) {
 	const sql = `
 		select 
-			u.id,
-			ur.value
+			u.id
 		from "users" u
-		join "user_roles" ur on ur.id = u.role_id
 		where 
 			u.email = $1
 	`
 
 	var (
-		userID   string
-		userRole string
+		userID string
 	)
 
-	err := r.pg.QueryRow(ctx, sql, input.Email).Scan(&userID, &userRole)
+	err := r.pg.QueryRow(ctx, sql, input.Email).Scan(&userID)
 	if err != nil {
 		return nil, err
 	}
