@@ -19,7 +19,7 @@ type ApplicationRepositoryPostgre struct {
 
 var _ domain.ApplicationRepository = (*ApplicationRepositoryPostgre)(nil)
 
-func NewApplicationRepositoryPostgre(pg *pgxpool.Pool) *ApplicationRepositoryPostgre {
+func NewApplicationRepositoryPostgres(pg *pgxpool.Pool) *ApplicationRepositoryPostgre {
 	return &ApplicationRepositoryPostgre{
 		pg: pg,
 	}

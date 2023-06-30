@@ -88,24 +88,24 @@ func EncodeDownloadArchiveResponse(ctx context.Context, w http.ResponseWriter, r
 	return nil
 }
 
-func DecodeGetDDCardResponse(_ context.Context, r *http.Request) (interface{}, error) {
+func DecodeGetDDCard(_ context.Context, r *http.Request) (interface{}, error) {
 	var (
 		applicationID = mux.Vars(r)["application_id"]
 	)
 
-	return endpoint.GetDDCardResponseRequest{
+	return endpoint.GetDDCardRequest{
 		ApplicationID: applicationID,
 	}, nil
 }
 
-func EncodeGetDDCardResponseResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+func EncodeGetDDCardResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	if e, ok := response.(common.Errorer); ok && e.Error() != nil {
 		common.EncodeError(ctx, e.Error(), w)
 		return nil
 	}
 
 	var (
-		resp     = response.(*endpoint.GetDDCardResponseResponse)
+		resp     = response.(*endpoint.GetDDCardResponse)
 		httpResp = resp.HTTPResponse
 	)
 
@@ -129,4 +129,8 @@ func EncodeGetDDCardResponseResponse(ctx context.Context, w http.ResponseWriter,
 	}
 
 	return nil
+}
+
+func DecodeGetManagers(_ context.Context, _ *http.Request) (interface{}, error) {
+	return nil, nil
 }

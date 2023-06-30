@@ -7,11 +7,11 @@ import (
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 )
 
-type GetDDCardResponseRequest struct {
+type GetDDCardRequest struct {
 	ApplicationID string
 }
 
-func (s *service) GetDDCardResponse(ctx context.Context, req *GetDDCardResponseRequest) (*http.Response, error) {
+func (s *service) GetDDCard(ctx context.Context, req *GetDDCardRequest) (*http.Response, error) {
 	application, err := s.applicationRepo.GetOne(ctx, &domain.ApplicationQuery{
 		ApplicationID: req.ApplicationID,
 	})
@@ -23,7 +23,7 @@ func (s *service) GetDDCardResponse(ctx context.Context, req *GetDDCardResponseR
 		return nil, domain.ErrorApplicationNotSigned
 	}
 
-	httpResp, err := s.signingSvc.GetDDCardResponse(ctx, application.SignDocumentID)
+	httpResp, err := s.signingSvc.GetDDCard(ctx, application.SignDocumentID)
 	if err != nil {
 		return nil, err
 	}

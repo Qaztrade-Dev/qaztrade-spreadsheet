@@ -16,11 +16,6 @@ type Application struct {
 	Attrs         interface{} `json:"attrs,omitempty"`
 }
 
-type ApplicationList struct {
-	OverallCount uint64         `json:"overall_count"`
-	Applications []*Application `json:"applications"`
-}
-
 func EncodeApplication(input *domain.Application) *Application {
 	if input == nil {
 		return nil
@@ -37,6 +32,11 @@ func EncodeApplication(input *domain.Application) *Application {
 	}
 }
 
+type ApplicationList struct {
+	OverallCount uint64         `json:"overall_count"`
+	Applications []*Application `json:"applications"`
+}
+
 func EncodeApplicationList(input *domain.ApplicationList) *ApplicationList {
 	if input == nil {
 		return nil
@@ -45,6 +45,24 @@ func EncodeApplicationList(input *domain.ApplicationList) *ApplicationList {
 	return &ApplicationList{
 		OverallCount: input.OverallCount,
 		Applications: EncodeSlice(input.Applications, EncodeApplication),
+	}
+}
+
+type Manager struct {
+	UserID string   `json:"user_id"`
+	Email  string   `json:"email"`
+	Roles  []string `json:"roles"`
+}
+
+func EncodeManager(input *domain.Manager) *Manager {
+	if input == nil {
+		return nil
+	}
+
+	return &Manager{
+		UserID: input.UserID,
+		Email:  input.Email,
+		Roles:  input.Roles,
 	}
 }
 

@@ -25,10 +25,13 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		panic(err)
 	}
 
-	applicationRepo := adapters.NewApplicationRepositoryPostgre(deps.pg)
-	signSvc := adapters.NewSigningServiceDoodocs(deps.signUrlBase, deps.signLogin, deps.signPassword)
+	var (
+		applicationRepo = adapters.NewApplicationRepositoryPostgres(deps.pg)
+		managersRepo    = adapters.NewManagersRepositoryPostgres(deps.pg)
+		signSvc         = adapters.NewSigningServiceDoodocs(deps.signUrlBase, deps.signLogin, deps.signPassword)
+	)
 
-	svc := service.NewService(spreadsheetSvc, applicationRepo, spreadsheetStorage, signSvc)
+	svc := service.NewService(spreadsheetSvc, applicationRepo, spreadsheetStorage, signSvc, managersRepo)
 	return svc
 }
 

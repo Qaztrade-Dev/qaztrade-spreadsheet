@@ -27,7 +27,7 @@ func NewSigningServiceDoodocs(urlBase, login, password string) *SigningServiceDo
 	}
 }
 
-func (s *SigningServiceDoodocs) GetDDCardResponse(ctx context.Context, documentID string) (*http.Response, error) {
+func (s *SigningServiceDoodocs) GetDDCard(ctx context.Context, documentID string) (*http.Response, error) {
 	session, err := s.authenticate(ctx)
 	if err != nil {
 		return nil, err

@@ -52,9 +52,15 @@ func MakeHandler(svc managerService.Service, jwtcli *jwt.Client, logger kitlog.L
 			opts...,
 		)
 
-		getDDCardResponseHandler = kithttp.NewServer(
-			mdlwChain(managerEndpoint.MakeGetDDCardResponseEndpoint(svc)),
-			managerTransport.DecodeGetDDCardResponse, managerTransport.EncodeGetDDCardResponseResponse,
+		getDDCardHandler = kithttp.NewServer(
+			mdlwChain(managerEndpoint.MakeGetDDCardEndpoint(svc)),
+			managerTransport.DecodeGetDDCard, managerTransport.EncodeGetDDCardResponse,
+			opts...,
+		)
+
+		getManagersHandler = kithttp.NewServer(
+			mdlwChain(managerEndpoint.MakeGetManagersEndpoint(svc)),
+			managerTransport.DecodeGetManagers, common.EncodeResponse,
 			opts...,
 		)
 	)
@@ -63,7 +69,8 @@ func MakeHandler(svc managerService.Service, jwtcli *jwt.Client, logger kitlog.L
 	r.Handle("/manager/spreadsheets/", switchStatusHandler).Methods("PATCH")
 	r.Handle("/manager/spreadsheets/", listSpreadsheetsHandler).Methods("GET")
 	r.Handle("/manager/applications/{application_id}/archive", downloadArchiveHandler).Methods("GET")
-	r.Handle("/manager/applications/{application_id}/ddcard", getDDCardResponseHandler).Methods("GET")
+	r.Handle("/manager/applications/{application_id}/ddcard", getDDCardHandler).Methods("GET")
+	r.Handle("/manager/managers/", getManagersHandler).Methods("GET")
 
 	return r
 }

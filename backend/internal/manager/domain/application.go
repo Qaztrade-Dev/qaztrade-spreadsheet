@@ -2,7 +2,7 @@ package domain
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -64,9 +64,9 @@ type Storage interface {
 }
 
 var (
-	ErrorApplicationNotSigned = errors.New("Заявление еще не подписано!")
+	ErrorApplicationNotSigned = fmt.Errorf("Заявление еще не подписано!")
 )
 
 type SigningService interface {
-	GetDDCardResponse(ctx context.Context, documentID string) (*http.Response, error)
+	GetDDCard(ctx context.Context, documentID string) (*http.Response, error)
 }

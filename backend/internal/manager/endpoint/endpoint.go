@@ -105,31 +105,52 @@ func MakeDownloadArchiveEndpoint(s service.Service) endpoint.Endpoint {
 	}
 }
 
-type GetDDCardResponseRequest struct {
+type GetDDCardRequest struct {
 	ApplicationID string
 }
 
-type GetDDCardResponseResponse struct {
+type GetDDCardResponse struct {
 	HTTPResponse *http.Response
 	Err          error `json:"err,omitempty"`
 }
 
-func (r *GetDDCardResponseResponse) Error() error { return r.Err }
+func (r *GetDDCardResponse) Error() error { return r.Err }
 
-func MakeGetDDCardResponseEndpoint(s service.Service) endpoint.Endpoint {
+func MakeGetDDCardEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GetDDCardResponseRequest)
+		req := request.(GetDDCardRequest)
 
-		result, err := s.GetDDCardResponse(ctx, &service.GetDDCardResponseRequest{
+		result, err := s.GetDDCard(ctx, &service.GetDDCardRequest{
 			ApplicationID: req.ApplicationID,
 		})
 		if err != nil {
 			return nil, err
 		}
 
-		return &GetDDCardResponseResponse{
+		return &GetDDCardResponse{
 			HTTPResponse: result,
 			Err:          err,
+		}, nil
+	}
+}
+
+type GetManagersResponse struct {
+	Managers []*jsonmanager.Manager `json:"managers"`
+	Err      error                  `json:"err,omitempty"`
+}
+
+func (r *GetManagersResponse) Error() error { return r.Err }
+
+func MakeGetManagersEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		result, err := s.GetManagers(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return &GetManagersResponse{
+			Managers: jsonmanager.EncodeSlice(result, jsonmanager.EncodeManager),
+			Err:      err,
 		}, nil
 	}
 }
