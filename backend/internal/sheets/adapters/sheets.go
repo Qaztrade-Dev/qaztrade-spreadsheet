@@ -89,7 +89,7 @@ func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID
 
 	_, err := c.service.Spreadsheets.Values.BatchUpdate(spreadsheetID, updateValuesRequest).Do()
 	if err != nil {
-		return err
+		return fmt.Errorf("BatchUpdate: %w", err)
 	}
 
 	return nil
