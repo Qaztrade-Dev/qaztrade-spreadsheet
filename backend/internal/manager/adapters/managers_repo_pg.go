@@ -70,7 +70,7 @@ func queryManagers(ctx context.Context, q querier, sqlQuery string, args ...inte
 		// scans
 		tmpUserID   string
 		tmpEmail    string
-		tmpFullname string
+		tmpFullname *string
 		tmpRoles    string
 	)
 
@@ -88,7 +88,7 @@ func queryManagers(ctx context.Context, q querier, sqlQuery string, args ...inte
 		objects = append(objects, &domain.Manager{
 			UserID:   tmpUserID,
 			Email:    tmpEmail,
-			Fullname: tmpFullname,
+			Fullname: valueFromPointer(tmpFullname),
 			Roles:    roles,
 		})
 		return nil
