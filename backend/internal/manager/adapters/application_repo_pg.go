@@ -83,7 +83,18 @@ func getApplicationQueryStatement(input *domain.ApplicationQuery) squirrel.Selec
 			"a.link",
 			"a.sign_document_id",
 			"a.sign_at",
-			"a.attrs",
+			`
+			jsonb_set(
+				a.attrs,
+				'{sheets}', 
+				(
+					SELECT jsonb_agg(
+						to_jsonb(sub.item) - 'data' - 'header'
+					) 
+					FROM jsonb_array_elements(a.attrs->'sheets') sub(item)
+				)
+			)
+			`,
 		).
 		From("applications a").
 		Join("application_statuses ast on ast.id = a.status_id").
