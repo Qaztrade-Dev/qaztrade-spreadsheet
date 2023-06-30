@@ -137,7 +137,6 @@ func FixtureTestGetMany() (string, []string) {
 	insert into "assignment_results" 
 		(assignment_id, total_completed)
 	values
-		(1, 0),
 		(2, 100),
 		(3, 14)
 	;

@@ -93,14 +93,14 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 			"u.attrs->>'name'",
 			"ass.rows_from",
 			"ass.rows_until",
-			"assres.total_completed",
+			"coalesce(assres.total_completed, 0)",
 			"ass.is_completed",
 			"ass.completed_at",
 		).
 		From("assignments ass").
 		Join("applications app on app.id = ass.application_id").
 		Join("users u on u.id = ass.user_id").
-		Join("assignment_results assres on assres.id = ass.last_result_id").
+		LeftJoin("assignment_results assres on assres.id = ass.last_result_id").
 		OrderBy("ass.created_at asc")
 
 	if input.UserID != nil {
