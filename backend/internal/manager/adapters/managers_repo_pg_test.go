@@ -74,9 +74,9 @@ func FixtureTestGetMany() (string, []string) {
 	insert into users 
 		(id, email, hashed_password, attrs, created_at)
 	values
-		('%[1]s',	'1',	'',	'{"name": "John Doe"}',		'2021-01-01'),
-		('%[2]s',	'2',	'',	'{"name": "Jack Wolf"}',	'2021-01-02'),
-		('%[3]s',	'3',	'',	'{"name": "Johny Dep"}',	'2021-01-03')
+		('%[1]s',	'1',	'',	'{"full_name": "John Doe"}',	'2021-01-01'),
+		('%[2]s',	'2',	'',	'{"full_name": "Jack Wolf"}',	'2021-01-02'),
+		('%[3]s',	'3',	'',	'{"full_name": "Johny Dep"}',	'2021-01-03')
 	;
 
 	insert into user_role_bindings
@@ -99,14 +99,16 @@ func (s *ManagersRepositoryPostgresSuite) TestGetMany() {
 	var (
 		expManagers = []*domain.Manager{
 			{
-				UserID: "85925046-290b-4159-9ebb-89c6cdb00fde",
-				Email:  "1",
-				Roles:  []string{"manager", "admin", "legal"},
+				UserID:   "85925046-290b-4159-9ebb-89c6cdb00fde",
+				Email:    "1",
+				Fullname: "John Doe",
+				Roles:    []string{"manager", "admin", "legal"},
 			},
 			{
-				UserID: "6ae4ead1-1865-44af-a74f-84f612df6f87",
-				Email:  "2",
-				Roles:  []string{"manager"},
+				UserID:   "6ae4ead1-1865-44af-a74f-84f612df6f87",
+				Email:    "2",
+				Fullname: "Jack Wolf",
+				Roles:    []string{"manager"},
 			},
 		}
 	)

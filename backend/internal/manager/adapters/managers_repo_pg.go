@@ -36,6 +36,7 @@ func getManagersQueryStatement() squirrel.SelectBuilder {
 		Select(
 			"u.id",
 			"u.email",
+			"u.attrs->>'full_name'",
 			"json_agg(ur.value) as roles",
 		).
 		From("users u").
@@ -67,14 +68,16 @@ func queryManagers(ctx context.Context, q querier, sqlQuery string, args ...inte
 		objects = make([]*domain.Manager, 0)
 
 		// scans
-		tmpUserID string
-		tmpEmail  string
-		tmpRoles  string
+		tmpUserID   string
+		tmpEmail    string
+		tmpFullname string
+		tmpRoles    string
 	)
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
 		&tmpUserID,
 		&tmpEmail,
+		&tmpFullname,
 		&tmpRoles,
 	}, func(pgx.QueryFuncRow) error {
 		var roles []string
@@ -83,9 +86,10 @@ func queryManagers(ctx context.Context, q querier, sqlQuery string, args ...inte
 		}
 
 		objects = append(objects, &domain.Manager{
-			UserID: tmpUserID,
-			Email:  tmpEmail,
-			Roles:  roles,
+			UserID:   tmpUserID,
+			Email:    tmpEmail,
+			Fullname: tmpFullname,
+			Roles:    roles,
 		})
 		return nil
 	})

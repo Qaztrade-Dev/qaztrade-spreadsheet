@@ -75,8 +75,8 @@ func FixtureTestGetMany() (string, []string) {
 	insert into users 
 		(id, email, hashed_password, attrs)
 	values
-		('%[1]s',	'1',	'',	'{"name": "John Doe"}'),
-		('%[2]s',	'2',	'',	'{"name": "Jack Wolf"}')
+		('%[1]s',	'1',	'',	'{"full_name": "John Doe"}'),
+		('%[2]s',	'2',	'',	'{"full_name": "Jack Wolf"}')
 	;
 
 	insert into applications 

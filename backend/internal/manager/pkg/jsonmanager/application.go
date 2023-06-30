@@ -51,9 +51,10 @@ func EncodeApplicationList(input *domain.ApplicationList) *ApplicationList {
 }
 
 type Manager struct {
-	UserID string   `json:"user_id"`
-	Email  string   `json:"email"`
-	Roles  []string `json:"roles"`
+	UserID   string   `json:"user_id"`
+	Email    string   `json:"email"`
+	Fullname string   `json:"full_name"`
+	Roles    []string `json:"roles"`
 }
 
 func EncodeManager(input *domain.Manager) *Manager {
@@ -62,9 +63,10 @@ func EncodeManager(input *domain.Manager) *Manager {
 	}
 
 	return &Manager{
-		UserID: input.UserID,
-		Email:  input.Email,
-		Roles:  input.Roles,
+		UserID:   input.UserID,
+		Email:    input.Email,
+		Fullname: input.Fullname,
+		Roles:    input.Roles,
 	}
 }
 

@@ -90,7 +90,7 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 			"ass.sheet_id",
 			"ass.type",
 			"app.link",
-			"u.attrs->>'name'",
+			"u.attrs->>'full_name'",
 			"ass.rows_from",
 			"ass.rows_until",
 			"coalesce(assres.total_completed, 0)",

@@ -3,9 +3,10 @@ package domain
 import "context"
 
 type Manager struct {
-	UserID string
-	Email  string
-	Roles  []string
+	UserID   string
+	Email    string
+	Fullname string
+	Roles    []string
 }
 
 type ManagersRepository interface {
