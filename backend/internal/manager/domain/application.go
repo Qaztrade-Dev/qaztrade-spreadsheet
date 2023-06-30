@@ -19,6 +19,7 @@ const (
 type Application struct {
 	ID             string
 	UserID         string
+	No             int
 	SpreadsheetID  string
 	Link           string
 	Status         string
@@ -34,10 +35,10 @@ type ApplicationList struct {
 }
 
 type ApplicationQuery struct {
-	ApplicationID string
-	Limit         uint64
-	Offset        uint64
+	Limit  uint64
+	Offset uint64
 
+	ApplicationID    string
 	BIN              string
 	CompensationType string
 	SignedAtFrom     time.Time

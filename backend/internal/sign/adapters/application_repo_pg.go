@@ -7,6 +7,7 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
 	"github.com/doodocs/qaztrade/backend/internal/sign/pkg/jsondomain"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -60,20 +61,60 @@ func (r *ApplicationRepositoryPostgre) AssignAttrs(ctx context.Context, spreadsh
 }
 
 func (r *ApplicationRepositoryPostgre) ConfirmSigningInfo(ctx context.Context, spreadsheetID string, signedAt time.Time) error {
-	signedAtStr := signedAt.Format(domain.TimestampLayout)
-	const sql = `
-		update "applications" set
-			is_signed=true,
-			sign_at=$2
-		where 
-			spreadsheet_id=$1
-	`
+	err := performInTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
+		no, err := assignApplicationNo(ctx, tx, spreadsheetID)
+		if err != nil {
+			return nil
+		}
 
-	if _, err := r.pg.Exec(ctx, sql, spreadsheetID, signedAtStr); err != nil {
+		if err := confirmApplicationSigning(ctx, tx, spreadsheetID, signedAt, no); err != nil {
+			return nil
+		}
+
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func confirmApplicationSigning(ctx context.Context, tx pgx.Tx, spreadsheetID string, signedAt time.Time, no int) error {
+	signedAtStr := signedAt.Format(domain.TimestampLayout)
+	const sql = `
+		update "applications" set
+			is_signed=true,
+			sign_at=$2,
+			no=$3
+		where 
+			spreadsheet_id=$1
+	`
+
+	if _, err := tx.Exec(ctx, sql, spreadsheetID, signedAtStr, no); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func assignApplicationNo(ctx context.Context, tx pgx.Tx, spreadsheetID string) (int, error) {
+	const sql = `
+		insert into "application_signings" (application_id)
+		select
+			id
+		from applications
+		where
+			spreadsheet_id=$1
+		returning id
+	`
+
+	var no int
+	if err := tx.QueryRow(ctx, sql, spreadsheetID).Scan(&no); err != nil {
+		return -1, err
+	}
+
+	return no, nil
 }
 
 func (r *ApplicationRepositoryPostgre) EditStatus(ctx context.Context, spreadsheetID, statusName string) error {
@@ -163,4 +204,24 @@ func valueFromPointer[T any](value *T) T {
 		return defaultValue
 	}
 	return *value
+}
+
+type transactionClosure func(ctx context.Context, tx pgx.Tx) error
+
+func performInTransaction(ctx context.Context, pg *pgxpool.Pool, closure transactionClosure) error {
+	tx, err := pg.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	if err := closure(ctx, tx); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	return nil
 }

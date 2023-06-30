@@ -77,6 +77,7 @@ func getApplicationQueryStatement(input *domain.ApplicationQuery) squirrel.Selec
 	mainStmt := psql.
 		Select(
 			"a.id",
+			"a.no",
 			"a.created_at",
 			"ast.value",
 			"a.spreadsheet_id",
@@ -98,7 +99,7 @@ func getApplicationQueryStatement(input *domain.ApplicationQuery) squirrel.Selec
 		).
 		From("applications a").
 		Join("application_statuses ast on ast.id = a.status_id").
-		OrderBy("a.created_at desc")
+		OrderBy("a.no desc")
 
 	if input.BIN != "" {
 		mainStmt = mainStmt.Where("a.attrs->'application'->>'bin' = ?", input.BIN)
@@ -185,6 +186,7 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 
 		// scans
 		applID             *string
+		applNo             *int
 		applCreatedAt      *time.Time
 		applStatus         *string
 		applSpreadsheetID  *string
@@ -196,6 +198,7 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
 		&applID,
+		&applNo,
 		&applCreatedAt,
 		&applStatus,
 		&applSpreadsheetID,
@@ -206,6 +209,7 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 	}, func(pgx.QueryFuncRow) error {
 		applications = append(applications, &domain.Application{
 			ID:             valueFromPointer(applID),
+			No:             valueFromPointer(applNo),
 			CreatedAt:      valueFromPointer(applCreatedAt),
 			Status:         valueFromPointer(applStatus),
 			SpreadsheetID:  valueFromPointer(applSpreadsheetID),
