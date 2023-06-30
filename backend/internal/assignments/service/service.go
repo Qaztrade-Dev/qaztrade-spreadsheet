@@ -34,5 +34,7 @@ func (s *service) CreateBatch(ctx context.Context) error {
 func NewService(
 	assignmentRepo domain.AssignmentsRepository,
 ) Service {
-	return &service{}
+	return &service{
+		assignmentRepo: assignmentRepo,
+	}
 }
