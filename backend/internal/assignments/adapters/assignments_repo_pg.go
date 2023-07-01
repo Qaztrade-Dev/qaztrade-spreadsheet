@@ -24,6 +24,38 @@ func NewAssignmentsRepositoryPostgres(pg *pgxpool.Pool) *AssignmentsRepositoryPo
 	}
 }
 
+func (r *AssignmentsRepositoryPostgres) GetSheets(ctx context.Context) ([]*domain.Sheet, error) {
+	stmt := getSheetsQueryStatement()
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	objects, err := querySheets(ctx, r.pg, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return objects, nil
+}
+
+func getSheetsQueryStatement() squirrel.SelectBuilder {
+	mainStmt := psql.
+		Select(
+			"a.id",
+			"e.sheet_title",
+			"safe_cast_to_int(s.value->>'sheet_id')",
+			"safe_cast_to_int(s.value->>'rows')",
+			"least(e.expenses_sum, info.tax_sum)",
+		).
+		From("applications a").
+		CrossJoin("jsonb_array_elements(a.attrs -> 'sheets') as s").
+		Join("expenses_dostavka_view_agg e on e.spreadsheet_id = a.spreadsheet_id and e.sheet_title = s.value ->> 'title'").
+		Join("applicants_info_view info on info.id = a.id")
+
+	return mainStmt
+}
+
 func (r *AssignmentsRepositoryPostgres) GetInfo(ctx context.Context, input *domain.GetInfoInput) (*domain.AssignmentsInfo, error) {
 	stmt := getAssignmentsInfoQueryStatement(input)
 	sql, args, err := stmt.ToSql()
@@ -206,6 +238,41 @@ func queryAssignmentViews(ctx context.Context, q querier, sqlQuery string, args 
 			RowsCompleted:  valueFromPointer(tmpRowsCompleted),
 			IsCompleted:    valueFromPointer(tmpIsCompleted),
 			CompletedAt:    valueFromPointer(tmpCompletedAt),
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return objects, err
+}
+
+func querySheets(ctx context.Context, q querier, sqlQuery string, args ...interface{}) ([]*domain.Sheet, error) {
+	var (
+		objects = make([]*domain.Sheet, 0)
+
+		// scans
+		tmpApplicationID *string
+		tmpSheetTitle    *string
+		tmpSheetID       *uint64
+		tmpTotalRows     *uint64
+		tmpTotalSum      *float64
+	)
+
+	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
+		&tmpApplicationID,
+		&tmpSheetTitle,
+		&tmpSheetID,
+		&tmpTotalRows,
+		&tmpTotalSum,
+	}, func(pgx.QueryFuncRow) error {
+		objects = append(objects, &domain.Sheet{
+			ApplicationID: valueFromPointer(tmpApplicationID),
+			SheetTitle:    valueFromPointer(tmpSheetTitle),
+			SheetID:       valueFromPointer(tmpSheetID),
+			TotalRows:     valueFromPointer(tmpTotalRows),
+			TotalSum:      valueFromPointer(tmpTotalSum),
 		})
 		return nil
 	})

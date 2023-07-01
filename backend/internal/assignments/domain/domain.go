@@ -6,18 +6,6 @@ import (
 	"time"
 )
 
-// type Sheet struct {
-// 	SheetTitle string
-// 	SheetID    int
-// 	TotalRows  int
-// }
-
-// type Application struct {
-// 	ApplicationID string
-// 	SpreadsheetID string
-// 	Sheets        []*Sheet
-// }
-
 const (
 	TypeDigital = "digital"
 	TypeFinance = "finance"

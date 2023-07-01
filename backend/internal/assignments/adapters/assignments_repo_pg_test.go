@@ -12,6 +12,8 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 type AssignmentsRepositoryPostgresSuite struct {
@@ -36,9 +38,9 @@ func (s *AssignmentsRepositoryPostgresSuite) SetupSuite() {
 		panic(err)
 	}
 
-	if err := teardownAssignmentsRepositoryPostgres(ctx, s.pg); err != nil {
-		fmt.Println(err)
-	}
+	// if err := teardownAssignmentsRepositoryPostgres(ctx, s.pg); err != nil {
+	// 	fmt.Println(err)
+	// }
 
 	s.ctx = ctx
 	s.repo = NewAssignmentsRepositoryPostgres(s.pg)
@@ -49,9 +51,9 @@ func (s *AssignmentsRepositoryPostgresSuite) TearDownSuite() {
 }
 
 func (s *AssignmentsRepositoryPostgresSuite) TearDownTest() {
-	if err := teardownAssignmentsRepositoryPostgres(s.ctx, s.pg); err != nil {
-		fmt.Println(err)
-	}
+	// if err := teardownAssignmentsRepositoryPostgres(s.ctx, s.pg); err != nil {
+	// 	fmt.Println(err)
+	// }
 }
 
 func TestAssignmentsRepositoryPostgres(t *testing.T) {
@@ -269,6 +271,23 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_User() {
 	s.Require().Nil(err)
 	s.Require().Equal(assignmentsList.Total, expAssignmentsTotal)
 	s.Require().Equal(assignmentsList.Objects, expAssignmentObjects)
+}
+
+func (s *AssignmentsRepositoryPostgresSuite) TestGetSheets() {
+	sheets, err := s.repo.GetSheets(s.ctx)
+	s.Require().Nil(err)
+
+	managersCount := 10
+	pq := domain.DistributeWork(managersCount, sheets)
+
+	p := message.NewPrinter(language.English)
+	// Print out manager assignments
+	for _, manager := range pq.Managers {
+		println("Manager ID: ", manager.ID)
+		p.Printf("Total rows: %d\n", manager.TotalRows)
+		p.Printf("Total sum: %f\n", manager.TotalSum)
+		println("------------")
+	}
 }
 
 func (s *AssignmentsRepositoryPostgresSuite) TestGetInfo_All() {
