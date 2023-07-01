@@ -1,0 +1,44 @@
+BEGIN;
+
+DROP VIEW expenses_sootvetstvie_tovara_view_agg;
+DROP VIEW expenses_sootvetstvie_tovara_view;
+DROP VIEW expenses_uchastie_vystavka_iku_view_agg;
+DROP VIEW expenses_uchastie_vystavka_iku_view;
+DROP VIEW expenses_uchastie_vystavka_view_agg;
+DROP VIEW expenses_uchastie_vystavka_view;
+DROP VIEW expenses_reklaman_view_agg;
+DROP VIEW expenses_reklaman_view;
+DROP VIEW expenses_perevod_view_agg;
+DROP VIEW expenses_perevod_view;
+DROP VIEW expenses_arenda_view_agg;
+DROP VIEW expenses_arenda_view;
+DROP VIEW expenses_registrazia_tovar_znakov_view_agg;
+DROP VIEW expenses_registrazia_tovar_znakov_view;
+DROP VIEW expenses_franchaizing_view_agg;
+DROP VIEW expenses_franchaizing_view;
+DROP VIEW expenses_demonstrazia_iku_view_agg;
+DROP VIEW expenses_demonstrazia_iku_view;
+DROP VIEW expenses_certifikazia_iku_view_agg;
+DROP VIEW expenses_certifikazia_iku_view;
+DROP VIEW expenses_arenda_iku_view_agg;
+DROP VIEW expenses_arenda_iku_view;
+DROP VIEW expenses_perevod_iku_view_agg;
+DROP VIEW expenses_perevod_iku_view;
+DROP VIEW expenses_reklama_iku_view_agg;
+DROP VIEW expenses_reklama_iku_view;
+DROP VIEW expenses_certifikazia_predpriyatia_view_agg;
+DROP VIEW expenses_certifikazia_predpriyatia_view;
+DROP VIEW expenses_dostavka_view_agg;
+DROP VIEW expenses_dostavka_view;
+DROP VIEW applicants_info_view;
+DROP VIEW logistics_values_view;
+DROP VIEW tnved_view;
+DROP VIEW tnved_values_view;
+DROP VIEW business_category_values_view;
+
+DROP FUNCTION get_business_category_table_agg;
+DROP FUNCTION get_business_category_table;
+DROP FUNCTION safe_cast_to_double;
+DROP FUNCTION safe_cast_to_int;
+
+commit;
