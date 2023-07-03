@@ -7,6 +7,7 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
 	"github.com/doodocs/qaztrade/backend/internal/sign/pkg/jsondomain"
+	"github.com/doodocs/qaztrade/backend/pkg/postgres"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -61,7 +62,7 @@ func (r *ApplicationRepositoryPostgre) AssignAttrs(ctx context.Context, spreadsh
 }
 
 func (r *ApplicationRepositoryPostgre) ConfirmSigningInfo(ctx context.Context, spreadsheetID string, signedAt time.Time) error {
-	err := performInTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
+	err := postgres.InTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
 		no, err := assignApplicationNo(ctx, tx, spreadsheetID)
 		if err != nil {
 			return nil
@@ -155,8 +156,8 @@ func (r *ApplicationRepositoryPostgre) GetApplication(ctx context.Context, sprea
 	}
 
 	result := &domain.SignApplication{
-		SignLink: valueFromPointer(scanSignLink),
-		Status:   valueFromPointer(scanStatus),
+		SignLink: postgres.Value(scanSignLink),
+		Status:   postgres.Value(scanStatus),
 	}
 
 	return result, nil
@@ -189,39 +190,10 @@ func (r *ApplicationRepositoryPostgre) GetApplicationByDocumentID(ctx context.Co
 	}
 
 	result := &domain.SignApplication{
-		SpreadsheetID: valueFromPointer(scanSpreadsheetID),
-		SignLink:      valueFromPointer(scanSignLink),
-		Status:        valueFromPointer(scanStatus),
+		SpreadsheetID: postgres.Value(scanSpreadsheetID),
+		SignLink:      postgres.Value(scanSignLink),
+		Status:        postgres.Value(scanStatus),
 	}
 
 	return result, nil
-}
-
-func valueFromPointer[T any](value *T) T {
-	var defaultValue T
-
-	if value == nil {
-		return defaultValue
-	}
-	return *value
-}
-
-type transactionClosure func(ctx context.Context, tx pgx.Tx) error
-
-func performInTransaction(ctx context.Context, pg *pgxpool.Pool, closure transactionClosure) error {
-	tx, err := pg.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	if err := closure(ctx, tx); err != nil {
-		return err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-
-	return nil
 }

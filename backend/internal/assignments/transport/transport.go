@@ -44,3 +44,7 @@ func DecodeGetUserAssignmentsRequest(_ context.Context, r *http.Request) (interf
 		Offset: offset,
 	}, nil
 }
+
+func DecodeCreateBatchRequest(_ context.Context, _ *http.Request) (interface{}, error) {
+	return nil, nil
+}

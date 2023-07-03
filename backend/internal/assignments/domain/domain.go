@@ -12,6 +12,16 @@ const (
 	TypeLegal   = "legal"
 )
 
+type AssignmentInput struct {
+	ApplicationID  string
+	SheetTitle     string
+	SheetID        uint64
+	AssignmentType string
+	ManagerID      string
+	TotalRows      uint64
+	TotalSum       float64
+}
+
 type AssignmentView struct {
 	ID             int
 	ApplicantName  string
@@ -21,9 +31,8 @@ type AssignmentView struct {
 	AssignmentType string
 	Link           string
 	AssigneeName   string
-	RowsFrom       int
-	RowsUntil      int
-	RowsTotal      int
+	TotalRows      int
+	TotalSum       int
 	RowsCompleted  int
 	IsCompleted    bool
 	CompletedAt    time.Time
@@ -53,7 +62,27 @@ type GetInfoInput struct {
 	UserID *string
 }
 
+var (
+	ErrorEmptySheets   = fmt.Errorf("empty sheets")
+	ErrorEmptyManagers = fmt.Errorf("empty managers")
+)
+
 type AssignmentsRepository interface {
 	GetInfo(ctx context.Context, input *GetInfoInput) (*AssignmentsInfo, error)
 	GetMany(ctx context.Context, input *GetManyInput) (*AssignmentsList, error)
+
+	// LockApplications locks signed applications into a batch. Returns batch ID of newly created batch
+	LockApplications(ctx context.Context) (int, error)
+
+	// GetSheets returns sheets of a given sheet type
+	GetSheets(ctx context.Context, batchID int, sheetTable string) ([]*Sheet, error)
+
+	// GetManagerIDs returns ID of managers with specified role
+	GetManagerIDs(ctx context.Context, role string) ([]string, error)
+
+	// CreateAssignments creates given assignments
+	CreateAssignments(ctx context.Context, inputs []*AssignmentInput) error
+
+	// UpdateBatchStep update step of the given batch
+	UpdateBatchStep(ctx context.Context, batchID, step int) error
 }

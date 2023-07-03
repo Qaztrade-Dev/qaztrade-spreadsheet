@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
-	"github.com/jackc/pgconn"
+	"github.com/doodocs/qaztrade/backend/pkg/postgres"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/mattermost/squirrel"
@@ -24,9 +24,169 @@ func NewAssignmentsRepositoryPostgres(pg *pgxpool.Pool) *AssignmentsRepositoryPo
 	}
 }
 
-func (r *AssignmentsRepositoryPostgres) GetSheets(ctx context.Context) ([]*domain.Sheet, error) {
-	stmt := getSheetsQueryStatement()
+func (r *AssignmentsRepositoryPostgres) LockApplications(ctx context.Context) (int, error) {
+	var batchID int
+
+	err := postgres.InTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
+		tmpBatchID, err := r.createBatch(ctx, tx)
+		if err != nil {
+			return err
+		}
+
+		if err := r.assignBatchApplications(ctx, tx, tmpBatchID); err != nil {
+			return err
+		}
+
+		batchID = tmpBatchID
+		return nil
+	})
+
+	if err != nil {
+		return batchID, err
+	}
+	return batchID, nil
+}
+
+func (r *AssignmentsRepositoryPostgres) createBatch(ctx context.Context, q postgres.Querier) (int, error) {
+	const sql = `
+		insert into "batches" default values returning id;
+	`
+
+	var batchID int
+	if err := q.QueryRow(ctx, sql).Scan(&batchID); err != nil {
+		return 0, err
+	}
+
+	return batchID, nil
+}
+
+func (r *AssignmentsRepositoryPostgres) assignBatchApplications(ctx context.Context, q postgres.Querier, batchID int) error {
+	const sql = `
+		insert into "batch_applications" 
+			(batch_id, application_id)
+		select
+			$1, id
+		from applications
+		where is_signed
+	`
+
+	if _, err := q.Exec(ctx, sql, batchID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *AssignmentsRepositoryPostgres) UpdateBatchStep(ctx context.Context, batchID, step int) error {
+	const sql = `
+		update "batches" set
+			step = $2
+		where 
+			id = $1
+	`
+
+	if _, err := r.pg.Exec(ctx, sql, batchID, step); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *AssignmentsRepositoryPostgres) CreateAssignments(ctx context.Context, inputs []*domain.AssignmentInput) error {
+	err := postgres.InTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
+		for _, input := range inputs {
+			if err := r.createAssignment(ctx, tx, input); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *AssignmentsRepositoryPostgres) createAssignment(ctx context.Context, q postgres.Querier, input *domain.AssignmentInput) error {
+	const sql = `
+		insert into "assignments" 
+			(
+				user_id,
+				application_id,
+				type,
+				sheet_title,
+				sheet_id,
+				total_rows,
+				total_sum
+			)
+		values
+			($1, $2, $3, $4, $5, $6, $7)
+	`
+
+	if _, err := q.Exec(ctx, sql,
+		input.ManagerID,
+		input.ApplicationID,
+		input.AssignmentType,
+		input.SheetTitle,
+		input.SheetID,
+		input.TotalRows,
+		input.TotalSum,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *AssignmentsRepositoryPostgres) GetManagerIDs(ctx context.Context, role string) ([]string, error) {
+	const sql = `
+		select
+			u.id
+		from users u
+		join user_role_bindings urb on urb.user_id = u.id
+		join user_roles ur on ur.id = urb.role_id
+		where 
+			ur.value = $1		
+	`
+
+	objects, err := queryStrings(ctx, r.pg, sql, role)
+	if err != nil {
+		return nil, err
+	}
+
+	return objects, nil
+}
+
+func queryStrings(ctx context.Context, q postgres.Querier, sqlQuery string, args ...interface{}) ([]string, error) {
+	var (
+		objects = make([]string, 0)
+
+		// scans
+		tmpStr *string
+	)
+
+	_, err := q.QueryFunc(ctx, sqlQuery, args,
+		[]any{&tmpStr},
+		func(pgx.QueryFuncRow) error {
+			objects = append(objects, postgres.Value(tmpStr))
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	return objects, err
+}
+
+func (r *AssignmentsRepositoryPostgres) GetSheets(ctx context.Context, batchID int, sheetTable string) ([]*domain.Sheet, error) {
+	stmt := getSheetsQueryStatement(batchID, sheetTable)
 	sql, args, err := stmt.ToSql()
+
+	fmt.Println(batchID, sheetTable)
+	fmt.Println(sql)
+
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +199,7 @@ func (r *AssignmentsRepositoryPostgres) GetSheets(ctx context.Context) ([]*domai
 	return objects, nil
 }
 
-func getSheetsQueryStatement() squirrel.SelectBuilder {
+func getSheetsQueryStatement(batchID int, sheetTable string) squirrel.SelectBuilder {
 	mainStmt := psql.
 		Select(
 			"a.id",
@@ -50,10 +210,46 @@ func getSheetsQueryStatement() squirrel.SelectBuilder {
 		).
 		From("applications a").
 		CrossJoin("jsonb_array_elements(a.attrs -> 'sheets') as s").
-		Join("expenses_dostavka_view_agg e on e.spreadsheet_id = a.spreadsheet_id and e.sheet_title = s.value ->> 'title'").
+		Join(sheetTable + " e on e.spreadsheet_id = a.spreadsheet_id and e.sheet_title = s.value ->> 'title'").
 		Join("applicants_info_view info on info.id = a.id")
+		// Where("a.id in (select application_id from batch_applications where batch_id = ?)", batchID)
 
 	return mainStmt
+}
+
+func querySheets(ctx context.Context, q postgres.Querier, sqlQuery string, args ...interface{}) ([]*domain.Sheet, error) {
+	var (
+		objects = make([]*domain.Sheet, 0)
+
+		// scans
+		tmpApplicationID *string
+		tmpSheetTitle    *string
+		tmpSheetID       *uint64
+		tmpTotalRows     *uint64
+		tmpTotalSum      *float64
+	)
+
+	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
+		&tmpApplicationID,
+		&tmpSheetTitle,
+		&tmpSheetID,
+		&tmpTotalRows,
+		&tmpTotalSum,
+	}, func(pgx.QueryFuncRow) error {
+		objects = append(objects, &domain.Sheet{
+			ApplicationID: postgres.Value(tmpApplicationID),
+			SheetTitle:    postgres.Value(tmpSheetTitle),
+			SheetID:       postgres.Value(tmpSheetID),
+			TotalRows:     postgres.Value(tmpTotalRows),
+			TotalSum:      postgres.Value(tmpTotalSum),
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return objects, err
 }
 
 func (r *AssignmentsRepositoryPostgres) GetInfo(ctx context.Context, input *domain.GetInfoInput) (*domain.AssignmentsInfo, error) {
@@ -123,8 +319,8 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 			"ass.type",
 			"app.link",
 			"u.attrs->>'full_name'",
-			"ass.rows_from",
-			"ass.rows_until",
+			"ass.total_rows",
+			"ass.total_sum",
 			"coalesce(assres.total_completed, 0)",
 			"ass.is_completed",
 			"ass.completed_at",
@@ -158,9 +354,6 @@ func (r *AssignmentsRepositoryPostgres) getMany(ctx context.Context, input *doma
 
 	for i := range objects {
 		objects[i].Link = fmt.Sprintf("%s#gid=%v", objects[i].Link, objects[i].SheetID)
-		objects[i].RowsTotal = (objects[i].RowsUntil - objects[i].RowsFrom) + 1
-		objects[i].RowsFrom += 3
-		objects[i].RowsUntil += 3
 	}
 
 	return objects, nil
@@ -182,14 +375,7 @@ func (r *AssignmentsRepositoryPostgres) getCount(ctx context.Context, query *dom
 	return tmp, err
 }
 
-type querier interface {
-	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
-	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
-	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
-	QueryFunc(ctx context.Context, sql string, args []interface{}, scans []interface{}, f func(pgx.QueryFuncRow) error) (pgconn.CommandTag, error)
-}
-
-func queryAssignmentViews(ctx context.Context, q querier, sqlQuery string, args ...interface{}) ([]*domain.AssignmentView, error) {
+func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery string, args ...interface{}) ([]*domain.AssignmentView, error) {
 	var (
 		objects = make([]*domain.AssignmentView, 0)
 
@@ -202,8 +388,8 @@ func queryAssignmentViews(ctx context.Context, q querier, sqlQuery string, args 
 		tmpAssignmentType *string
 		tmpLink           *string
 		tmpAssigneeName   *string
-		tmpRowsFrom       *int
-		tmpRowsUntil      *int
+		tmpTotalRows      *int
+		tmpTotalSum       *int
 		tmpRowsCompleted  *int
 		tmpIsCompleted    *bool
 		tmpCompletedAt    *time.Time
@@ -218,26 +404,26 @@ func queryAssignmentViews(ctx context.Context, q querier, sqlQuery string, args 
 		&tmpAssignmentType,
 		&tmpLink,
 		&tmpAssigneeName,
-		&tmpRowsFrom,
-		&tmpRowsUntil,
+		&tmpTotalRows,
+		&tmpTotalSum,
 		&tmpRowsCompleted,
 		&tmpIsCompleted,
 		&tmpCompletedAt,
 	}, func(pgx.QueryFuncRow) error {
 		objects = append(objects, &domain.AssignmentView{
-			ID:             valueFromPointer(tmpID),
-			ApplicantName:  valueFromPointer(tmpApplicantName),
-			ApplicantBIN:   valueFromPointer(tmpApplicantBIN),
-			SheetTitle:     valueFromPointer(tmpSheetTitle),
-			SheetID:        valueFromPointer(tmpSheetID),
-			AssignmentType: valueFromPointer(tmpAssignmentType),
-			Link:           valueFromPointer(tmpLink),
-			AssigneeName:   valueFromPointer(tmpAssigneeName),
-			RowsFrom:       valueFromPointer(tmpRowsFrom),
-			RowsUntil:      valueFromPointer(tmpRowsUntil),
-			RowsCompleted:  valueFromPointer(tmpRowsCompleted),
-			IsCompleted:    valueFromPointer(tmpIsCompleted),
-			CompletedAt:    valueFromPointer(tmpCompletedAt),
+			ID:             postgres.Value(tmpID),
+			ApplicantName:  postgres.Value(tmpApplicantName),
+			ApplicantBIN:   postgres.Value(tmpApplicantBIN),
+			SheetTitle:     postgres.Value(tmpSheetTitle),
+			SheetID:        postgres.Value(tmpSheetID),
+			AssignmentType: postgres.Value(tmpAssignmentType),
+			Link:           postgres.Value(tmpLink),
+			AssigneeName:   postgres.Value(tmpAssigneeName),
+			TotalRows:      postgres.Value(tmpTotalRows),
+			TotalSum:       postgres.Value(tmpTotalSum),
+			RowsCompleted:  postgres.Value(tmpRowsCompleted),
+			IsCompleted:    postgres.Value(tmpIsCompleted),
+			CompletedAt:    postgres.Value(tmpCompletedAt),
 		})
 		return nil
 	})
@@ -246,48 +432,4 @@ func queryAssignmentViews(ctx context.Context, q querier, sqlQuery string, args 
 	}
 
 	return objects, err
-}
-
-func querySheets(ctx context.Context, q querier, sqlQuery string, args ...interface{}) ([]*domain.Sheet, error) {
-	var (
-		objects = make([]*domain.Sheet, 0)
-
-		// scans
-		tmpApplicationID *string
-		tmpSheetTitle    *string
-		tmpSheetID       *uint64
-		tmpTotalRows     *uint64
-		tmpTotalSum      *float64
-	)
-
-	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
-		&tmpApplicationID,
-		&tmpSheetTitle,
-		&tmpSheetID,
-		&tmpTotalRows,
-		&tmpTotalSum,
-	}, func(pgx.QueryFuncRow) error {
-		objects = append(objects, &domain.Sheet{
-			ApplicationID: valueFromPointer(tmpApplicationID),
-			SheetTitle:    valueFromPointer(tmpSheetTitle),
-			SheetID:       valueFromPointer(tmpSheetID),
-			TotalRows:     valueFromPointer(tmpTotalRows),
-			TotalSum:      valueFromPointer(tmpTotalSum),
-		})
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return objects, err
-}
-
-func valueFromPointer[T any](value *T) T {
-	var defaultValue T
-
-	if value == nil {
-		return defaultValue
-	}
-	return *value
 }

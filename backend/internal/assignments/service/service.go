@@ -20,17 +20,6 @@ type service struct {
 	assignmentRepo domain.AssignmentsRepository
 }
 
-func (s *service) CreateBatch(ctx context.Context) error {
-	// 1. get signed applications not in a batch
-	// 2. create an empty batch (step=0)
-	// 3. group signed applications into a single batch
-	// 4. get a list of users (role=digital)
-	// 5. distribute applications into assignments among these users
-	// 6. create assignments
-	// 7. start the batch (step=1)
-	return nil
-}
-
 func NewService(
 	assignmentRepo domain.AssignmentsRepository,
 ) Service {

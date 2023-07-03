@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
-	"github.com/jackc/pgconn"
+	"github.com/doodocs/qaztrade/backend/pkg/postgres"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -107,14 +107,7 @@ func (r *ApplicationRepositoryPostgre) getCount(ctx context.Context, query *doma
 	return count, nil
 }
 
-type querier interface {
-	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
-	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
-	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
-	QueryFunc(ctx context.Context, sql string, args []interface{}, scans []interface{}, f func(pgx.QueryFuncRow) error) (pgconn.CommandTag, error)
-}
-
-func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...interface{}) ([]*domain.Application, error) {
+func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string, args ...interface{}) ([]*domain.Application, error) {
 	var (
 		applications = make([]*domain.Application, 0)
 
@@ -132,10 +125,10 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 		&applLink,
 	}, func(pgx.QueryFuncRow) error {
 		applications = append(applications, &domain.Application{
-			CreatedAt:     valueFromPointer(applCreatedAt),
-			Status:        valueFromPointer(applStatus),
-			SpreadsheetID: valueFromPointer(applSpreadsheetID),
-			Link:          valueFromPointer(applLink),
+			CreatedAt:     postgres.Value(applCreatedAt),
+			Status:        postgres.Value(applStatus),
+			SpreadsheetID: postgres.Value(applSpreadsheetID),
+			Link:          postgres.Value(applLink),
 		})
 		return nil
 	})
@@ -144,13 +137,4 @@ func queryApplications(ctx context.Context, q querier, sqlQuery string, args ...
 	}
 
 	return applications, err
-}
-
-func valueFromPointer[T any](value *T) T {
-	var defaultValue T
-
-	if value == nil {
-		return defaultValue
-	}
-	return *value
 }

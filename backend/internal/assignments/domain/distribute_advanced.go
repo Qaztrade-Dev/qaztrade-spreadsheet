@@ -6,22 +6,7 @@ import (
 	"sort"
 )
 
-type Sheet struct {
-	ApplicationID string
-	SheetTitle    string
-	SheetID       uint64
-	TotalRows     uint64
-	TotalSum      float64
-}
-
-type Manager struct {
-	TotalRows uint64
-	TotalSum  float64
-	ID        int
-	index     int
-}
-
-type PriorityQueue struct {
+type AdvancedPriorityQueue struct {
 	Managers []*Manager
 	meanRows float64
 	meanSum  float64
@@ -29,9 +14,9 @@ type PriorityQueue struct {
 	stdSum   float64
 }
 
-func (pq PriorityQueue) Len() int { return len(pq.Managers) }
+func (pq AdvancedPriorityQueue) Len() int { return len(pq.Managers) }
 
-func (pq PriorityQueue) Less(i, j int) bool {
+func (pq AdvancedPriorityQueue) Less(i, j int) bool {
 	zScoreRowsI := (float64(pq.Managers[i].TotalRows) - pq.meanRows) / pq.stdRows
 	zScoreSumI := (float64(pq.Managers[i].TotalSum) - pq.meanSum) / pq.stdSum
 	zScoreI := zScoreRowsI + zScoreSumI
@@ -43,20 +28,20 @@ func (pq PriorityQueue) Less(i, j int) bool {
 	return zScoreI < zScoreJ
 }
 
-func (pq PriorityQueue) Swap(i, j int) {
+func (pq AdvancedPriorityQueue) Swap(i, j int) {
 	pq.Managers[i], pq.Managers[j] = pq.Managers[j], pq.Managers[i]
 	pq.Managers[i].index = i
 	pq.Managers[j].index = j
 }
 
-func (pq *PriorityQueue) Push(x interface{}) {
+func (pq *AdvancedPriorityQueue) Push(x interface{}) {
 	n := len(pq.Managers)
 	item := x.(*Manager)
 	item.index = n
 	pq.Managers = append(pq.Managers, item)
 }
 
-func (pq *PriorityQueue) Pop() interface{} {
+func (pq *AdvancedPriorityQueue) Pop() interface{} {
 	old := pq.Managers
 	n := len(old)
 	item := old[n-1]
@@ -66,14 +51,14 @@ func (pq *PriorityQueue) Pop() interface{} {
 	return item
 }
 
-func DistributeWork(managersCount int, sheets []*Sheet) PriorityQueue {
-	pq := PriorityQueue{Managers: make([]*Manager, managersCount)}
+// DistributeAdvanced distributes sheets based on total rows and total sum of a sheet
+func DistributeAdvanced(managersCount int, sheets []*Sheet) AdvancedPriorityQueue {
+	pq := AdvancedPriorityQueue{Managers: make([]*Manager, managersCount)}
 
 	for i := 0; i < managersCount; i++ {
 		pq.Managers[i] = &Manager{
 			TotalRows: 0,
 			TotalSum:  0,
-			ID:        i,
 			index:     i,
 		}
 	}
@@ -99,7 +84,9 @@ func DistributeWork(managersCount int, sheets []*Sheet) PriorityQueue {
 	})
 
 	for _, sheet := range sheets {
+		sheet := sheet
 		manager := heap.Pop(&pq).(*Manager)
+		manager.Sheets = append(manager.Sheets, sheet)
 		manager.TotalRows += sheet.TotalRows
 		manager.TotalSum += sheet.TotalSum
 		heap.Push(&pq, manager)

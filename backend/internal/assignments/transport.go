@@ -39,6 +39,12 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 			authEndpoint.MakeAuthMiddleware(authDomain.RoleManager),
 		)
 
+		createBatchHandler = kithttp.NewServer(
+			mdlwChainAdmin(assignmentsEndpoint.MakeCreateBatchEndpoint(svc)),
+			assignmentsTransport.DecodeCreateBatchRequest, common.EncodeResponse,
+			opts...,
+		)
+
 		getAssignmentsHandler = kithttp.NewServer(
 			mdlwChainAdmin(assignmentsEndpoint.MakeGetAssignmentsEndpoint(svc)),
 			assignmentsTransport.DecodeGetAssignmentsRequest, common.EncodeResponse,
@@ -55,6 +61,7 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 	r := mux.NewRouter()
 	r.Handle("/assignments/manager/", getUserAssignmentsHandler).Methods(http.MethodGet)
 	r.Handle("/assignments/admin/", getAssignmentsHandler).Methods(http.MethodGet)
+	r.Handle("/assignments/admin/batch/", createBatchHandler).Methods(http.MethodPost)
 
 	return r
 }

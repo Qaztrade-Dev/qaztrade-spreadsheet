@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"context"
+	"fmt"
 
 	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 
@@ -37,6 +38,8 @@ func MakeGetUserAssignmentsEndpoint(s service.Service) endpoint.Endpoint {
 			Limit:  input.Limit,
 			Offset: input.Offset,
 		})
+		_ = response
+		fmt.Println(err)
 
 		return &GetUserAssignmentsResponse{
 			Err:             err,

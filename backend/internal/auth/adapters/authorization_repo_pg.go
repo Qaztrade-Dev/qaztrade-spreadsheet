@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/doodocs/qaztrade/backend/internal/auth/domain"
+	"github.com/doodocs/qaztrade/backend/pkg/postgres"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"golang.org/x/crypto/bcrypt"
@@ -23,7 +24,7 @@ func NewAuthorizationRepositoryPostgre(pg *pgxpool.Pool) *AuthorizationRepositor
 }
 
 func (r *AuthorizationRepositoryPostgre) SignUp(ctx context.Context, input *domain.SignUpInput) error {
-	err := performInTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
+	err := postgres.InTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
 		if err := r.signUp(ctx, tx, input); err != nil {
 			return nil
 		}
@@ -197,24 +198,4 @@ func DecodeUserAttrs(jsonBytes []byte) (*UserAttrs, error) {
 
 func EncodeUserAttrs(attrs *UserAttrs) ([]byte, error) {
 	return json.Marshal(attrs)
-}
-
-type transactionClosure func(ctx context.Context, tx pgx.Tx) error
-
-func performInTransaction(ctx context.Context, pg *pgxpool.Pool, closure transactionClosure) error {
-	tx, err := pg.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	if err := closure(ctx, tx); err != nil {
-		return err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-
-	return nil
 }

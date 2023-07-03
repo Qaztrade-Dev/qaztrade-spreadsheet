@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
+	"github.com/doodocs/qaztrade/backend/pkg/postgres"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/mattermost/squirrel"
@@ -63,7 +64,7 @@ func (r *ManagersRepositoryPostgres) getMany(ctx context.Context) ([]*domain.Man
 	return objects, nil
 }
 
-func queryManagers(ctx context.Context, q querier, sqlQuery string, args ...interface{}) ([]*domain.Manager, error) {
+func queryManagers(ctx context.Context, q postgres.Querier, sqlQuery string, args ...interface{}) ([]*domain.Manager, error) {
 	var (
 		objects = make([]*domain.Manager, 0)
 
@@ -88,7 +89,7 @@ func queryManagers(ctx context.Context, q querier, sqlQuery string, args ...inte
 		objects = append(objects, &domain.Manager{
 			UserID:   tmpUserID,
 			Email:    tmpEmail,
-			Fullname: valueFromPointer(tmpFullname),
+			Fullname: postgres.Value(tmpFullname),
 			Roles:    roles,
 		})
 		return nil

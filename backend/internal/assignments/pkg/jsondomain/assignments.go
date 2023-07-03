@@ -15,9 +15,8 @@ type AssignmentView struct {
 	AssignmentType string    `json:"assignment_type"`
 	Link           string    `json:"link"`
 	AssigneeName   string    `json:"assignee_name"`
-	RowsFrom       int       `json:"rows_from"`
-	RowsUntil      int       `json:"rows_until"`
-	RowsTotal      int       `json:"rows_total"`
+	TotalRows      int       `json:"total_rows"`
+	TotalSum       int       `json:"total_sum"`
 	RowsCompleted  int       `json:"rows_completed"`
 	IsCompleted    bool      `json:"is_completed"`
 	CompletedAt    time.Time `json:"completed_at"`
@@ -37,9 +36,8 @@ func EncodeAssignmentView(input *domain.AssignmentView) *AssignmentView {
 		AssignmentType: input.AssignmentType,
 		Link:           input.Link,
 		AssigneeName:   input.AssigneeName,
-		RowsFrom:       input.RowsFrom,
-		RowsUntil:      input.RowsUntil,
-		RowsTotal:      input.RowsTotal,
+		TotalRows:      input.TotalRows,
+		TotalSum:       input.TotalSum,
 		RowsCompleted:  input.RowsCompleted,
 		IsCompleted:    input.IsCompleted,
 		CompletedAt:    input.CompletedAt,

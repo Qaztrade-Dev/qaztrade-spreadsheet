@@ -12,8 +12,6 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stretchr/testify/suite"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 )
 
 type AssignmentsRepositoryPostgresSuite struct {
@@ -38,9 +36,9 @@ func (s *AssignmentsRepositoryPostgresSuite) SetupSuite() {
 		panic(err)
 	}
 
-	// if err := teardownAssignmentsRepositoryPostgres(ctx, s.pg); err != nil {
-	// 	fmt.Println(err)
-	// }
+	if err := teardownAssignmentsRepositoryPostgres(ctx, s.pg); err != nil {
+		fmt.Println(err)
+	}
 
 	s.ctx = ctx
 	s.repo = NewAssignmentsRepositoryPostgres(s.pg)
@@ -51,9 +49,9 @@ func (s *AssignmentsRepositoryPostgresSuite) TearDownSuite() {
 }
 
 func (s *AssignmentsRepositoryPostgresSuite) TearDownTest() {
-	// if err := teardownAssignmentsRepositoryPostgres(s.ctx, s.pg); err != nil {
-	// 	fmt.Println(err)
-	// }
+	if err := teardownAssignmentsRepositoryPostgres(s.ctx, s.pg); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func TestAssignmentsRepositoryPostgres(t *testing.T) {
@@ -108,7 +106,7 @@ func FixtureTestGetMany() (string, []string) {
 		(
 			id, created_at,
 			sheet_title, sheet_id, 
-			rows_from, rows_until, 
+			total_rows, total_sum, 
 			is_completed, completed_at,
 			user_id, application_id
 		)
@@ -170,9 +168,8 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_All() {
 				AssignmentType: "",
 				Link:           "#gid=1",
 				AssigneeName:   "John Doe",
-				RowsFrom:       53,
-				RowsUntil:      153,
-				RowsTotal:      101,
+				TotalRows:      53,
+				TotalSum:       153,
 				RowsCompleted:  0,
 				IsCompleted:    false,
 				CompletedAt:    time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
@@ -186,9 +183,8 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_All() {
 				AssignmentType: "",
 				Link:           "#gid=2",
 				AssigneeName:   "John Doe",
-				RowsFrom:       4,
-				RowsUntil:      103,
-				RowsTotal:      100,
+				TotalRows:      4,
+				TotalSum:       103,
 				RowsCompleted:  100,
 				IsCompleted:    true,
 				CompletedAt:    time.Date(2023, time.January, 2, 19, 30, 0, 0, time.Local),
@@ -202,9 +198,8 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_All() {
 				AssignmentType: "",
 				Link:           "#gid=1",
 				AssigneeName:   "Jack Wolf",
-				RowsFrom:       4,
-				RowsUntil:      52,
-				RowsTotal:      49,
+				TotalRows:      4,
+				TotalSum:       52,
 				RowsCompleted:  14,
 				IsCompleted:    false,
 				CompletedAt:    time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
@@ -237,9 +232,8 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_User() {
 				AssignmentType: "",
 				Link:           "#gid=1",
 				AssigneeName:   "John Doe",
-				RowsFrom:       53,
-				RowsUntil:      153,
-				RowsTotal:      101,
+				TotalRows:      53,
+				TotalSum:       153,
 				RowsCompleted:  0,
 				IsCompleted:    false,
 				CompletedAt:    time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
@@ -253,9 +247,8 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_User() {
 				AssignmentType: "",
 				Link:           "#gid=2",
 				AssigneeName:   "John Doe",
-				RowsFrom:       4,
-				RowsUntil:      103,
-				RowsTotal:      100,
+				TotalRows:      4,
+				TotalSum:       103,
 				RowsCompleted:  100,
 				IsCompleted:    true,
 				CompletedAt:    time.Date(2023, time.January, 2, 19, 30, 0, 0, time.Local),
@@ -273,22 +266,22 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_User() {
 	s.Require().Equal(assignmentsList.Objects, expAssignmentObjects)
 }
 
-func (s *AssignmentsRepositoryPostgresSuite) TestGetSheets() {
-	sheets, err := s.repo.GetSheets(s.ctx)
-	s.Require().Nil(err)
+// func (s *AssignmentsRepositoryPostgresSuite) TestGetSheets() {
+// 	sheets, err := s.repo.GetSheets(s.ctx)
+// 	s.Require().Nil(err)
 
-	managersCount := 10
-	pq := domain.DistributeWork(managersCount, sheets)
+// 	managersCount := 10
+// 	pq := domain.DistributeAdvanced(managersCount, sheets)
 
-	p := message.NewPrinter(language.English)
-	// Print out manager assignments
-	for _, manager := range pq.Managers {
-		println("Manager ID: ", manager.ID)
-		p.Printf("Total rows: %d\n", manager.TotalRows)
-		p.Printf("Total sum: %f\n", manager.TotalSum)
-		println("------------")
-	}
-}
+// 	p := message.NewPrinter(language.English)
+// 	// Print out manager assignments
+// 	for i, manager := range pq.Managers {
+// 		println("Manager ID: ", i)
+// 		p.Printf("Total rows: %d\n", manager.TotalRows)
+// 		p.Printf("Total sum: %f\n", manager.TotalSum)
+// 		println("------------")
+// 	}
+// }
 
 func (s *AssignmentsRepositoryPostgresSuite) TestGetInfo_All() {
 	s.Require().Nil(applyFixture(s.ctx, s.pg, FixtureTestGetMany))
