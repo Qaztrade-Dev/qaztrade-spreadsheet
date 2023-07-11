@@ -14,6 +14,9 @@ type Service interface {
 
 	// GetAssignments returns all assignments.
 	GetAssignments(ctx context.Context, input *GetAssignmentsRequest) (*GetAssignmentsResponse, error)
+
+	// ChangeAssignee changes assignee to the given assignee
+	ChangeAssignee(ctx context.Context, input *ChangeAssigneeRequest) error
 }
 
 type service struct {

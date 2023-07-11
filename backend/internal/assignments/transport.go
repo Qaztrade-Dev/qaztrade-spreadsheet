@@ -56,12 +56,19 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 			assignmentsTransport.DecodeGetUserAssignmentsRequest, common.EncodeResponse,
 			opts...,
 		)
+
+		changeAssigneeHandler = kithttp.NewServer(
+			mdlwChainAdmin(assignmentsEndpoint.MakeChangeAssigneeEndpoint(svc)),
+			assignmentsTransport.DecodeChangeAssigneeRequest, common.EncodeResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
 	r.Handle("/assignments/manager/", getUserAssignmentsHandler).Methods(http.MethodGet)
 	r.Handle("/assignments/admin/", getAssignmentsHandler).Methods(http.MethodGet)
 	r.Handle("/assignments/admin/batch/", createBatchHandler).Methods(http.MethodPost)
+	r.Handle("/assignments/{assignment_id}/user", changeAssigneeHandler).Methods(http.MethodPatch)
 
 	return r
 }
