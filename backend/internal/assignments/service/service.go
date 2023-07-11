@@ -17,16 +17,21 @@ type Service interface {
 
 	// ChangeAssignee changes assignee to the given assignee
 	ChangeAssignee(ctx context.Context, input *ChangeAssigneeRequest) error
+
+	GetArchive(ctx context.Context, req *GetArchiveRequest) (*GetArchiveResponse, error)
 }
 
 type service struct {
 	assignmentRepo domain.AssignmentsRepository
+	storage        domain.Storage
 }
 
 func NewService(
 	assignmentRepo domain.AssignmentsRepository,
+	storage domain.Storage,
 ) Service {
 	return &service{
 		assignmentRepo: assignmentRepo,
+		storage:        storage,
 	}
 }

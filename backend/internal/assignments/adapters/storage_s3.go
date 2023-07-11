@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
+	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
 )
 
 type StorageS3 struct {
@@ -77,7 +77,7 @@ func customHTTPClient() *http.Client {
 	}
 }
 
-func (s *StorageS3) DownloadArchive(ctx context.Context, folderName string) (io.ReadCloser, domain.RemoveFunction, error) {
+func (s *StorageS3) GetArchive(ctx context.Context, folderName string) (io.ReadCloser, domain.RemoveFunction, error) {
 	tempDir, err := os.MkdirTemp("", "archive")
 	if err != nil {
 		return nil, nil, err
@@ -89,7 +89,7 @@ func (s *StorageS3) DownloadArchive(ctx context.Context, folderName string) (io.
 		Prefix: aws.String(folderName),
 	})
 	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(context.TODO())
+		output, err := paginator.NextPage(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -145,7 +145,7 @@ func downloadFile(ctx context.Context, client *s3.Client, bucket, key, tempDir s
 		Key:    &key,
 	}
 
-	resp, err := client.GetObject(context.TODO(), input)
+	resp, err := client.GetObject(ctx, input)
 	if err != nil {
 		return fmt.Errorf("failed to download file, %w", err)
 	}

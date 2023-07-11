@@ -23,7 +23,7 @@ func TestStorageS3(t *testing.T) {
 		t.Fatal("NewStorageS3 error:", err)
 	}
 
-	readCloser, remove, err := storage.DownloadArchive(ctx, spreadsheetID)
+	readCloser, remove, err := storage.GetArchive(ctx, spreadsheetID)
 	if err != nil {
 		t.Fatal("NewStorageS3 Upload error:", err)
 	}

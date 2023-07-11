@@ -20,18 +20,13 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		panic(err)
 	}
 
-	spreadsheetStorage, err := adapters.NewStorageS3(ctx, deps.s3AccessKey, deps.s3SecretKey, deps.s3Bucket, deps.s3Endpoint)
-	if err != nil {
-		panic(err)
-	}
-
 	var (
 		applicationRepo = adapters.NewApplicationRepositoryPostgres(deps.pg)
 		managersRepo    = adapters.NewManagersRepositoryPostgres(deps.pg)
 		signSvc         = adapters.NewSigningServiceDoodocs(deps.signUrlBase, deps.signLogin, deps.signPassword)
 	)
 
-	svc := service.NewService(spreadsheetSvc, applicationRepo, spreadsheetStorage, signSvc, managersRepo)
+	svc := service.NewService(spreadsheetSvc, applicationRepo, signSvc, managersRepo)
 	return svc
 }
 
@@ -40,11 +35,6 @@ type Option func(*dependencies)
 type dependencies struct {
 	credentials []byte
 	pg          *pgxpool.Pool
-
-	s3AccessKey string
-	s3SecretKey string
-	s3Endpoint  string
-	s3Bucket    string
 
 	signUrlBase  string
 	signLogin    string
@@ -66,15 +56,6 @@ func WithPostgre(pg *pgxpool.Pool) Option {
 func WithCredentials(credentials []byte) Option {
 	return func(d *dependencies) {
 		d.credentials = credentials
-	}
-}
-
-func WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket string) Option {
-	return func(d *dependencies) {
-		d.s3AccessKey = s3AccessKey
-		d.s3SecretKey = s3SecretKey
-		d.s3Endpoint = s3Endpoint
-		d.s3Bucket = s3Bucket
 	}
 }
 

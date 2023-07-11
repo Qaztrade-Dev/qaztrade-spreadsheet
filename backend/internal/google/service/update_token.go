@@ -5,7 +5,7 @@ import (
 )
 
 func (s *service) UpdateToken(ctx context.Context, authCode string) error {
-	tok, err := s.config.Exchange(context.TODO(), authCode)
+	tok, err := s.config.Exchange(ctx, authCode)
 	if err != nil {
 		return err
 	}

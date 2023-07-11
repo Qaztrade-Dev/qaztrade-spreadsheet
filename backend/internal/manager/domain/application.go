@@ -3,7 +3,6 @@ package domain
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 )
@@ -56,12 +55,6 @@ type SpreadsheetService interface {
 	SwitchModeEdit(ctx context.Context, spreadsheetID string) error
 	BlockImportantRanges(ctx context.Context, spreadsheetID string) error
 	UnlockImportantRanges(ctx context.Context, spreadsheetID string) error
-}
-
-type RemoveFunction func() error
-
-type Storage interface {
-	DownloadArchive(ctx context.Context, folderName string) (io.ReadCloser, RemoveFunction, error)
 }
 
 var (
