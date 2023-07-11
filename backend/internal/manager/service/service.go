@@ -10,7 +10,6 @@ import (
 type Service interface {
 	SwitchStatus(ctx context.Context, req *SwitchStatusRequest) error
 	ListSpreadsheets(ctx context.Context, req *ListSpreadsheetsRequest) (*domain.ApplicationList, error)
-	DownloadArchive(ctx context.Context, req *DownloadArchiveRequest) (*DownloadArchiveResponse, error)
 	GetDDCard(ctx context.Context, req *GetDDCardRequest) (*http.Response, error)
 
 	// GetManagers returns a list of managers
@@ -18,25 +17,22 @@ type Service interface {
 }
 
 type service struct {
-	spreadsheetSvc     domain.SpreadsheetService
-	applicationRepo    domain.ApplicationRepository
-	spreadsheetStorage domain.Storage
-	signingSvc         domain.SigningService
-	mngRepo            domain.ManagersRepository
+	spreadsheetSvc  domain.SpreadsheetService
+	applicationRepo domain.ApplicationRepository
+	signingSvc      domain.SigningService
+	mngRepo         domain.ManagersRepository
 }
 
 func NewService(
 	spreadsheetSvc domain.SpreadsheetService,
 	applicationRepo domain.ApplicationRepository,
-	spreadsheetStorage domain.Storage,
 	signingSvc domain.SigningService,
 	mngRepo domain.ManagersRepository,
 ) Service {
 	return &service{
-		spreadsheetSvc:     spreadsheetSvc,
-		applicationRepo:    applicationRepo,
-		spreadsheetStorage: spreadsheetStorage,
-		signingSvc:         signingSvc,
-		mngRepo:            mngRepo,
+		spreadsheetSvc:  spreadsheetSvc,
+		applicationRepo: applicationRepo,
+		signingSvc:      signingSvc,
+		mngRepo:         mngRepo,
 	}
 }

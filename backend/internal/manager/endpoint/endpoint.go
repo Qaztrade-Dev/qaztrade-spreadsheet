@@ -2,11 +2,9 @@ package endpoint
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"time"
 
-	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 	"github.com/doodocs/qaztrade/backend/internal/manager/pkg/jsonmanager"
 	"github.com/doodocs/qaztrade/backend/internal/manager/service"
 	"github.com/go-kit/kit/endpoint"
@@ -70,37 +68,6 @@ func MakeListSpreadsheetsEndpoint(s service.Service) endpoint.Endpoint {
 		return &ListSpreadsheetsResponse{
 			ApplicationList: jsonmanager.EncodeApplicationList(list),
 			Err:             err,
-		}, nil
-	}
-}
-
-type DownloadArchiveRequest struct {
-	ApplicationID string
-}
-
-type DownloadArchiveResponse struct {
-	ArchiveReader io.ReadCloser
-	RemoveFunc    domain.RemoveFunction
-	Err           error `json:"err,omitempty"`
-}
-
-func (r *DownloadArchiveResponse) Error() error { return r.Err }
-
-func MakeDownloadArchiveEndpoint(s service.Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(DownloadArchiveRequest)
-
-		result, err := s.DownloadArchive(ctx, &service.DownloadArchiveRequest{
-			ApplicationID: req.ApplicationID,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		return &DownloadArchiveResponse{
-			ArchiveReader: result.ArchiveReader,
-			RemoveFunc:    result.RemoveFunc,
-			Err:           err,
 		}, nil
 	}
 }

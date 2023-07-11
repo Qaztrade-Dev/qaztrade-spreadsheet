@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"mime"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -54,38 +52,6 @@ func DecodeListSpreadsheetsRequest(_ context.Context, r *http.Request) (interfac
 		SignedAtFrom:     filterSignedAtFrom,
 		SignedAtUntil:    filterSignedAtUntil,
 	}, nil
-}
-
-func DecodeDownloadArchive(_ context.Context, r *http.Request) (interface{}, error) {
-	var (
-		applicationID = mux.Vars(r)["application_id"]
-	)
-
-	return endpoint.DownloadArchiveRequest{
-		ApplicationID: applicationID,
-	}, nil
-}
-
-func EncodeDownloadArchiveResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if e, ok := response.(common.Errorer); ok && e.Error() != nil {
-		common.EncodeError(ctx, e.Error(), w)
-		return nil
-	}
-
-	resp := response.(*endpoint.DownloadArchiveResponse)
-	defer resp.RemoveFunc()
-	defer resp.ArchiveReader.Close()
-
-	w.Header().Set("Content-Type", mime.TypeByExtension(filepath.Ext("архив.zip")))
-	w.Header().Set("Content-Disposition", "attachment; filename=\"архив.zip\"")
-
-	_, err := io.Copy(w, resp.ArchiveReader)
-	if err != nil {
-		common.EncodeError(ctx, err, w)
-		return nil
-	}
-
-	return nil
 }
 
 func DecodeGetDDCard(_ context.Context, r *http.Request) (interface{}, error) {

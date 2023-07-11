@@ -117,7 +117,6 @@ func main() {
 			ctx,
 			manager.WithPostgre(pg),
 			manager.WithCredentials(credentialsSA),
-			manager.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
 			manager.WithSignCredentials(signUrlBase, signLogin, signPassword),
 			manager.WithAdmin(adminAccount),
 		)
@@ -135,6 +134,7 @@ func main() {
 		assignmentsService = assignments.MakeService(
 			ctx,
 			assignments.WithPostgres(pg),
+			assignments.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
 		)
 	)
 

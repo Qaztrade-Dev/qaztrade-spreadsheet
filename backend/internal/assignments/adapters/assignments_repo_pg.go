@@ -320,12 +320,28 @@ func (r *AssignmentsRepositoryPostgres) GetMany(ctx context.Context, input *doma
 	return result, nil
 }
 
+func (r *AssignmentsRepositoryPostgres) GetOne(ctx context.Context, input *domain.GetManyInput) (*domain.AssignmentView, error) {
+	input.Limit = 1
+	input.Offset = 0
+	objects, err := r.getMany(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(objects) == 0 {
+		return nil, domain.ErrAssignmentNotFound
+	}
+
+	return objects[0], nil
+}
+
 func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBuilder {
 	mainStmt := psql.
 		Select(
 			"ass.id",
 			"app.attrs->'application'->>'from'",
 			"app.attrs->'application'->>'bin'",
+			"app.spreadsheet_id",
 			"ass.sheet_title",
 			"ass.sheet_id",
 			"ass.type",
@@ -346,6 +362,10 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 
 	if input.UserID != nil {
 		mainStmt = mainStmt.Where("u.id = ?", *input.UserID)
+	}
+
+	if input.AssignmentID != nil {
+		mainStmt = mainStmt.Where("ass.id = ?", *input.AssignmentID)
 	}
 
 	return mainStmt
@@ -397,6 +417,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		tmpID             *int
 		tmpApplicantName  *string
 		tmpApplicantBIN   *string
+		tmpSpreadsheetID  *string
 		tmpSheetTitle     *string
 		tmpSheetID        *uint64
 		tmpAssignmentType *string
@@ -414,6 +435,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		&tmpID,
 		&tmpApplicantName,
 		&tmpApplicantBIN,
+		&tmpSpreadsheetID,
 		&tmpSheetTitle,
 		&tmpSheetID,
 		&tmpAssignmentType,
@@ -430,6 +452,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 			ID:             postgres.Value(tmpID),
 			ApplicantName:  postgres.Value(tmpApplicantName),
 			ApplicantBIN:   postgres.Value(tmpApplicantBIN),
+			SpreadsheetID:  postgres.Value(tmpSpreadsheetID),
 			SheetTitle:     postgres.Value(tmpSheetTitle),
 			SheetID:        postgres.Value(tmpSheetID),
 			AssignmentType: postgres.Value(tmpAssignmentType),
