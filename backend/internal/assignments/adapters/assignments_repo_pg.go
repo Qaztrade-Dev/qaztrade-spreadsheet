@@ -286,6 +286,21 @@ func getAssignmentsInfoQueryStatement(input *domain.GetInfoInput) squirrel.Selec
 	return mainStmt
 }
 
+func (r *AssignmentsRepositoryPostgres) ChangeAssignee(ctx context.Context, input *domain.ChangeAssigneeInput) error {
+	const sql = `
+		update "assignments"
+		set
+			user_id=$2
+		where
+			id=$1
+	`
+	if _, err := r.pg.Exec(ctx, sql, input.AssignmentID, input.UserID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *AssignmentsRepositoryPostgres) GetMany(ctx context.Context, input *domain.GetManyInput) (*domain.AssignmentsList, error) {
 	total, err := r.getCount(ctx, input)
 	if err != nil {

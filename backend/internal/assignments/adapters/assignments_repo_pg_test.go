@@ -323,6 +323,49 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetInfo_User() {
 	s.Require().Equal(expInfo, assignmentsInfo)
 }
 
+func (s *AssignmentsRepositoryPostgresSuite) TestChangeAssignee() {
+	s.Require().Nil(applyFixture(s.ctx, s.pg, FixtureTestGetMany))
+
+	var (
+		newUserID           = "85925046-290b-4159-9ebb-89c6cdb00fde"
+		assignmentID uint64 = 3
+
+		// expAssignmentObjects = []*domain.AssignmentView{
+		// 	{
+		// 		ID:             1,
+		// 		ApplicantName:  "Facebook Inc.",
+		// 		ApplicantBIN:   "012345678901",
+		// 		SheetTitle:     "Sheet1",
+		// 		SheetID:        1,
+		// 		AssignmentType: "",
+		// 		Link:           "#gid=1",
+		// 		SignLink:       "https://link.doodocs.kz/abc",
+		// 		AssigneeName:   "John Doe",
+		// 		TotalRows:      50,
+		// 		TotalSum:       150,
+		// 		RowsCompleted:  0,
+		// 		IsCompleted:    false,
+		// 		CompletedAt:    time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
+		// 	},
+		// }
+	)
+
+	err := s.repo.ChangeAssignee(s.ctx, &domain.ChangeAssigneeInput{
+		UserID:       newUserID,
+		AssignmentID: assignmentID,
+	})
+	s.Require().Nil(err)
+
+	assignmentsList, err := s.repo.GetMany(s.ctx, &domain.GetManyInput{
+		UserID: &newUserID,
+		Limit:  10,
+		Offset: 0,
+	})
+	s.Require().Nil(err)
+	s.Require().Equal(assignmentsList.Total, 3)
+	s.Require().Equal(assignmentsList.Objects[2].AssigneeName, "John Doe")
+}
+
 func teardownAssignmentsRepositoryPostgres(ctx context.Context, pg *pgxpool.Pool) error {
 	sqlQuery := `
 		truncate users cascade;

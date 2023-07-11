@@ -63,6 +63,11 @@ type GetInfoInput struct {
 	UserID *string
 }
 
+type ChangeAssigneeInput struct {
+	UserID       string
+	AssignmentID uint64
+}
+
 var (
 	ErrorEmptySheets   = fmt.Errorf("empty sheets")
 	ErrorEmptyManagers = fmt.Errorf("empty managers")
@@ -86,4 +91,6 @@ type AssignmentsRepository interface {
 
 	// UpdateBatchStep update step of the given batch
 	UpdateBatchStep(ctx context.Context, batchID, step int) error
+
+	ChangeAssignee(ctx context.Context, input *ChangeAssigneeInput) error
 }
