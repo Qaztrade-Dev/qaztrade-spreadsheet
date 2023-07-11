@@ -80,7 +80,7 @@ func FixtureTestGetMany() (string, []string) {
 	;
 
 	insert into applications 
-		(id, attrs)
+		(id, attrs, sign_link)
 	values
 		(
 			'%[1]s',
@@ -89,7 +89,8 @@ func FixtureTestGetMany() (string, []string) {
 					"from": "Facebook Inc.",
 					"bin":	"012345678901"
 				}
-			}'::jsonb
+			}'::jsonb,
+			'abc'
 		),
 		(
 			'%[2]s',
@@ -98,7 +99,8 @@ func FixtureTestGetMany() (string, []string) {
 					"from": "Google Ent.",
 					"bin":	"098765432109"
 				}
-			}'::jsonb
+			}'::jsonb,
+			'def'
 		)
 	;
 
@@ -167,9 +169,10 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_All() {
 				SheetID:        1,
 				AssignmentType: "",
 				Link:           "#gid=1",
+				SignLink:       "https://link.doodocs.kz/abc",
 				AssigneeName:   "John Doe",
-				TotalRows:      53,
-				TotalSum:       153,
+				TotalRows:      50,
+				TotalSum:       150,
 				RowsCompleted:  0,
 				IsCompleted:    false,
 				CompletedAt:    time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
@@ -182,9 +185,10 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_All() {
 				SheetID:        2,
 				AssignmentType: "",
 				Link:           "#gid=2",
+				SignLink:       "https://link.doodocs.kz/def",
 				AssigneeName:   "John Doe",
-				TotalRows:      4,
-				TotalSum:       103,
+				TotalRows:      1,
+				TotalSum:       100,
 				RowsCompleted:  100,
 				IsCompleted:    true,
 				CompletedAt:    time.Date(2023, time.January, 2, 19, 30, 0, 0, time.Local),
@@ -197,9 +201,10 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_All() {
 				SheetID:        1,
 				AssignmentType: "",
 				Link:           "#gid=1",
+				SignLink:       "https://link.doodocs.kz/abc",
 				AssigneeName:   "Jack Wolf",
-				TotalRows:      4,
-				TotalSum:       52,
+				TotalRows:      1,
+				TotalSum:       49,
 				RowsCompleted:  14,
 				IsCompleted:    false,
 				CompletedAt:    time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
@@ -231,9 +236,10 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_User() {
 				SheetID:        1,
 				AssignmentType: "",
 				Link:           "#gid=1",
+				SignLink:       "https://link.doodocs.kz/abc",
 				AssigneeName:   "John Doe",
-				TotalRows:      53,
-				TotalSum:       153,
+				TotalRows:      50,
+				TotalSum:       150,
 				RowsCompleted:  0,
 				IsCompleted:    false,
 				CompletedAt:    time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
@@ -246,9 +252,10 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_User() {
 				SheetID:        2,
 				AssignmentType: "",
 				Link:           "#gid=2",
+				SignLink:       "https://link.doodocs.kz/def",
 				AssigneeName:   "John Doe",
-				TotalRows:      4,
-				TotalSum:       103,
+				TotalRows:      1,
+				TotalSum:       100,
 				RowsCompleted:  100,
 				IsCompleted:    true,
 				CompletedAt:    time.Date(2023, time.January, 2, 19, 30, 0, 0, time.Local),

@@ -1,7 +1,6 @@
 begin;
 
 drop index applications_is_signed_idx;
-drop index tnved_code_idx;
 drop index tnved_level_idx;
 
 alter table "assignments"
