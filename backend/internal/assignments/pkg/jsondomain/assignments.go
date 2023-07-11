@@ -14,6 +14,7 @@ type AssignmentView struct {
 	SheetID        uint64    `json:"sheet_id"`
 	AssignmentType string    `json:"assignment_type"`
 	Link           string    `json:"link"`
+	SignLink       string    `json:"sign_link"`
 	AssigneeName   string    `json:"assignee_name"`
 	TotalRows      int       `json:"total_rows"`
 	TotalSum       int       `json:"total_sum"`
@@ -35,6 +36,7 @@ func EncodeAssignmentView(input *domain.AssignmentView) *AssignmentView {
 		SheetID:        input.SheetID,
 		AssignmentType: input.AssignmentType,
 		Link:           input.Link,
+		SignLink:       input.SignLink,
 		AssigneeName:   input.AssigneeName,
 		TotalRows:      input.TotalRows,
 		TotalSum:       input.TotalSum,

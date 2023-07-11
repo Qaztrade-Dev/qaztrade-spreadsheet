@@ -30,6 +30,7 @@ type AssignmentView struct {
 	SheetID        uint64
 	AssignmentType string
 	Link           string
+	SignLink       string
 	AssigneeName   string
 	TotalRows      int
 	TotalSum       int

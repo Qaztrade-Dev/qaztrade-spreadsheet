@@ -184,9 +184,6 @@ func (r *AssignmentsRepositoryPostgres) GetSheets(ctx context.Context, batchID i
 	stmt := getSheetsQueryStatement(batchID, sheetTable)
 	sql, args, err := stmt.ToSql()
 
-	fmt.Println(batchID, sheetTable)
-	fmt.Println(sql)
-
 	if err != nil {
 		return nil, err
 	}
@@ -318,6 +315,7 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 			"ass.sheet_id",
 			"ass.type",
 			"app.link",
+			"app.sign_link",
 			"u.attrs->>'full_name'",
 			"ass.total_rows",
 			"ass.total_sum",
@@ -354,6 +352,7 @@ func (r *AssignmentsRepositoryPostgres) getMany(ctx context.Context, input *doma
 
 	for i := range objects {
 		objects[i].Link = fmt.Sprintf("%s#gid=%v", objects[i].Link, objects[i].SheetID)
+		objects[i].SignLink = fmt.Sprintf("https://link.doodocs.kz/%s", objects[i].SignLink)
 	}
 
 	return objects, nil
@@ -387,6 +386,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		tmpSheetID        *uint64
 		tmpAssignmentType *string
 		tmpLink           *string
+		tmpSignLink       *string
 		tmpAssigneeName   *string
 		tmpTotalRows      *int
 		tmpTotalSum       *int
@@ -403,6 +403,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		&tmpSheetID,
 		&tmpAssignmentType,
 		&tmpLink,
+		&tmpSignLink,
 		&tmpAssigneeName,
 		&tmpTotalRows,
 		&tmpTotalSum,
@@ -418,6 +419,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 			SheetID:        postgres.Value(tmpSheetID),
 			AssignmentType: postgres.Value(tmpAssignmentType),
 			Link:           postgres.Value(tmpLink),
+			SignLink:       postgres.Value(tmpSignLink),
 			AssigneeName:   postgres.Value(tmpAssigneeName),
 			TotalRows:      postgres.Value(tmpTotalRows),
 			TotalSum:       postgres.Value(tmpTotalSum),
