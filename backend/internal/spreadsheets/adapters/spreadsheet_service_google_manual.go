@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -681,36 +682,45 @@ func (s *SpreadsheetServiceGoogle) GetExpoCount(ctx context.Context) error {
 	return nil
 }
 
+func (s *SpreadsheetServiceGoogle) getSpreadsheets(ctx context.Context, httpClient *http.Client) ([]string, error) {
+	driveSvc, err := drive.NewService(ctx, option.WithHTTPClient(httpClient))
+	if err != nil {
+		return nil, err
+	}
+
+	query := fmt.Sprintf("mimeType!='application/vnd.google-apps.folder' and trashed = false and '%s' in parents", s.destinationFolderID)
+	fileListCall := driveSvc.Files.List().Q(query).Fields("nextPageToken, files(id, name)").OrderBy("createdTime asc")
+
+	spreadsheetIDs := make([]string, 0)
+	err = fileListCall.Pages(ctx, func(filesList *drive.FileList) error {
+		for _, file := range filesList.Files {
+			spreadsheetIDs = append(spreadsheetIDs, file.Id)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return spreadsheetIDs, nil
+}
+
 func (s *SpreadsheetServiceGoogle) AddTotalSumCells(ctx context.Context) error {
 	httpClient, err := s.oauth2.GetClient(ctx)
 	if err != nil {
 		return err
 	}
 
-	// driveSvc, err := drive.NewService(ctx, option.WithHTTPClient(httpClient))
-	// if err != nil {
-	// 	return err
-	// }
-
 	spreadsheetsSvc, err := sheets.NewService(ctx, option.WithHTTPClient(httpClient))
 	if err != nil {
 		return err
 	}
 
-	// query := fmt.Sprintf("mimeType!='application/vnd.google-apps.folder' and trashed = false and '%s' in parents", s.destinationFolderID)
-	// fileListCall := driveSvc.Files.List().Q(query).Fields("nextPageToken, files(id, name)").OrderBy("createdTime asc")
-
-	// spreadsheetIDs := make([]string, 0)
-	// err = fileListCall.Pages(ctx, func(filesList *drive.FileList) error {
-	// 	for _, file := range filesList.Files {
-	// 		spreadsheetIDs = append(spreadsheetIDs, file.Id)
-	// 	}
-	// 	return nil
-	// })
-	// if err != nil {
-	// 	return err
-	// }
-	spreadsheetIDs := []string{"1f5MbllNW-ktR0vzhoCaYi55OTKtlPkEkbkc90sqRoBo"}
+	spreadsheetIDs, err := s.getSpreadsheets(ctx, httpClient)
+	if err != nil {
+		return err
+	}
+	spreadsheetIDs = []string{"1oMJFttuiPxoBdejx3Ul3D2nscE0x45oeNfo-upVe1gE"}
 
 	for i, spreadsheetID := range spreadsheetIDs {
 		spreadsheetID := spreadsheetID
@@ -721,79 +731,130 @@ func (s *SpreadsheetServiceGoogle) AddTotalSumCells(ctx context.Context) error {
 			return err
 		}
 
-		var sheetID int64 = -1
+		batch := NewBatchUpdate(spreadsheetsSvc)
 		for _, sheet := range spreadsheet.Sheets {
-			if sheet.Properties.Title == "Затраты на доставку транспортом" {
-				sheetID = sheet.Properties.SheetId
-				break
+			sheetID := sheet.Properties.SheetId
+			// title := sheet.Properties.Title
+			title := strings.ReplaceAll(sheet.Properties.Title, "⏳ (ожидайте) ", "")
+			switch title {
+			case "Затраты на доставку транспортом":
+				totalSum_Затраты_на_доставку_транспортом(batch, sheetID)
+			case "Затраты на сертификацию предприятия",
+				"Затраты на рекламу ИКУ за рубежом",
+				"Затраты на перевод каталога ИКУ",
+				"Затраты на аренду помещения ИКУ",
+				"Затраты на сертификацию ИКУ",
+				"Затраты на демонстрацию ИКУ",
+				"Затраты на франчайзинг",
+				"Затраты на регистрацию товарных знаков",
+				"Затраты на аренду",
+				"Затраты на перевод",
+				"Затраты на рекламу товаров за рубежом",
+				"Затраты на участие в выставках",
+				"Затраты на участие в выставках ИКУ",
+				"Затраты на соответствие товаров требованиям":
+				totalSum_Затраты_на_сертификацию_предприятия(batch, sheetID)
 			}
 		}
-
-		if sheetID == -1 {
-			continue
-		}
-
-		batch := NewBatchUpdate(spreadsheetsSvc)
-
-		// X
-		batch.WithRequest(
-			// UnmergeRequest(sheetID, "U1:Y1"),
-			UnmergeRequest(sheetID, "U2:Y2"),
-			// SetCellText(sheetID, "X1", &SetCellTextInput{"Общая сумма", true, 8}),
-			SetCellFormula(sheetID, "X2", "=sum(X4:X)"),
-			// MergeRequest(sheetID, "U1:W1"),
-			MergeRequest(sheetID, "U2:W2"),
-		)
-
-		// AF
-		batch.WithRequest(
-			// UnmergeRequest(sheetID, "Z1:AF1"),
-			UnmergeRequest(sheetID, "Z2:AF2"),
-			// SetCellText(sheetID, "AF1", &SetCellTextInput{"Общая сумма", true, 8}),
-			SetCellFormula(sheetID, "AF2", "=sum(AF4:AF)"),
-			// MergeRequest(sheetID, "Z1:AE1"),
-			MergeRequest(sheetID, "Z2:AE2"),
-		)
-
-		// AJ
-		batch.WithRequest(
-			// UnmergeRequest(sheetID, "AG1:AL1"),
-			UnmergeRequest(sheetID, "AG2:AL2"),
-			// SetCellText(sheetID, "AJ1", &SetCellTextInput{"Общая сумма", true, 8}),
-			SetCellFormula(sheetID, "AJ2", "=sum(AJ4:AJ)"),
-			// MergeRequest(sheetID, "AG1:AI1"),
-			MergeRequest(sheetID, "AG2:AI2"),
-			// MergeRequest(sheetID, "AK1:AL1"),
-			MergeRequest(sheetID, "AK2:AL2"),
-		)
-
-		// AP
-		batch.WithRequest(
-			UnmergeRequest(sheetID, "AM2:AP2"),
-			SetCellFormula(sheetID, "AP2", "=sum(AP4:AP)"),
-			MergeRequest(sheetID, "AM2:AO2"),
-		)
-
-		// AT
-		batch.WithRequest(
-			UnmergeRequest(sheetID, "AQ2:AT2"),
-			SetCellFormula(sheetID, "AT2", "=sum(AT4:AT)"),
-			MergeRequest(sheetID, "AQ2:AS2"),
-		)
-
-		// AX
-		batch.WithRequest(
-			UnmergeRequest(sheetID, "AU2:AX2"),
-			SetCellFormula(sheetID, "AX2", "=sum(AX4:AX)"),
-			MergeRequest(sheetID, "AU2:AW2"),
-		)
 
 		if err := batch.Do(ctx, spreadsheetID); err != nil {
 			return err
 		}
 
 		fmt.Printf("%v/%v\n", i+1, len(spreadsheetIDs))
+		time.Sleep(time.Second)
 	}
 
 	return nil
+}
+
+func totalSum(sheetID int64, parentA1, targetA1 string) []*sheets.Request {
+	var (
+		result = make([]*sheets.Request, 0)
+
+		a1Range = A1ToRange(parentA1)
+		cell    = A1ToCell(targetA1)
+	)
+
+	beforeTargetRange := &Range{
+		From: a1Range.From,
+		To: &Cell{
+			Col: cell.Col - 1,
+			Row: cell.Row,
+		},
+	}
+
+	afterTargetRange := &Range{
+		From: &Cell{
+			Col: cell.Col + 1,
+			Row: cell.Row,
+		},
+		To: a1Range.To,
+	}
+
+	result = append(result,
+		UnmergeRequest(sheetID, parentA1),
+		SetCellFormula(sheetID, targetA1, fmt.Sprintf("=sum(%[1]s4:%[1]s)", numberToColumn(cell.Col))),
+	)
+
+	// fmt.Println("--------")
+
+	// fmt.Println(parentA1, targetA1)
+	// fmt.Printf("=sum(%[1]s4:%[1]s)\n", numberToColumn(cell.Col))
+
+	if beforeTargetRange.From.Col < cell.Col && !beforeTargetRange.From.Equals(beforeTargetRange.To) {
+		result = append(result, MergeRequest(sheetID, beforeTargetRange.ToA1()))
+		// fmt.Printf("merge %s\n", beforeTargetRange.ToA1())
+	}
+
+	if afterTargetRange.To.Col > cell.Col && !afterTargetRange.From.Equals(afterTargetRange.To) {
+		result = append(result, MergeRequest(sheetID, afterTargetRange.ToA1()))
+		// fmt.Printf("merge %s\n", afterTargetRange.ToA1())
+	}
+
+	// fmt.Println("--------")
+
+	return result
+}
+
+// Затраты на доставку транспортом
+func totalSum_Затраты_на_доставку_транспортом(batch *BatchUpdate, sheetID int64) {
+	args := []struct {
+		parentA1 string
+		targetA1 string
+	}{
+		{"U2:Y2", "X2"},
+		{"Z2:AF2", "AF2"},
+		{"AG2:AL2", "AJ2"},
+		{"AM2:AP2", "AP2"},
+		{"AQ2:AT2", "AT2"},
+		{"AU2:AX2", "AX2"},
+	}
+
+	for _, arg := range args {
+		batch.WithRequest(
+			totalSum(sheetID, arg.parentA1, arg.targetA1)...,
+		)
+	}
+}
+
+// Затраты на сертификацию предприятия
+func totalSum_Затраты_на_сертификацию_предприятия(batch *BatchUpdate, sheetID int64) {
+	args := []struct {
+		parentA1 string
+		targetA1 string
+	}{
+		{"N2:V2", "U2"},
+		{"W2:AB2", "AA2"},
+		{"AC2:AI2", "AG2"},
+		{"AJ2:AN2", "AM2"},
+		{"AO2:AR2", "AR2"},
+		{"AS2:AV2", "AV2"},
+	}
+
+	for _, arg := range args {
+		batch.WithRequest(
+			totalSum(sheetID, arg.parentA1, arg.targetA1)...,
+		)
+	}
 }

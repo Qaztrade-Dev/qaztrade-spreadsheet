@@ -2,7 +2,6 @@ package adapters
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -70,48 +69,32 @@ func (b *BatchUpdate) Do(ctx context.Context, spreadsheetID string) error {
 }
 
 func UnmergeRequest(sheetID int64, fromToA1 string) *sheets.Request {
-	splitted := strings.Split(fromToA1, ":")
-	if len(splitted) != 2 {
-		return nil
-	}
-
-	var (
-		fromCol, fromRow = A1ToNumbers(splitted[0])
-		toCol, toRow     = A1ToNumbers(splitted[1])
-	)
+	cellRange := A1ToRange(fromToA1)
 
 	return &sheets.Request{
 		UnmergeCells: &sheets.UnmergeCellsRequest{
 			Range: &sheets.GridRange{
 				SheetId:          sheetID,
-				StartRowIndex:    fromRow,
-				EndRowIndex:      toRow + 1,
-				StartColumnIndex: fromCol,
-				EndColumnIndex:   toCol + 1,
+				StartRowIndex:    cellRange.From.Row,
+				EndRowIndex:      cellRange.To.Row + 1,
+				StartColumnIndex: cellRange.From.Col,
+				EndColumnIndex:   cellRange.To.Col + 1,
 			},
 		},
 	}
 }
 
 func MergeRequest(sheetID int64, fromToA1 string) *sheets.Request {
-	splitted := strings.Split(fromToA1, ":")
-	if len(splitted) != 2 {
-		return nil
-	}
-
-	var (
-		fromCol, fromRow = A1ToNumbers(splitted[0])
-		toCol, toRow     = A1ToNumbers(splitted[1])
-	)
+	cellRange := A1ToRange(fromToA1)
 
 	return &sheets.Request{
 		MergeCells: &sheets.MergeCellsRequest{
 			Range: &sheets.GridRange{
 				SheetId:          sheetID,
-				StartRowIndex:    fromRow,
-				EndRowIndex:      toRow + 1,
-				StartColumnIndex: fromCol,
-				EndColumnIndex:   toCol + 1,
+				StartRowIndex:    cellRange.From.Row,
+				EndRowIndex:      cellRange.To.Row + 1,
+				StartColumnIndex: cellRange.From.Col,
+				EndColumnIndex:   cellRange.To.Col + 1,
 			},
 			MergeType: "MERGE_ALL",
 		},
@@ -125,18 +108,16 @@ type SetCellTextInput struct {
 }
 
 func SetCellText(sheetID int64, a1 string, input *SetCellTextInput) *sheets.Request {
-	var (
-		col, row = A1ToNumbers(a1)
-	)
+	cell := A1ToCell(a1)
 
 	return &sheets.Request{
 		RepeatCell: &sheets.RepeatCellRequest{
 			Range: &sheets.GridRange{
 				SheetId:          sheetID,
-				StartRowIndex:    row,
-				EndRowIndex:      row + 1,
-				StartColumnIndex: col,
-				EndColumnIndex:   col + 1,
+				StartRowIndex:    cell.Row,
+				EndRowIndex:      cell.Row + 1,
+				StartColumnIndex: cell.Col,
+				EndColumnIndex:   cell.Col + 1,
 			},
 			Cell: &sheets.CellData{
 				UserEnteredValue: &sheets.ExtendedValue{
@@ -155,18 +136,16 @@ func SetCellText(sheetID int64, a1 string, input *SetCellTextInput) *sheets.Requ
 }
 
 func SetCellFormula(sheetID int64, a1, formula string) *sheets.Request {
-	var (
-		col, row = A1ToNumbers(a1)
-	)
+	cell := A1ToCell(a1)
 
 	return &sheets.Request{
 		RepeatCell: &sheets.RepeatCellRequest{
 			Range: &sheets.GridRange{
 				SheetId:          sheetID,
-				StartRowIndex:    row,
-				EndRowIndex:      row + 1,
-				StartColumnIndex: col,
-				EndColumnIndex:   col + 1,
+				StartRowIndex:    cell.Row,
+				EndRowIndex:      cell.Row + 1,
+				StartColumnIndex: cell.Col,
+				EndColumnIndex:   cell.Col + 1,
 			},
 			Cell: &sheets.CellData{
 				UserEnteredValue: &sheets.ExtendedValue{
@@ -184,6 +163,16 @@ func SetCellFormula(sheetID int64, a1, formula string) *sheets.Request {
 	}
 }
 
+type Cell struct {
+	Col int64
+	Row int64
+}
+
+type Range struct {
+	From *Cell
+	To   *Cell
+}
+
 func columnToNumber(column string) int64 {
 	column = strings.ToUpper(column)
 	var num int64 = 0
@@ -193,14 +182,54 @@ func columnToNumber(column string) int64 {
 	return num
 }
 
-func A1ToNumbers(a1 string) (int64, int64) {
+func A1ToCell(a1 string) *Cell {
 	for i, r := range a1 {
 		if r >= '0' && r <= '9' {
 			col := a1[:i]
 			row, _ := strconv.Atoi(a1[i:])
-			fmt.Println(a1, columnToNumber(col)-1, int64(row-1))
-			return columnToNumber(col) - 1, int64(row - 1)
+			return &Cell{
+				Col: columnToNumber(col) - 1,
+				Row: int64(row - 1),
+			}
 		}
 	}
-	return -1, -1 // Invalid A1 notation
+	return nil
+}
+
+func numberToColumn(num int64) string {
+	column := ""
+	for num >= 0 {
+		column = string(rune((num%26)+'A')) + column
+		num = num/26 - 1
+	}
+	return column
+}
+
+func (cell *Cell) Equals(b *Cell) bool {
+	return cell.Col == b.Col && cell.Row == b.Row
+}
+
+func (cell *Cell) ToA1() string {
+	return numberToColumn(cell.Col) + strconv.Itoa(int(cell.Row)+1)
+}
+
+func (r *Range) ToA1() string {
+	return r.From.ToA1() + ":" + r.To.ToA1()
+}
+
+func A1ToRange(fromToA1 string) *Range {
+	splitted := strings.Split(fromToA1, ":")
+	if len(splitted) != 2 {
+		return nil
+	}
+
+	var (
+		fromCell = A1ToCell(splitted[0])
+		toCell   = A1ToCell(splitted[1])
+	)
+
+	return &Range{
+		From: fromCell,
+		To:   toCell,
+	}
 }
