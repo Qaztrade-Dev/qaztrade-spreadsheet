@@ -140,7 +140,7 @@ func TestTest(t *testing.T) {
 		destinationFolderId,
 	)
 
-	err = svc.GetExpoCount(ctx)
+	err = svc.AddTotalSumCells(ctx)
 	if err != nil {
 		t.Fatal("Test error:", err)
 	}

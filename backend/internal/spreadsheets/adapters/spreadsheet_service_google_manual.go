@@ -680,3 +680,120 @@ func (s *SpreadsheetServiceGoogle) GetExpoCount(ctx context.Context) error {
 
 	return nil
 }
+
+func (s *SpreadsheetServiceGoogle) AddTotalSumCells(ctx context.Context) error {
+	httpClient, err := s.oauth2.GetClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	// driveSvc, err := drive.NewService(ctx, option.WithHTTPClient(httpClient))
+	// if err != nil {
+	// 	return err
+	// }
+
+	spreadsheetsSvc, err := sheets.NewService(ctx, option.WithHTTPClient(httpClient))
+	if err != nil {
+		return err
+	}
+
+	// query := fmt.Sprintf("mimeType!='application/vnd.google-apps.folder' and trashed = false and '%s' in parents", s.destinationFolderID)
+	// fileListCall := driveSvc.Files.List().Q(query).Fields("nextPageToken, files(id, name)").OrderBy("createdTime asc")
+
+	// spreadsheetIDs := make([]string, 0)
+	// err = fileListCall.Pages(ctx, func(filesList *drive.FileList) error {
+	// 	for _, file := range filesList.Files {
+	// 		spreadsheetIDs = append(spreadsheetIDs, file.Id)
+	// 	}
+	// 	return nil
+	// })
+	// if err != nil {
+	// 	return err
+	// }
+	spreadsheetIDs := []string{"1f5MbllNW-ktR0vzhoCaYi55OTKtlPkEkbkc90sqRoBo"}
+
+	for i, spreadsheetID := range spreadsheetIDs {
+		spreadsheetID := spreadsheetID
+		fmt.Println(spreadsheetID)
+
+		spreadsheet, err := spreadsheetsSvc.Spreadsheets.Get(spreadsheetID).Do()
+		if err != nil {
+			return err
+		}
+
+		var sheetID int64 = -1
+		for _, sheet := range spreadsheet.Sheets {
+			if sheet.Properties.Title == "Затраты на доставку транспортом" {
+				sheetID = sheet.Properties.SheetId
+				break
+			}
+		}
+
+		if sheetID == -1 {
+			continue
+		}
+
+		batch := NewBatchUpdate(spreadsheetsSvc)
+
+		// X
+		batch.WithRequest(
+			// UnmergeRequest(sheetID, "U1:Y1"),
+			UnmergeRequest(sheetID, "U2:Y2"),
+			// SetCellText(sheetID, "X1", &SetCellTextInput{"Общая сумма", true, 8}),
+			SetCellFormula(sheetID, "X2", "=sum(X4:X)"),
+			// MergeRequest(sheetID, "U1:W1"),
+			MergeRequest(sheetID, "U2:W2"),
+		)
+
+		// AF
+		batch.WithRequest(
+			// UnmergeRequest(sheetID, "Z1:AF1"),
+			UnmergeRequest(sheetID, "Z2:AF2"),
+			// SetCellText(sheetID, "AF1", &SetCellTextInput{"Общая сумма", true, 8}),
+			SetCellFormula(sheetID, "AF2", "=sum(AF4:AF)"),
+			// MergeRequest(sheetID, "Z1:AE1"),
+			MergeRequest(sheetID, "Z2:AE2"),
+		)
+
+		// AJ
+		batch.WithRequest(
+			// UnmergeRequest(sheetID, "AG1:AL1"),
+			UnmergeRequest(sheetID, "AG2:AL2"),
+			// SetCellText(sheetID, "AJ1", &SetCellTextInput{"Общая сумма", true, 8}),
+			SetCellFormula(sheetID, "AJ2", "=sum(AJ4:AJ)"),
+			// MergeRequest(sheetID, "AG1:AI1"),
+			MergeRequest(sheetID, "AG2:AI2"),
+			// MergeRequest(sheetID, "AK1:AL1"),
+			MergeRequest(sheetID, "AK2:AL2"),
+		)
+
+		// AP
+		batch.WithRequest(
+			UnmergeRequest(sheetID, "AM2:AP2"),
+			SetCellFormula(sheetID, "AP2", "=sum(AP4:AP)"),
+			MergeRequest(sheetID, "AM2:AO2"),
+		)
+
+		// AT
+		batch.WithRequest(
+			UnmergeRequest(sheetID, "AQ2:AT2"),
+			SetCellFormula(sheetID, "AT2", "=sum(AT4:AT)"),
+			MergeRequest(sheetID, "AQ2:AS2"),
+		)
+
+		// AX
+		batch.WithRequest(
+			UnmergeRequest(sheetID, "AU2:AX2"),
+			SetCellFormula(sheetID, "AX2", "=sum(AX4:AX)"),
+			MergeRequest(sheetID, "AU2:AW2"),
+		)
+
+		if err := batch.Do(ctx, spreadsheetID); err != nil {
+			return err
+		}
+
+		fmt.Printf("%v/%v\n", i+1, len(spreadsheetIDs))
+	}
+
+	return nil
+}
