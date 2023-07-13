@@ -140,7 +140,7 @@ func TestTest(t *testing.T) {
 		destinationFolderId,
 	)
 
-	err = svc.AddTotalSumCells(ctx)
+	err = svc.AddСоответствиеЖДН(ctx)
 	if err != nil {
 		t.Fatal("Test error:", err)
 	}

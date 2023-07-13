@@ -68,6 +68,57 @@ func (b *BatchUpdate) Do(ctx context.Context, spreadsheetID string) error {
 	return err
 }
 
+func InsertColumnLeft(sheetID int64, columnA1 string) *sheets.Request {
+	var (
+		col = columnToNumber(columnA1)
+	)
+
+	return &sheets.Request{
+		InsertDimension: &sheets.InsertDimensionRequest{
+			Range: &sheets.DimensionRange{
+				Dimension:  "COLUMNS",
+				StartIndex: col - 1,
+				EndIndex:   col,
+				SheetId:    sheetID,
+			},
+			InheritFromBefore: true,
+		},
+	}
+}
+
+func SetDataValidationOneOf(sheetID int64, fromA1 string, oneOf []string) *sheets.Request {
+	var (
+		cell        = A1ToCell(fromA1)
+		oneOfValues = make([]*sheets.ConditionValue, len(oneOf))
+	)
+
+	for i := range oneOf {
+		oneOfValues[i] = &sheets.ConditionValue{UserEnteredValue: oneOf[i]}
+	}
+
+	return &sheets.Request{
+		RepeatCell: &sheets.RepeatCellRequest{
+			Range: &sheets.GridRange{
+				StartRowIndex: cell.Row,
+				// EndRowIndex:      1000000,
+				StartColumnIndex: cell.Col,
+				EndColumnIndex:   cell.Col + 1,
+				SheetId:          sheetID,
+			},
+			Cell: &sheets.CellData{
+				DataValidation: &sheets.DataValidationRule{
+					Condition: &sheets.BooleanCondition{
+						Type:   "ONE_OF_LIST",
+						Values: oneOfValues,
+					},
+					ShowCustomUi: true,
+				},
+			},
+			Fields: "dataValidation",
+		},
+	}
+}
+
 func UnmergeRequest(sheetID int64, fromToA1 string) *sheets.Request {
 	cellRange := A1ToRange(fromToA1)
 

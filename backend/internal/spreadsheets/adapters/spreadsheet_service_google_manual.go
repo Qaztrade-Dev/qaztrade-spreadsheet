@@ -734,7 +734,6 @@ func (s *SpreadsheetServiceGoogle) AddTotalSumCells(ctx context.Context) error {
 		batch := NewBatchUpdate(spreadsheetsSvc)
 		for _, sheet := range spreadsheet.Sheets {
 			sheetID := sheet.Properties.SheetId
-			// title := sheet.Properties.Title
 			title := strings.ReplaceAll(sheet.Properties.Title, "⏳ (ожидайте) ", "")
 			switch title {
 			case "Затраты на доставку транспортом":
@@ -857,4 +856,61 @@ func totalSum_Затраты_на_сертификацию_предприяти�
 			totalSum(sheetID, arg.parentA1, arg.targetA1)...,
 		)
 	}
+}
+
+func (s *SpreadsheetServiceGoogle) AddСоответствиеЖДН(ctx context.Context) error {
+	httpClient, err := s.oauth2.GetClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	spreadsheetsSvc, err := sheets.NewService(ctx, option.WithHTTPClient(httpClient))
+	if err != nil {
+		return err
+	}
+
+	// spreadsheetIDs, err := s.getSpreadsheets(ctx, httpClient)
+	// if err != nil {
+	// 	return err
+	// }
+	spreadsheetIDs := []string{"1oMJFttuiPxoBdejx3Ul3D2nscE0x45oeNfo-upVe1gE"}
+
+	for i, spreadsheetID := range spreadsheetIDs {
+		spreadsheetID := spreadsheetID
+		fmt.Println(spreadsheetID)
+
+		spreadsheet, err := spreadsheetsSvc.Spreadsheets.Get(spreadsheetID).Do()
+		if err != nil {
+			return err
+		}
+
+		batch := NewBatchUpdate(spreadsheetsSvc)
+
+		for _, sheet := range spreadsheet.Sheets {
+			sheetID := sheet.Properties.SheetId
+			title := strings.ReplaceAll(sheet.Properties.Title, "⏳ (ожидайте) ", "")
+			switch title {
+			case "Затраты на доставку транспортом":
+				СоответствиеЖДН(batch, sheetID)
+			}
+		}
+
+		if err := batch.Do(ctx, spreadsheetID); err != nil {
+			return err
+		}
+
+		fmt.Printf("%v/%v\n", i+1, len(spreadsheetIDs))
+		time.Sleep(time.Second)
+	}
+
+	return nil
+}
+
+func СоответствиеЖДН(batch *BatchUpdate, sheetID int64) {
+	batch.WithRequest(
+		InsertColumnLeft(sheetID, "EF"),
+		SetCellText(sheetID, "EF2", &SetCellTextInput{"Соответствие ЖДН (оцифровка)", true, 8}),
+		MergeRequest(sheetID, "EF2:EF3"),
+		SetDataValidationOneOf(sheetID, "EF4", []string{"да", "нет"}),
+	)
 }
