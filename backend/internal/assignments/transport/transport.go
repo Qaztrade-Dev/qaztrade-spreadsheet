@@ -76,7 +76,7 @@ func DecodeChangeAssigneeRequest(_ context.Context, r *http.Request) (interface{
 	}, nil
 }
 
-func DecodeGetArchive(_ context.Context, r *http.Request) (interface{}, error) {
+func DecodeGetArchiveRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var (
 		assignmentIDStr = mux.Vars(r)["assignment_id"]
 		assignmentID, _ = strconv.ParseUint(assignmentIDStr, 10, 0)
@@ -107,4 +107,15 @@ func EncodeGetArchiveResponse(ctx context.Context, w http.ResponseWriter, respon
 	}
 
 	return nil
+}
+
+func DecodeCheckAssignmentRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		assignmentIDStr = mux.Vars(r)["assignment_id"]
+		assignmentID, _ = strconv.ParseUint(assignmentIDStr, 10, 0)
+	)
+
+	return endpoint.CheckAssignmentRequest{
+		AssignmentID: assignmentID,
+	}, nil
 }

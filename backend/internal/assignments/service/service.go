@@ -19,19 +19,30 @@ type Service interface {
 	ChangeAssignee(ctx context.Context, input *ChangeAssigneeRequest) error
 
 	GetArchive(ctx context.Context, req *GetArchiveRequest) (*GetArchiveResponse, error)
+
+	// EnqueueAssignments enqueues to check queue assignments that will be checked
+	EnqueueAssignments(ctx context.Context) error
+
+	// CheckAssignment checks the assignment
+	CheckAssignment(ctx context.Context, assignmentID uint64) error
 }
 
 type service struct {
-	assignmentRepo domain.AssignmentsRepository
-	storage        domain.Storage
+	assignmentRepo  domain.AssignmentsRepository
+	storage         domain.Storage
+	publisher       domain.Publisher
+	spreadsheetRepo domain.SpreadsheetRepository
 }
 
 func NewService(
 	assignmentRepo domain.AssignmentsRepository,
 	storage domain.Storage,
+	// publisher domain.Publisher,
+	spreadsheetRepo domain.SpreadsheetRepository,
 ) Service {
 	return &service{
-		assignmentRepo: assignmentRepo,
-		storage:        storage,
+		assignmentRepo:  assignmentRepo,
+		storage:         storage,
+		spreadsheetRepo: spreadsheetRepo,
 	}
 }

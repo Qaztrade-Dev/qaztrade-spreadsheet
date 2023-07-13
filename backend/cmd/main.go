@@ -135,6 +135,7 @@ func main() {
 			ctx,
 			assignments.WithPostgres(pg),
 			assignments.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
+			assignments.WithCredentialsSA(credentialsSA),
 		)
 	)
 

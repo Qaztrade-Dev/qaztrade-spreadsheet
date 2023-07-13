@@ -35,7 +35,7 @@ func (s *service) CreateBatch(ctx context.Context) error {
 		return fmt.Errorf("LockApplications: %w", err)
 	}
 
-	sheets, err := s.assignmentRepo.GetSheets(ctx, batchID, domain.SheetsDostavkaAgg)
+	sheets, err := s.assignmentRepo.GetSheets(ctx, batchID, domain.SheetsЗатратыНаДоставкуТранспортом)
 	if err != nil {
 		return fmt.Errorf("GetSheets: %w", err)
 	}

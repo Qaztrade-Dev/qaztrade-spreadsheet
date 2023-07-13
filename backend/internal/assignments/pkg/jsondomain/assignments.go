@@ -7,7 +7,7 @@ import (
 )
 
 type AssignmentView struct {
-	ID             int       `json:"id"`
+	ID             uint64    `json:"id"`
 	ApplicantName  string    `json:"applicant_name"`
 	ApplicantBIN   string    `json:"applicant_bin"`
 	SheetTitle     string    `json:"sheet_title"`

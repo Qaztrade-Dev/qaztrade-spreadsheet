@@ -65,7 +65,13 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 
 		getArchiveHandler = kithttp.NewServer(
 			mdlwChainManager(assignmentsEndpoint.MakeGetArchiveEndpoint(svc)),
-			assignmentsTransport.DecodeGetArchive, assignmentsTransport.EncodeGetArchiveResponse,
+			assignmentsTransport.DecodeGetArchiveRequest, assignmentsTransport.EncodeGetArchiveResponse,
+			opts...,
+		)
+
+		checkAssignmentHandler = kithttp.NewServer(
+			mdlwChainManager(assignmentsEndpoint.MakeCheckAssignmentEndpoint(svc)),
+			assignmentsTransport.DecodeCheckAssignmentRequest, common.EncodeResponse,
 			opts...,
 		)
 	)
@@ -76,6 +82,7 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 	r.Handle("/assignments/admin/batch/", createBatchHandler).Methods(http.MethodPost)
 	r.Handle("/assignments/{assignment_id}/user", changeAssigneeHandler).Methods(http.MethodPatch)
 	r.Handle("/assignments/{assignment_id}/archive", getArchiveHandler).Methods(http.MethodGet)
+	r.Handle("/assignments/{assignment_id}/check", checkAssignmentHandler).Methods(http.MethodPost)
 
 	return r
 }

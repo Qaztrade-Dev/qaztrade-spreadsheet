@@ -286,6 +286,41 @@ func getAssignmentsInfoQueryStatement(input *domain.GetInfoInput) squirrel.Selec
 	return mainStmt
 }
 
+func (r *AssignmentsRepositoryPostgres) InsertAssignmentResult(ctx context.Context, assignmentID uint64, total uint64) error {
+	if err := postgres.InTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
+		var query1 = `insert into "assignment_results" (assignment_id, total_completed) values ($1, $2) returning id`
+		var assResID string
+		if err := tx.QueryRow(ctx, query1, assignmentID, total).Scan(&assResID); err != nil {
+			return fmt.Errorf("insert: %w", err)
+		}
+
+		var query2 = `update "assignments" set last_result_id = $2 where id = $1`
+		if _, err := tx.Exec(ctx, query2, assignmentID, assResID); err != nil {
+			return fmt.Errorf("update last_result_id: %w", err)
+		}
+
+		assignment, err := getOne(ctx, tx, &domain.GetManyInput{
+			AssignmentID: &assignmentID,
+		})
+		if err != nil {
+			return fmt.Errorf("getOne: %w", err)
+		}
+
+		if assignment.TotalRows == assignment.RowsCompleted {
+			var query3 = `update "assignments" set is_completed = true, completed_at = now() where id = $1`
+			if _, err := tx.Exec(ctx, query3, assignmentID); err != nil {
+				return fmt.Errorf("update is_completed: %w", err)
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *AssignmentsRepositoryPostgres) ChangeAssignee(ctx context.Context, input *domain.ChangeAssigneeInput) error {
 	const sql = `
 		update "assignments"
@@ -307,7 +342,7 @@ func (r *AssignmentsRepositoryPostgres) GetMany(ctx context.Context, input *doma
 		return nil, err
 	}
 
-	objects, err := r.getMany(ctx, input)
+	objects, err := getMany(ctx, r.pg, input)
 	if err != nil {
 		return nil, err
 	}
@@ -321,9 +356,12 @@ func (r *AssignmentsRepositoryPostgres) GetMany(ctx context.Context, input *doma
 }
 
 func (r *AssignmentsRepositoryPostgres) GetOne(ctx context.Context, input *domain.GetManyInput) (*domain.AssignmentView, error) {
+	return getOne(ctx, r.pg, input)
+}
+
+func getOne(ctx context.Context, querier postgres.Querier, input *domain.GetManyInput) (*domain.AssignmentView, error) {
 	input.Limit = 1
-	input.Offset = 0
-	objects, err := r.getMany(ctx, input)
+	objects, err := getMany(ctx, querier, input)
 	if err != nil {
 		return nil, err
 	}
@@ -368,19 +406,32 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 		mainStmt = mainStmt.Where("ass.id = ?", *input.AssignmentID)
 	}
 
+	if input.IsCompleted != nil {
+		mainStmt = mainStmt.Where("ass.is_completed = ?", *input.IsCompleted)
+	}
+
 	return mainStmt
 }
 
 var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
-func (r *AssignmentsRepositoryPostgres) getMany(ctx context.Context, input *domain.GetManyInput) ([]*domain.AssignmentView, error) {
-	stmt := getAssignmentsQueryStatement(input).Limit(input.Limit).Offset(input.Offset)
+func getMany(ctx context.Context, querier postgres.Querier, input *domain.GetManyInput) ([]*domain.AssignmentView, error) {
+	stmt := getAssignmentsQueryStatement(input)
+
+	if input.Limit != 0 {
+		stmt = stmt.Limit(input.Limit)
+	}
+
+	if input.Offset != 0 {
+		stmt = stmt.Offset(input.Offset)
+	}
+
 	sql, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	objects, err := queryAssignmentViews(ctx, r.pg, sql, args...)
+	objects, err := queryAssignmentViews(ctx, querier, sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -414,7 +465,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		objects = make([]*domain.AssignmentView, 0)
 
 		// scans
-		tmpID             *int
+		tmpID             *uint64
 		tmpApplicantName  *string
 		tmpApplicantBIN   *string
 		tmpSpreadsheetID  *string

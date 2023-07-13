@@ -24,7 +24,7 @@ type AssignmentInput struct {
 }
 
 type AssignmentView struct {
-	ID             int
+	ID             uint64
 	ApplicantName  string
 	ApplicantBIN   string
 	SpreadsheetID  string
@@ -58,6 +58,7 @@ var (
 type GetManyInput struct {
 	UserID       *string
 	AssignmentID *uint64
+	IsCompleted  *bool
 	Limit        uint64
 	Offset       uint64
 }
@@ -98,10 +99,25 @@ type AssignmentsRepository interface {
 
 	// ChangeAssignee changes assignment assinee
 	ChangeAssignee(ctx context.Context, input *ChangeAssigneeInput) error
+
+	// InsertAssignmentResult inserts assignment result and updates along related tables
+	InsertAssignmentResult(ctx context.Context, assignmentID uint64, total uint64) error
 }
 
 type RemoveFunction func() error
 
 type Storage interface {
 	GetArchive(ctx context.Context, folderName string) (io.ReadCloser, RemoveFunction, error)
+}
+
+type Publisher interface {
+	Publish(ctx context.Context, assignmentID uint64) error
+}
+
+var (
+	ErrorSheetNotFound = fmt.Errorf("sheet not found")
+)
+
+type SpreadsheetRepository interface {
+	GetSheetData(ctx context.Context, spreadsheetID string, sheetTitle string) ([][]string, error)
 }
