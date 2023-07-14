@@ -74,6 +74,12 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 			assignmentsTransport.DecodeCheckAssignmentRequest, common.EncodeResponse,
 			opts...,
 		)
+
+		enqueueAssignmentsHandler = kithttp.NewServer(
+			assignmentsEndpoint.MakeEnqueueAssignmentsEndpoint(svc),
+			assignmentsTransport.DecodeEnqueueAssignmentsRequest, common.EncodeResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
@@ -83,6 +89,7 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 	r.Handle("/assignments/{assignment_id}/user", changeAssigneeHandler).Methods(http.MethodPatch)
 	r.Handle("/assignments/{assignment_id}/archive", getArchiveHandler).Methods(http.MethodGet)
 	r.Handle("/assignments/{assignment_id}/check", checkAssignmentHandler).Methods(http.MethodPost)
+	r.Handle("/assignments/enqueue", enqueueAssignmentsHandler).Methods(http.MethodPost)
 
 	return r
 }

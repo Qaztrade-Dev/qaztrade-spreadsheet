@@ -37,12 +37,13 @@ type service struct {
 func NewService(
 	assignmentRepo domain.AssignmentsRepository,
 	storage domain.Storage,
-	// publisher domain.Publisher,
 	spreadsheetRepo domain.SpreadsheetRepository,
+	publisher domain.Publisher,
 ) Service {
 	return &service{
 		assignmentRepo:  assignmentRepo,
 		storage:         storage,
 		spreadsheetRepo: spreadsheetRepo,
+		publisher:       publisher,
 	}
 }

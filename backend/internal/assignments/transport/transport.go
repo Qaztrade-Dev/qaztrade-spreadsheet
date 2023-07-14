@@ -119,3 +119,7 @@ func DecodeCheckAssignmentRequest(_ context.Context, r *http.Request) (interface
 		AssignmentID: assignmentID,
 	}, nil
 }
+
+func DecodeEnqueueAssignmentsRequest(_ context.Context, _ *http.Request) (interface{}, error) {
+	return nil, nil
+}

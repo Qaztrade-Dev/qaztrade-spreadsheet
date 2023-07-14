@@ -17,10 +17,13 @@ func (s *service) EnqueueAssignments(ctx context.Context) error {
 		return fmt.Errorf("assignmentRepo.GetMany: %w", err)
 	}
 
+	assignmentIDs := make([]uint64, 0, assignments.Total)
 	for _, assignment := range assignments.Objects {
-		if err := s.publisher.Publish(ctx, assignment.ID); err != nil {
-			return fmt.Errorf("publisher.Publish: %w", err)
-		}
+		assignmentIDs = append(assignmentIDs, assignment.ID)
+	}
+
+	if err := s.publisher.Publish(ctx, assignmentIDs...); err != nil {
+		return fmt.Errorf("publisher.Publish: %w", err)
 	}
 
 	return nil

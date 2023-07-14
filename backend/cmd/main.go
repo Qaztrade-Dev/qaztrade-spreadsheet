@@ -7,8 +7,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
+	"github.com/ThreeDotsLabs/watermill"
+	"github.com/ThreeDotsLabs/watermill-redisstream/pkg/redisstream"
+	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/doodocs/qaztrade/backend/internal/assignments"
 	"github.com/doodocs/qaztrade/backend/internal/auth"
 	"github.com/doodocs/qaztrade/backend/internal/common"
@@ -20,6 +24,7 @@ import (
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/go-kit/log"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/redis/go-redis/v9"
 	googleOAuth "golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v2"
 	googleSheets "google.golang.org/api/sheets/v4"
@@ -59,6 +64,8 @@ func main() {
 		signUrlBase           = getenv("SIGN_URL_BASE")
 		signLogin             = getenv("SIGN_LOGIN")
 		signPassword          = getenv("SIGN_PASSWORD")
+		redisAddr             = getenv("REDIS_ADDR")
+		topicCheckAssignments = getenv("TOPIC_CHECK_ASSIGNMENTS", "check-assignments")
 
 		addr        = ":" + port
 		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
@@ -70,13 +77,40 @@ func main() {
 		panic(err)
 	}
 
-	var logger log.Logger
+	var (
+		logger          log.Logger
+		watermillLogger = watermill.NewStdLogger(false, false)
+	)
+
 	{
 		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
 		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 	}
 
 	oauthConfig, err := googleOAuth.ConfigFromJSON(credentialsOAuth, drive.DriveScope, googleSheets.SpreadsheetsScope)
+	if err != nil {
+		panic(err)
+	}
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr: redisAddr,
+	})
+
+	sub, err := redisstream.NewSubscriber(redisstream.SubscriberConfig{
+		Client: rdb,
+	}, watermillLogger)
+	if err != nil {
+		panic(err)
+	}
+
+	publisher, err := redisstream.NewPublisher(redisstream.PublisherConfig{
+		Client: rdb,
+	}, watermillLogger)
+	if err != nil {
+		panic(err)
+	}
+
+	router, err := message.NewRouter(message.RouterConfig{}, watermillLogger)
 	if err != nil {
 		panic(err)
 	}
@@ -136,7 +170,28 @@ func main() {
 			assignments.WithPostgres(pg),
 			assignments.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
 			assignments.WithCredentialsSA(credentialsSA),
+			assignments.WithPublisher(publisher, topicCheckAssignments),
 		)
+	)
+
+	router.AddNoPublisherHandler(
+		topicCheckAssignments,
+		topicCheckAssignments,
+		sub,
+		func(msg *message.Message) error {
+			var (
+				assignmentIDStr = string(msg.Payload)
+				assignmentID, _ = strconv.ParseUint(assignmentIDStr, 10, 0)
+			)
+
+			fmt.Printf("processing - %d\n", assignmentID)
+			if err := assignmentsService.CheckAssignment(msg.Context(), assignmentID); err != nil {
+				fmt.Println("error happened", err)
+				return err
+			}
+
+			return nil
+		},
 	)
 
 	var (
@@ -159,23 +214,28 @@ func main() {
 		logger.Log("transport", "http", "address", addr, "msg", "listening")
 		errs <- http.ListenAndServe(addr, nil)
 	}()
+
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT)
 		errs <- fmt.Errorf("%s", <-c)
 	}()
 
+	go func() {
+		errs <- router.Run(context.Background())
+	}()
+
 	logger.Log("terminated", <-errs)
 }
 
 func getenv(env string, fallback ...string) string {
-	e := os.Getenv(env)
-	if e == "" {
-		value := ""
-		if len(fallback) > 0 {
-			value = fallback[0]
-		}
+	value := os.Getenv(env)
+	if value != "" {
 		return value
 	}
-	return e
+
+	if len(fallback) > 0 {
+		value = fallback[0]
+	}
+	return value
 }

@@ -23,13 +23,19 @@ func NewPublisherWatermill(publisher message.Publisher, topic string) *Publisher
 	}
 }
 
-func (p *PublisherWatermill) Publish(ctx context.Context, assignmentID uint64) error {
-	var (
-		payload = strconv.FormatUint(assignmentID, 10)
-		msg     = message.NewMessage(uuid.NewString(), []byte(payload))
-	)
+func (p *PublisherWatermill) Publish(ctx context.Context, assignmentIDs ...uint64) error {
+	messages := make([]*message.Message, 0, len(assignmentIDs))
+	for i := range assignmentIDs {
+		var (
+			assignmentID = assignmentIDs[i]
+			payload      = strconv.FormatUint(assignmentID, 10)
+			msg          = message.NewMessage(uuid.NewString(), []byte(payload))
+		)
 
-	if err := p.publisher.Publish(p.topic, msg); err != nil {
+		messages = append(messages, msg)
+	}
+
+	if err := p.publisher.Publish(p.topic, messages...); err != nil {
 		return err
 	}
 	return nil

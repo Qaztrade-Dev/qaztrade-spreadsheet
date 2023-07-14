@@ -3,6 +3,7 @@ package assignments
 import (
 	"context"
 
+	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/doodocs/qaztrade/backend/internal/assignments/adapters"
 	"github.com/doodocs/qaztrade/backend/internal/assignments/service"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -27,9 +28,10 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 
 	var (
 		assignmentsRepo = adapters.NewAssignmentsRepositoryPostgres(deps.pg)
+		publisher       = adapters.NewPublisherWatermill(deps.publisher, deps.topicCheckAssignment)
 	)
 
-	svc := service.NewService(assignmentsRepo, storage, spreadsheetsRepo)
+	svc := service.NewService(assignmentsRepo, storage, spreadsheetsRepo, publisher)
 	return svc
 }
 
@@ -43,6 +45,9 @@ type dependencies struct {
 	s3SecretKey string
 	s3Endpoint  string
 	s3Bucket    string
+
+	publisher            message.Publisher
+	topicCheckAssignment string
 }
 
 func (d *dependencies) setDefaults() {
@@ -67,5 +72,12 @@ func WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket string) Option
 func WithCredentialsSA(credentialsSA []byte) Option {
 	return func(d *dependencies) {
 		d.credentialsSA = credentialsSA
+	}
+}
+
+func WithPublisher(publisher message.Publisher, topicCheckAssignment string) Option {
+	return func(d *dependencies) {
+		d.publisher = publisher
+		d.topicCheckAssignment = topicCheckAssignment
 	}
 }

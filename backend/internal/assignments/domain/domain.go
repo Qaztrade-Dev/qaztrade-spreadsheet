@@ -111,7 +111,7 @@ type Storage interface {
 }
 
 type Publisher interface {
-	Publish(ctx context.Context, assignmentID uint64) error
+	Publish(ctx context.Context, assignmentID ...uint64) error
 }
 
 var (
