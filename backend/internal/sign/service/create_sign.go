@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
 )
@@ -21,6 +22,10 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 
 	if signApplication.Status != domain.StatusUserFilling {
 		return linkbase + signApplication.SignLink, nil
+	}
+
+	if time.Now().UTC().After(time.Date(2023, 07, 21, 11, 00, 00, 00, time.UTC)) {
+		return "", domain.ErrorApplyClosed
 	}
 
 	sheets, err := s.spreadsheetRepo.GetSheets(ctx, req.SpreadsheetID)
