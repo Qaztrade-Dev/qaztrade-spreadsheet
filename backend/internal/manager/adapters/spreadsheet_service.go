@@ -72,7 +72,6 @@ func (s *SpreadsheetServiceGoogle) BlockImportantRanges(ctx context.Context, spr
 	if err != nil {
 		return err
 	}
-	fmt.Println(s.adminAccount, s.svcAccount)
 	batch := NewBatchUpdate(s.sheetsSvc)
 
 	for _, namedRange := range spreadsheet.NamedRanges {
