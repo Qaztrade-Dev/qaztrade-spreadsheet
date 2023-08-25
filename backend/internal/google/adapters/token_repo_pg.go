@@ -33,7 +33,6 @@ func (s *TokenRepositoryPostgre) UpdateToken(ctx context.Context, token *oauth2.
 		on conflict ("id")
 		do update set "token" = excluded."token"
 	`
-
 	if _, err := s.pg.Exec(ctx, sql, tokenStr); err != nil {
 		return err
 	}

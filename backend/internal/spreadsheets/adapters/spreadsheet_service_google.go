@@ -48,6 +48,7 @@ func NewSpreadsheetServiceGoogle(
 
 func (s *SpreadsheetServiceGoogle) Create(ctx context.Context, user *domain.User) (string, error) {
 	httpClient, err := s.oauth2.GetClient(ctx)
+
 	if err != nil {
 		return "", err
 	}
@@ -85,6 +86,7 @@ func (s *SpreadsheetServiceGoogle) Create(ctx context.Context, user *domain.User
 func (s *SpreadsheetServiceGoogle) copyFile(ctx context.Context, svc *drive.Service, user *domain.User) (string, error) {
 	newFileName, err := domain.CreateSpreadsheetName(user)
 	if err != nil {
+		fmt.Println("Copy file error", err)
 		return "", err
 	}
 
@@ -94,6 +96,7 @@ func (s *SpreadsheetServiceGoogle) copyFile(ctx context.Context, svc *drive.Serv
 	}
 	copiedFile, err := svc.Files.Copy(s.templateSpreadsheetID, copy).Context(ctx).Do()
 	if err != nil {
+		fmt.Println("Copy file error 2", err, s.templateSpreadsheetID)
 		return "", err
 	}
 

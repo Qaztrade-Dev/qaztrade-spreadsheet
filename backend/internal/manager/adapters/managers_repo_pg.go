@@ -3,6 +3,7 @@ package adapters
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 	"github.com/doodocs/qaztrade/backend/pkg/postgres"
@@ -22,7 +23,18 @@ func NewManagersRepositoryPostgres(pg *pgxpool.Pool) *ManagersRepositoryPostgres
 		pg: pg,
 	}
 }
-
+func (r *ManagersRepositoryPostgres) GetCurrent(ctx context.Context, userID string) (*domain.Manager, error) {
+	managers, err := r.getMany(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, j := range managers {
+		if j.UserID == userID {
+			return j, nil
+		}
+	}
+	return nil, errors.New("current user is not manager")
+}
 func (r *ManagersRepositoryPostgres) GetMany(ctx context.Context) ([]*domain.Manager, error) {
 	managers, err := r.getMany(ctx)
 	if err != nil {

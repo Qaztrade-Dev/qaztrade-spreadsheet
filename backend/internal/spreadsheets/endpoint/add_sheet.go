@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"context"
+	"fmt"
 
 	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	"github.com/doodocs/qaztrade/backend/internal/spreadsheets/domain"
@@ -25,6 +26,7 @@ func MakeAddSheetEndpoint(s service.Service) endpoint.Endpoint {
 
 		claims, err := authDomain.ExtractClaims[domain.SpreadsheetClaims](ctx)
 		if err != nil {
+			fmt.Println(err)
 			return nil, err
 		}
 

@@ -25,6 +25,7 @@ func NewApplicationRepositoryPostgres(pg *pgxpool.Pool) *ApplicationRepositoryPo
 	}
 }
 
+// func (r *ApplicationRepositoryPostgre) GetStatus(ctx )
 func (r *ApplicationRepositoryPostgre) EditStatus(ctx context.Context, applicationID, statusName string) error {
 	const sql = `
 		update "applications" set

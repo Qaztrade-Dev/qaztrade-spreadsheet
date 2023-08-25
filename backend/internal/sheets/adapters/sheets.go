@@ -165,12 +165,6 @@ func (c *SheetClient) getData(ctx context.Context, sheetName string, values [][]
 			data[i][j] = strings.TrimSpace(row[j].(string))
 		}
 	}
-	// for i := range data {
-	// 	for j := range data[i] {
-	// 		fmt.Printf("%v, ", data[i][j])
-	// 	}
-	// 	fmt.Println()
-	// }
 	return data, nil
 }
 

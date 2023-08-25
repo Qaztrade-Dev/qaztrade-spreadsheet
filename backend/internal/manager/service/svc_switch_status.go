@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 )
 
@@ -48,6 +49,24 @@ func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) er
 		mustSwitchModeRead = true
 	}
 
+	claims, err := authDomain.ExtractClaims[authDomain.UserClaims](ctx)
+	if err != nil {
+		return err
+	}
+
+	manager, err := s.mngRepo.GetCurrent(ctx, claims.UserID)
+
+	if err != nil {
+		return err
+	}
+
+	data, err := s.spreadsheetSvc.Comments(ctx, application)
+	data.ManagerName = manager.Fullname
+	data.ManagerEmail = manager.Email
+
+	if err != nil {
+		return err
+	}
 	if mustSwitchModeEdit {
 		if err := s.spreadsheetSvc.SwitchModeEdit(ctx, application.SpreadsheetID); err != nil {
 			return err

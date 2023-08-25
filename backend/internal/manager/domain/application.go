@@ -43,7 +43,19 @@ type ApplicationQuery struct {
 	SignedAtFrom     time.Time
 	SignedAtUntil    time.Time
 }
-
+type Revision struct {
+	ApplicationID  string
+	SpreadsheetID  string
+	No             int
+	Link           string
+	BIN            string
+	Manufactor     string
+	To             string
+	ApplicantEmail string
+	ManagerName    string
+	ManagerEmail   string
+	Remarks        string
+}
 type ApplicationRepository interface {
 	GetMany(ctx context.Context, query *ApplicationQuery) (*ApplicationList, error)
 	GetOne(ctx context.Context, query *ApplicationQuery) (*Application, error)
@@ -55,6 +67,7 @@ type SpreadsheetService interface {
 	SwitchModeEdit(ctx context.Context, spreadsheetID string) error
 	BlockImportantRanges(ctx context.Context, spreadsheetID string) error
 	UnlockImportantRanges(ctx context.Context, spreadsheetID string) error
+	Comments(ctx context.Context, application *Application) (*Revision, error)
 }
 
 var (

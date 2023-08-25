@@ -15,12 +15,15 @@ type CreateSpreadsheetRequest struct {
 
 func (s *service) CreateSpreadsheet(ctx context.Context, req *CreateSpreadsheetRequest) (string, error) {
 	user, err := s.userRepo.Get(ctx, req.UserID)
+
 	if err != nil {
+
 		return "", err
 	}
 
 	spreadsheetID, err := s.spreadsheetSvc.Create(ctx, user)
 	if err != nil {
+
 		return "", err
 	}
 
@@ -31,11 +34,13 @@ func (s *service) CreateSpreadsheet(ctx context.Context, req *CreateSpreadsheetR
 		SpreadsheetID: spreadsheetID,
 		Link:          publicLink,
 	}); err != nil {
+
 		return "", err
 	}
 
 	tallyLink, err := s.getTallyLink(spreadsheetID)
 	if err != nil {
+
 		return "", err
 	}
 
