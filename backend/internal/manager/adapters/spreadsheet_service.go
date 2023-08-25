@@ -188,16 +188,16 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 				var (
 					x, _, _            = excelize.CellNameToCoordinates(j.Cell)
 					column_cell, _     = excelize.CoordinatesToCellName(x, 2)
-					collumn, _         = file_xlsx.GetCellValue(i, column_cell)
+					column, _          = file_xlsx.GetCellValue(i, column_cell)
 					column_add_cell, _ = excelize.CoordinatesToCellName(x, 3)
-					collumn_add, _     = file_xlsx.GetCellValue(i, column_add_cell)
+					column_add, _      = file_xlsx.GetCellValue(i, column_add_cell)
 				)
 
-				summary.Remarks += fmt.Sprintf("%d) %s", cnt, collumn)
-				if collumn != collumn_add {
-					summary.Remarks += fmt.Sprintf(" - %s", collumn_add)
+				summary.Remarks += fmt.Sprintf("%d) %s", cnt, column)
+				if column != column_add {
+					summary.Remarks += fmt.Sprintf(" - %s", column_add)
 				}
-				summary.Remarks += fmt.Sprintf("(Клетка-%s), Замечания: %s\n", j.Cell, j.Text)
+				summary.Remarks += fmt.Sprintf(" (Клетка-%s), Замечания: %s\n", j.Cell, j.Text)
 			}
 		}
 	}
