@@ -132,6 +132,7 @@ func (s *SpreadsheetServiceGoogle) UnlockImportantRanges(ctx context.Context, sp
 
 	return nil
 }
+
 func (s *SpreadsheetServiceGoogle) GetPublicLink(_ context.Context, spreadsheetID string) string {
 	url := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/edit?usp=sharing", spreadsheetID)
 	return url
@@ -165,7 +166,6 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 	spreadsheetID := application.SpreadsheetID
 	exportMimeType := "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 	exportedContent, err := s.driveSvc.Files.Export(spreadsheetID, exportMimeType).Download()
-
 	if err != nil {
 		return summary, err
 	}
@@ -173,6 +173,9 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 	content := exportedContent.Body
 	defer exportedContent.Body.Close()
 	file_xlsx, err := excelize.OpenReader(content)
+	if err != nil {
+		return summary, err
+	}
 	sheet_list := file_xlsx.GetSheetList()
 
 	cnt := 0
@@ -182,18 +185,19 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 			summary.Remarks += fmt.Sprintln("Таблица " + i + ":")
 			for _, j := range comments {
 				cnt++
-				x, _, _ := excelize.CellNameToCoordinates(j.Cell)
-				column_cell, _ := excelize.CoordinatesToCellName(x, 2)
-				collumn, _ := file_xlsx.GetCellValue(i, column_cell)
-				column_cell, _ = excelize.CoordinatesToCellName(x, 3)
-				collumn_add, _ := file_xlsx.GetCellValue(i, column_cell)
+				var (
+					x, _, _            = excelize.CellNameToCoordinates(j.Cell)
+					column_cell, _     = excelize.CoordinatesToCellName(x, 2)
+					collumn, _         = file_xlsx.GetCellValue(i, column_cell)
+					column_add_cell, _ = excelize.CoordinatesToCellName(x, 3)
+					collumn_add, _     = file_xlsx.GetCellValue(i, column_add_cell)
+				)
 
 				summary.Remarks += fmt.Sprintf("%d) %s", cnt, collumn)
 				if collumn != collumn_add {
 					summary.Remarks += fmt.Sprintf(" - %s", collumn_add)
 				}
 				summary.Remarks += fmt.Sprintf("(Клетка-%s), Замечания: %s\n", j.Cell, j.Text)
-
 			}
 		}
 	}

@@ -12,6 +12,26 @@ type SwitchStatusRequest struct {
 	StatusName    string
 }
 
+func (s *service) Revision(ctx context.Context, application *domain.Application) error {
+	claims, err := authDomain.ExtractClaims[authDomain.UserClaims](ctx)
+	if err != nil {
+		return err
+	}
+
+	manager, err := s.mngRepo.GetCurrent(ctx, claims.UserID)
+	if err != nil {
+		return err
+	}
+
+	data, err := s.spreadsheetSvc.Comments(ctx, application)
+	data.ManagerName = manager.Fullname
+	data.ManagerEmail = manager.Email
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) error {
 	application, err := s.applicationRepo.GetOne(ctx, &domain.ApplicationQuery{
 		ApplicationID: req.ApplicationID,
@@ -42,6 +62,10 @@ func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) er
 	case isUserFixing:
 		mustSwitchModeEdit = true
 		mustUnlockImportantRanges = true
+		err := s.Revision(ctx, application)
+		if err != nil {
+			return err
+		}
 	case isManagerReviewing:
 		mustSwitchModeRead = true
 		mustBlockImportantRanges = true
@@ -49,24 +73,6 @@ func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) er
 		mustSwitchModeRead = true
 	}
 
-	claims, err := authDomain.ExtractClaims[authDomain.UserClaims](ctx)
-	if err != nil {
-		return err
-	}
-
-	manager, err := s.mngRepo.GetCurrent(ctx, claims.UserID)
-
-	if err != nil {
-		return err
-	}
-
-	data, err := s.spreadsheetSvc.Comments(ctx, application)
-	data.ManagerName = manager.Fullname
-	data.ManagerEmail = manager.Email
-
-	if err != nil {
-		return err
-	}
 	if mustSwitchModeEdit {
 		if err := s.spreadsheetSvc.SwitchModeEdit(ctx, application.SpreadsheetID); err != nil {
 			return err

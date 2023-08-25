@@ -23,6 +23,7 @@ func NewManagersRepositoryPostgres(pg *pgxpool.Pool) *ManagersRepositoryPostgres
 		pg: pg,
 	}
 }
+
 func (r *ManagersRepositoryPostgres) GetCurrent(ctx context.Context, userID string) (*domain.Manager, error) {
 	managers, err := r.getMany(ctx)
 	if err != nil {
@@ -35,6 +36,7 @@ func (r *ManagersRepositoryPostgres) GetCurrent(ctx context.Context, userID stri
 	}
 	return nil, errors.New("current user is not manager")
 }
+
 func (r *ManagersRepositoryPostgres) GetMany(ctx context.Context) ([]*domain.Manager, error) {
 	managers, err := r.getMany(ctx)
 	if err != nil {

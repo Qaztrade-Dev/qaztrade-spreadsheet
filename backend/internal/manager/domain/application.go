@@ -43,6 +43,7 @@ type ApplicationQuery struct {
 	SignedAtFrom     time.Time
 	SignedAtUntil    time.Time
 }
+
 type Revision struct {
 	ApplicationID  string
 	SpreadsheetID  string
@@ -56,6 +57,7 @@ type Revision struct {
 	ManagerEmail   string
 	Remarks        string
 }
+
 type ApplicationRepository interface {
 	GetMany(ctx context.Context, query *ApplicationQuery) (*ApplicationList, error)
 	GetOne(ctx context.Context, query *ApplicationQuery) (*Application, error)
