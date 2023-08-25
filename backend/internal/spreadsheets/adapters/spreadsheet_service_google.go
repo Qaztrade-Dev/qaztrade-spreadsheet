@@ -48,6 +48,7 @@ func NewSpreadsheetServiceGoogle(
 
 func (s *SpreadsheetServiceGoogle) Create(ctx context.Context, user *domain.User) (string, error) {
 	httpClient, err := s.oauth2.GetClient(ctx)
+
 	if err != nil {
 		return "", err
 	}

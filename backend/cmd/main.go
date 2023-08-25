@@ -153,6 +153,7 @@ func main() {
 			manager.WithCredentials(credentialsSA),
 			manager.WithSignCredentials(signUrlBase, signLogin, signPassword),
 			manager.WithAdmin(adminAccount),
+			manager.WithServiceAccount(svcAccount),
 		)
 
 		signService = sign.MakeService(

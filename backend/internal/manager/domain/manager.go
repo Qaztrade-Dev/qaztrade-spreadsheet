@@ -11,4 +11,5 @@ type Manager struct {
 
 type ManagersRepository interface {
 	GetMany(ctx context.Context) ([]*Manager, error)
+	GetCurrent(ctx context.Context, UserID string) (*Manager, error)
 }

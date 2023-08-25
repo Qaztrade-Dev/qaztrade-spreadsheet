@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	excelize "github.com/xuri/excelize/v2"
+
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
@@ -15,11 +17,12 @@ type SpreadsheetServiceGoogle struct {
 	driveSvc     *drive.Service
 	sheetsSvc    *sheets.Service
 	adminAccount string
+	svcAccount   string
 }
 
 var _ domain.SpreadsheetService = (*SpreadsheetServiceGoogle)(nil)
 
-func NewSpreadsheetService(ctx context.Context, credentialsJson []byte, adminAccount string) (*SpreadsheetServiceGoogle, error) {
+func NewSpreadsheetService(ctx context.Context, credentialsJson []byte, adminAccount, svcAccount string) (*SpreadsheetServiceGoogle, error) {
 	driveSvc, err := drive.NewService(ctx, option.WithCredentialsJSON(credentialsJson))
 	if err != nil {
 		return nil, err
@@ -34,6 +37,7 @@ func NewSpreadsheetService(ctx context.Context, credentialsJson []byte, adminAcc
 		driveSvc:     driveSvc,
 		sheetsSvc:    sheetsSvc,
 		adminAccount: adminAccount,
+		svcAccount:   svcAccount,
 	}, err
 }
 
@@ -42,6 +46,7 @@ func (s *SpreadsheetServiceGoogle) SwitchModeRead(ctx context.Context, spreadshe
 		Type: "anyone",
 		Role: "reader",
 	}
+
 	_, err := s.driveSvc.Permissions.Create(spreadsheetID, permission).Do()
 	if err != nil {
 		return err
@@ -54,6 +59,7 @@ func (s *SpreadsheetServiceGoogle) SwitchModeEdit(ctx context.Context, spreadshe
 		Type: "anyone",
 		Role: "writer",
 	}
+
 	_, err := s.driveSvc.Permissions.Create(spreadsheetID, permission).Do()
 	if err != nil {
 		return err
@@ -66,7 +72,6 @@ func (s *SpreadsheetServiceGoogle) BlockImportantRanges(ctx context.Context, spr
 	if err != nil {
 		return err
 	}
-
 	batch := NewBatchUpdate(s.sheetsSvc)
 
 	for _, namedRange := range spreadsheet.NamedRanges {
@@ -78,7 +83,7 @@ func (s *SpreadsheetServiceGoogle) BlockImportantRanges(ctx context.Context, spr
 						ProtectedRange: &sheets.ProtectedRange{
 							Description: namedRange.Name,
 							Editors: &sheets.Editors{
-								Users: []string{s.adminAccount},
+								Users: []string{s.adminAccount, s.svcAccount},
 							},
 							Range: &sheets.GridRange{
 								SheetId:          namedRange.Range.SheetId,
@@ -128,39 +133,77 @@ func (s *SpreadsheetServiceGoogle) UnlockImportantRanges(ctx context.Context, sp
 	return nil
 }
 
-func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, spreadsheetID string) error {
-	// Get all comments in the sheet
-	comments, err := s.driveSvc.Comments.List(spreadsheetID).Fields("*").Do()
+func (s *SpreadsheetServiceGoogle) GetPublicLink(_ context.Context, spreadsheetID string) string {
+	url := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/edit?usp=sharing", spreadsheetID)
+	return url
+}
+
+func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *domain.Application) (*domain.Revision, error) {
+
+	dataMap, ok := application.Attrs.(map[string]interface{})
+	if !ok {
+		return &domain.Revision{}, nil
+	}
+	applicationRawData, ok := dataMap["application"].(map[string]interface{})
+	if !ok {
+		return &domain.Revision{}, nil
+	}
+	applicationMap := map[string]string{}
+	for i, j := range applicationRawData {
+		applicationMap[i] = j.(string)
+	}
+	summary := &domain.Revision{
+		ApplicationID:  application.ID,
+		SpreadsheetID:  application.SpreadsheetID,
+		No:             application.No,
+		Link:           s.GetPublicLink(ctx, application.SpreadsheetID),
+		BIN:            applicationMap["bin"],
+		Manufactor:     applicationMap["manufacturer"],
+		To:             applicationMap["from"],
+		ApplicantEmail: applicationMap["cont_email"],
+	}
+
+	spreadsheetID := application.SpreadsheetID
+	exportMimeType := "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	exportedContent, err := s.driveSvc.Files.Export(spreadsheetID, exportMimeType).Download()
 	if err != nil {
-		return err
+		return summary, err
 	}
 
-	// Print all comments and their replies
-	for _, comment := range comments.Comments {
-		fmt.Printf("Comment: %s\n", comment.HtmlContent)
-		fmt.Printf("Author: %s\n", comment.Author.DisplayName)
-		fmt.Printf("Anchor: %s\n", comment.Anchor)
-		fmt.Printf("Anchor: %s\n", comment.Kind)
-		fmt.Printf("QuotedFileContent: %#v\n", comment.QuotedFileContent)
-		for _, reply := range comment.Replies {
-			fmt.Printf("\treply: %s\n\tAuthor: %s\n", reply.HtmlContent, reply.Author.DisplayName)
+	content := exportedContent.Body
+	defer exportedContent.Body.Close()
+	file_xlsx, err := excelize.OpenReader(content)
+	if err != nil {
+		return summary, err
+	}
+	sheet_list := file_xlsx.GetSheetList()
+
+	cnt := 0
+	for _, i := range sheet_list {
+		comments, _ := file_xlsx.GetComments(i)
+		if len(comments) != 0 {
+			summary.Remarks += fmt.Sprintln("Таблица " + i + ":")
+			for _, j := range comments {
+				cnt++
+				var (
+					x, _, _            = excelize.CellNameToCoordinates(j.Cell)
+					column_cell, _     = excelize.CoordinatesToCellName(x, 2)
+					column, _          = file_xlsx.GetCellValue(i, column_cell)
+					column_add_cell, _ = excelize.CoordinatesToCellName(x, 3)
+					column_add, _      = file_xlsx.GetCellValue(i, column_add_cell)
+				)
+
+				summary.Remarks += fmt.Sprintf("%d) %s", cnt, column)
+				if column != column_add {
+					summary.Remarks += fmt.Sprintf(" - %s", column_add)
+				}
+				summary.Remarks += fmt.Sprintf(" (Клетка-%s), Замечания: %s\n", j.Cell, j.Text)
+			}
 		}
-
-		// resp, err := s.sheetsSvc.Spreadsheets.GetByDataFilter(spreadsheetID, &sheets.GetSpreadsheetByDataFilterRequest{
-		// 	DataFilters: []*sheets.DataFilter{
-		// 		{
-		// 			A1Range: "428107940",
-		// 		},
-		// 	},
-		// }).Do()
-		// fmt.Println(resp)
-		// fmt.Println(err)
-		// if err != nil {
-		// 	return err
-		// }
-
-		// break
+	}
+	if err != nil {
+		return summary, err
 	}
 
-	return nil
+	return summary, nil
 }
