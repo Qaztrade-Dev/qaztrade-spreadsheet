@@ -94,9 +94,6 @@ type AssignmentsRepository interface {
 	// CreateAssignments creates given assignments
 	CreateAssignments(ctx context.Context, inputs []*AssignmentInput) error
 
-	// UpdateBatchStep update step of the given batch
-	UpdateBatchStep(ctx context.Context, batchID, step int) error
-
 	// ChangeAssignee changes assignment assinee
 	ChangeAssignee(ctx context.Context, input *ChangeAssigneeInput) error
 
