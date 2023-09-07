@@ -381,7 +381,7 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 		Join("applications app on app.id = ass.application_id").
 		Join("users u on u.id = ass.user_id").
 		LeftJoin("assignment_results assres on assres.id = ass.last_result_id").
-		OrderBy("app.no asc")
+		OrderBy("app.no asc", "ass.type asc")
 
 	if input.UserID != nil {
 		mainStmt = mainStmt.Where("u.id = ?", *input.UserID)
