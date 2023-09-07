@@ -98,7 +98,7 @@ func (s *service) createAssignments(ctx context.Context, batchID int, sheetType,
 	}
 
 	if len(sheets) == 0 {
-		return nil, domain.ErrorEmptySheets
+		return []*domain.AssignmentInput{}, nil
 	}
 
 	random := rand.New(rand.NewSource(time.Now().UnixNano()))
