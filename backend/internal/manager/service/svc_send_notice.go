@@ -15,8 +15,6 @@ type SendNoticeRequest struct {
 
 func (s *service) SendNotice(ctx context.Context, req *SendNoticeRequest) (string, error) {
 
-	exists, errBucketExists := s.storage.BucketExists("qaztrade")
-	fmt.Println(exists, errBucketExists)
 	now := time.Now()
 	folderName := "notices"
 	fileName := fmt.Sprintf("%s-%s", req.ApplicationID, now.Format("2006-01-02-15-04"))

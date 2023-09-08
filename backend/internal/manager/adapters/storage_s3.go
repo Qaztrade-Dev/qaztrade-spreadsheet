@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -101,19 +100,4 @@ func customHTTPClient() *http.Client {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
-}
-
-func (s *StorageS3) BucketExists(bucketName string) (bool, error) {
-	_, err := s.cli.HeadBucket(context.TODO(), &s3.HeadBucketInput{
-		Bucket: aws.String(bucketName),
-	})
-	exists := true
-	if err != nil {
-
-		log.Printf("Nope %v.", bucketName)
-	} else {
-		log.Printf("Bucket %v exists and you already own it.", bucketName)
-	}
-
-	return exists, err
 }

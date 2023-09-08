@@ -58,8 +58,7 @@ func MakeHandler(svc managerService.Service, jwtcli *jwt.Client, logger kitlog.L
 			opts...,
 		)
 		getNoticeHandler = kithttp.NewServer(
-			// mdlwChain(managerEndpoint.MakeGetNoticeEndpoint(svc)),
-			managerEndpoint.MakeGetNoticeEndpoint(svc),
+			mdlwChain(managerEndpoint.MakeGetNoticeEndpoint(svc)),
 			managerTransport.DecodeGetNotice, managerTransport.EncodeGetNoticeResponse,
 			opts...,
 		)

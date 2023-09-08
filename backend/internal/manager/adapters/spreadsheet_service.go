@@ -184,7 +184,8 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 	for _, i := range sheet_list {
 		comments, _ := file_xlsx.GetComments(i)
 		if len(comments) != 0 {
-			summary.Remarks += fmt.Sprintln("Таблица " + i + ":")
+			summary.Remarks += fmt.Sprint("\u200b         Таблица " + i + ":\n")
+
 			for _, j := range comments {
 				cnt++
 				y2 := 3
@@ -215,7 +216,7 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 			}
 		}
 	}
-	fmt.Println(summary.Remarks)
+
 	if err != nil {
 		return summary, err
 	}
