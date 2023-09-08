@@ -156,11 +156,13 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 		ApplicationID:  application.ID,
 		SpreadsheetID:  application.SpreadsheetID,
 		No:             application.No,
+		CreatedAt:      application.CreatedAt,
 		Link:           s.GetPublicLink(ctx, application.SpreadsheetID),
 		BIN:            applicationMap["bin"],
 		Manufactor:     applicationMap["manufacturer"],
 		To:             applicationMap["from"],
 		ApplicantEmail: applicationMap["cont_email"],
+		Address:        applicationMap["fact_addr"],
 	}
 
 	spreadsheetID := application.SpreadsheetID
@@ -185,11 +187,22 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 			summary.Remarks += fmt.Sprintln("Таблица " + i + ":")
 			for _, j := range comments {
 				cnt++
+				y2 := 3
+				x2 := 1
+				x, y, _ := excelize.CellNameToCoordinates(j.Cell)
+				if i != "Заявление" {
+					x2 = x
+					y = 3
+					y2 = 2
+				}
+				if i == "ТНВЭД" || i == "ОКВЭД" {
+					y = 1
+					y2 = 1
+				}
 				var (
-					x, _, _            = excelize.CellNameToCoordinates(j.Cell)
-					column_cell, _     = excelize.CoordinatesToCellName(x, 2)
+					column_cell, _     = excelize.CoordinatesToCellName(x, y2)
 					column, _          = file_xlsx.GetCellValue(i, column_cell)
-					column_add_cell, _ = excelize.CoordinatesToCellName(x, 3)
+					column_add_cell, _ = excelize.CoordinatesToCellName(x2, y)
 					column_add, _      = file_xlsx.GetCellValue(i, column_add_cell)
 				)
 
@@ -197,10 +210,12 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 				if column != column_add {
 					summary.Remarks += fmt.Sprintf(" - %s", column_add)
 				}
-				summary.Remarks += fmt.Sprintf(" (Клетка-%s), Замечания: %s\n", j.Cell, j.Text)
+				index := strings.LastIndex(j.Text, "-")
+				summary.Remarks += fmt.Sprintf(" (Клетка-%s), Замечания: %s\n", j.Cell, j.Text[:index-2])
 			}
 		}
 	}
+	fmt.Println(summary.Remarks)
 	if err != nil {
 		return summary, err
 	}

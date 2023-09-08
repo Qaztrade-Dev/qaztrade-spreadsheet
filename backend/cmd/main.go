@@ -154,6 +154,7 @@ func main() {
 			manager.WithSignCredentials(signUrlBase, signLogin, signPassword),
 			manager.WithAdmin(adminAccount),
 			manager.WithServiceAccount(svcAccount),
+			manager.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
 		)
 
 		signService = sign.MakeService(

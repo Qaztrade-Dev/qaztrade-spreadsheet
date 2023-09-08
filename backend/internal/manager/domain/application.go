@@ -1,8 +1,10 @@
 package domain
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -49,12 +51,14 @@ type Revision struct {
 	SpreadsheetID  string
 	No             int
 	Link           string
+	Address        string
 	BIN            string
 	Manufactor     string
 	To             string
 	ApplicantEmail string
 	ManagerName    string
 	ManagerEmail   string
+	CreatedAt      time.Time
 	Remarks        string
 }
 
@@ -73,9 +77,20 @@ type SpreadsheetService interface {
 }
 
 var (
-	ErrorApplicationNotSigned = fmt.Errorf("Заявление еще не подписано!")
+	ErrorApplicationNotSigned      = fmt.Errorf("Заявление еще не подписано!")
+	ErrorApplicationNotUnderReview = fmt.Errorf("статус заявления не соответствует требованиям")
 )
 
 type SigningService interface {
 	GetDDCard(ctx context.Context, documentID string) (*http.Response, error)
+}
+
+type NoticeService interface {
+	Create(revision *Revision) (*bytes.Buffer, error)
+}
+
+type Storage interface {
+	Upload(ctx context.Context, folderName, fileName string, fileSize int64, fileReader io.Reader) (string, error)
+	Remove(ctx context.Context, filePath string) error
+	BucketExists(bucketname string) (bool, error)
 }

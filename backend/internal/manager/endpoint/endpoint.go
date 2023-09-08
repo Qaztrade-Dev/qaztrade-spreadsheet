@@ -1,7 +1,9 @@
 package endpoint
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"net/http"
 	"time"
 
@@ -81,7 +83,28 @@ type GetDDCardResponse struct {
 	Err          error `json:"err,omitempty"`
 }
 
+type GetNoticeRequest struct {
+	ApplicationID string
+}
+
+type GetNoticeResponse struct {
+	Docx *bytes.Buffer
+	Err  error `json:"err,omitempty"`
+}
+
+type SendNoticeRequest struct {
+	ApplicationID string
+	FileReader    io.Reader
+	FileSize      int64
+}
+
+type SendNoticeResponse struct {
+	Err error `json:"err,omitempty"`
+}
+
 func (r *GetDDCardResponse) Error() error { return r.Err }
+
+func (r *GetNoticeResponse) Error() error { return r.Err }
 
 func MakeGetDDCardEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -119,5 +142,38 @@ func MakeGetManagersEndpoint(s service.Service) endpoint.Endpoint {
 			Managers: jsonmanager.EncodeSlice(result, jsonmanager.EncodeManager),
 			Err:      err,
 		}, nil
+	}
+}
+
+func MakeGetNoticeEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetNoticeRequest)
+		data, err := s.GetNotice(ctx, &service.GetNoticeRequest{
+			ApplicationID: req.ApplicationID,
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &GetNoticeResponse{
+			Docx: data,
+			Err:  err,
+		}, err
+	}
+}
+
+func MakeSendNoticeEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(SendNoticeRequest)
+		hyperlink, err := s.SendNotice(ctx, &service.SendNoticeRequest{
+			ApplicationID: req.ApplicationID,
+			FileReader:    req.FileReader,
+			FileSize:      req.FileSize,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return hyperlink, nil
 	}
 }

@@ -15,11 +15,13 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/jackc/pgconn v1.14.0
 	github.com/jackc/pgx/v4 v4.18.1
+	github.com/lukasjarosch/go-docx v0.4.7
 	github.com/mattermost/squirrel v0.2.0
 	github.com/pdfcpu/pdfcpu v0.3.14-0.20221101223428-07d97625e3fa
 	github.com/phpdave11/gofpdf v1.4.2
 	github.com/redis/go-redis/v9 v9.0.5
 	github.com/stretchr/testify v1.8.4
+	github.com/xuri/excelize/v2 v2.7.1
 	golang.org/x/crypto v0.8.0
 	golang.org/x/net v0.9.0
 	golang.org/x/oauth2 v0.6.0
@@ -75,7 +77,6 @@ require (
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/xuri/efp v0.0.0-20220603152613-6918739fd470 // indirect
-	github.com/xuri/excelize/v2 v2.7.1 // indirect
 	github.com/xuri/nfp v0.0.0-20220409054826-5e722a1d9e22 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/image v0.5.0 // indirect

@@ -64,6 +64,39 @@ func DecodeGetDDCard(_ context.Context, r *http.Request) (interface{}, error) {
 	}, nil
 }
 
+func DecodeGetNotice(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		applicationID = mux.Vars(r)["application_id"]
+	)
+	return endpoint.GetNoticeRequest{
+		ApplicationID: applicationID,
+	}, nil
+}
+
+func DecodeSendNotice(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		applicationID = mux.Vars(r)["application_id"]
+	)
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		return nil, err
+	}
+
+	fileReader, header, err := r.FormFile("file")
+	if err != nil {
+		return nil, err
+	}
+	defer fileReader.Close()
+
+	var (
+		fileSize = header.Size
+	)
+	return endpoint.SendNoticeRequest{
+		ApplicationID: applicationID,
+		FileReader:    fileReader,
+		FileSize:      fileSize,
+	}, nil
+}
+
 func EncodeGetDDCardResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	if e, ok := response.(common.Errorer); ok && e.Error() != nil {
 		common.EncodeError(ctx, e.Error(), w)
@@ -94,6 +127,22 @@ func EncodeGetDDCardResponse(ctx context.Context, w http.ResponseWriter, respons
 		return nil
 	}
 
+	return nil
+}
+
+func EncodeGetNoticeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	var (
+		resp = response.(*endpoint.GetNoticeResponse)
+		data = resp.Docx
+	)
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+	// w.Header().Set("Content-Disposition", "attachment; filename=example.docx")
+	_, err := io.Copy(w, data)
+
+	if err != nil {
+		common.EncodeError(ctx, err, w)
+		return nil
+	}
 	return nil
 }
 
