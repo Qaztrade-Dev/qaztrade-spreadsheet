@@ -77,21 +77,6 @@ func (r *AssignmentsRepositoryPostgres) assignBatchApplications(ctx context.Cont
 	return nil
 }
 
-func (r *AssignmentsRepositoryPostgres) UpdateBatchStep(ctx context.Context, batchID, step int) error {
-	const sql = `
-		update "batches" set
-			step = $2
-		where 
-			id = $1
-	`
-
-	if _, err := r.pg.Exec(ctx, sql, batchID, step); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (r *AssignmentsRepositoryPostgres) CreateAssignments(ctx context.Context, inputs []*domain.AssignmentInput) error {
 	err := postgres.InTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
 		for _, input := range inputs {
@@ -376,7 +361,7 @@ func getOne(ctx context.Context, querier postgres.Querier, input *domain.GetMany
 func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBuilder {
 	mainStmt := psql.
 		Select(
-			"ass.id",
+			"app.no",
 			"app.attrs->'application'->>'from'",
 			"app.attrs->'application'->>'bin'",
 			"app.spreadsheet_id",
@@ -396,7 +381,7 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 		Join("applications app on app.id = ass.application_id").
 		Join("users u on u.id = ass.user_id").
 		LeftJoin("assignment_results assres on assres.id = ass.last_result_id").
-		OrderBy("ass.id asc")
+		OrderBy("app.no asc", "ass.type asc")
 
 	if input.UserID != nil {
 		mainStmt = mainStmt.Where("u.id = ?", *input.UserID)

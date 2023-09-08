@@ -110,10 +110,10 @@ func TestTest(t *testing.T) {
 		credentialsOAuth = credentialsOAuth
 		jwtcli           = jwt.NewClient("qaztradesecret")
 
-		postgresLogin         = getenv("POSTGRES_LOGIN", "postgres")
-		postgresPassword      = getenv("POSTGRES_PASSWORD", "postgres")
-		postgresHost          = getenv("POSTGRES_HOST", "localhost")
-		postgresDatabase      = getenv("POSTGRES_DATABASE", "qaztrade")
+		postgresLogin         = getenv("POSTGRES_LOGIN1", "postgres")
+		postgresPassword      = getenv("POSTGRES_PASSWORD1", "postgres")
+		postgresHost          = getenv("POSTGRES_HOST1", "localhost")
+		postgresDatabase      = getenv("POSTGRES_DATABASE1", "qaztrade")
 		templateSpreadsheetId = getenv("TEMPLATE_SPREADSHEET_ID")
 		destinationFolderId   = getenv("DESTINATION_FOLDER_ID")
 		reviewerAccount       = getenv("REVIEWER_ACCOUNT")
@@ -140,7 +140,7 @@ func TestTest(t *testing.T) {
 		destinationFolderId,
 	)
 
-	err = svc.AddСоответствиеЖДН(ctx)
+	err = svc.ConvertToFinancialSumCells(ctx)
 	if err != nil {
 		t.Fatal("Test error:", err)
 	}

@@ -9,14 +9,16 @@ import (
 )
 
 type BatchUpdate struct {
-	service  *sheets.Service
-	requests []*sheets.Request
+	service     *sheets.Service
+	requests    []*sheets.Request
+	valueRanges []*sheets.ValueRange
 }
 
 func NewBatchUpdate(service *sheets.Service) *BatchUpdate {
 	return &BatchUpdate{
-		service:  service,
-		requests: make([]*sheets.Request, 0),
+		service:     service,
+		requests:    make([]*sheets.Request, 0),
+		valueRanges: make([]*sheets.ValueRange, 0),
 	}
 }
 
@@ -59,13 +61,29 @@ func (b *BatchUpdate) WithRequest(requests ...*sheets.Request) {
 	b.requests = append(b.requests, requests...)
 }
 
+func (b *BatchUpdate) WithValueRange(valueRanges ...*sheets.ValueRange) {
+	b.valueRanges = append(b.valueRanges, valueRanges...)
+}
+
 func (b *BatchUpdate) Do(ctx context.Context, spreadsheetID string) error {
 	if len(b.requests) == 0 {
 		return nil
 	}
 	batchUpdateRequest := &sheets.BatchUpdateSpreadsheetRequest{Requests: b.requests}
-	_, err := b.service.Spreadsheets.BatchUpdate(spreadsheetID, batchUpdateRequest).Context(ctx).Do()
-	return err
+	if _, err := b.service.Spreadsheets.BatchUpdate(spreadsheetID, batchUpdateRequest).Context(ctx).Do(); err != nil {
+		return err
+	}
+
+	if len(b.valueRanges) > 0 {
+		if _, err := b.service.Spreadsheets.Values.BatchUpdate(spreadsheetID, &sheets.BatchUpdateValuesRequest{
+			Data:             b.valueRanges,
+			ValueInputOption: "USER_ENTERED",
+		}).Context(ctx).Do(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func InsertColumnLeft(sheetID int64, columnA1 string) *sheets.Request {
