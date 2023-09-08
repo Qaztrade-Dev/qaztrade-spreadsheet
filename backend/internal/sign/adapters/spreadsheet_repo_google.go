@@ -513,47 +513,6 @@ func (s *SpreadsheetClient) SwitchModeRead(ctx context.Context, spreadsheetID st
 	return nil
 }
 
-func (s *SpreadsheetClient) BlockImportantRanges(ctx context.Context, spreadsheetID string) error {
-	spreadsheet, err := s.sheetsService.Spreadsheets.Get(spreadsheetID).Do()
-	if err != nil {
-		return err
-	}
-
-	batch := NewBatchUpdate(s.sheetsService)
-
-	for _, namedRange := range spreadsheet.NamedRanges {
-		namedRange := namedRange
-		if strings.Contains(namedRange.Name, "_blocked_") {
-			batch.WithRequest(
-				&sheets.Request{
-					AddProtectedRange: &sheets.AddProtectedRangeRequest{
-						ProtectedRange: &sheets.ProtectedRange{
-							Description: namedRange.Name,
-							Editors: &sheets.Editors{
-								Users: []string{
-									s.adminAccount,
-									s.svcAccount,
-								},
-							},
-							Range: &sheets.GridRange{
-								SheetId:          namedRange.Range.SheetId,
-								StartColumnIndex: namedRange.Range.StartColumnIndex,
-								EndColumnIndex:   namedRange.Range.EndColumnIndex,
-							},
-						},
-					},
-				},
-			)
-		}
-	}
-
-	if err := batch.Do(ctx, spreadsheetID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (s *SpreadsheetClient) HasMergedCells(ctx context.Context, spreadsheetID string, sheets []*domain.Sheet) (bool, error) {
 	resp, err := s.sheetsService.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Do()
 	if err != nil {

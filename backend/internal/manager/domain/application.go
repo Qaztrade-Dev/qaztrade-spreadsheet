@@ -67,8 +67,6 @@ type ApplicationRepository interface {
 type SpreadsheetService interface {
 	SwitchModeRead(ctx context.Context, spreadsheetID string) error
 	SwitchModeEdit(ctx context.Context, spreadsheetID string) error
-	BlockImportantRanges(ctx context.Context, spreadsheetID string) error
-	UnlockImportantRanges(ctx context.Context, spreadsheetID string) error
 	Comments(ctx context.Context, application *Application) (*Revision, error)
 }
 

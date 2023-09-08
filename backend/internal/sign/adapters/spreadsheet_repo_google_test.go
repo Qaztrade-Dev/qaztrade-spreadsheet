@@ -96,18 +96,3 @@ func TestHasMergedCells(t *testing.T) {
 	require.Nil(t, err)
 	require.False(t, hasMergedCells)
 }
-
-func TestBlockImportantRanges(t *testing.T) {
-	var (
-		ctx           = context.Background()
-		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
-		svcAccount    = os.Getenv("SERVICE_ACCOUNT")
-		spreadsheetID = "13mbVQopQziZO4lEok42y-ThyVdX8Fk8AHF5qbrVR0nw"
-	)
-
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
-	require.Nil(t, err)
-
-	err = cli.BlockImportantRanges(ctx, spreadsheetID)
-	require.Nil(t, err)
-}
