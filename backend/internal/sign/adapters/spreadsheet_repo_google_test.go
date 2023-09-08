@@ -67,7 +67,7 @@ func TestGetSheets(t *testing.T) {
 		adminAccount = os.Getenv("ADMIN_ACCOUNT")
 		svcAccount   = os.Getenv("SERVICE_ACCOUNT")
 		// spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
-		spreadsheetID = "12BFz2hEBE9Su9-ahPX8L9tK6EkLb22dP1vnvOZMixO4"
+		spreadsheetID = "1hytwux8Qwqw-CvatrrFomlMRDNtJDBpXXwe6hIGbmzE"
 	)
 
 	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
@@ -75,7 +75,7 @@ func TestGetSheets(t *testing.T) {
 
 	sheets, err := cli.GetSheets(ctx, spreadsheetID)
 	require.Nil(t, err)
-	fmt.Printf("%#v\n", sheets[0])
+	fmt.Printf("%#v\n", sheets[0].Data)
 }
 
 func TestHasMergedCells(t *testing.T) {

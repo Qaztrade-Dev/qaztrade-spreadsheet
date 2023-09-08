@@ -360,8 +360,8 @@ func getDataRange(sheet *sheets.Sheet) *getDataRangeResponse {
 		}
 	}
 
-	data := make([][]string, rowEnd-3)
-	for i := 3; i < rowEnd; i++ {
+	data := make([][]string, rowEnd-3+1)
+	for i := 3; i <= rowEnd; i++ {
 		idx := i - 3
 		data[idx] = make([]string, columnEnd+1)
 		row := sheet.Data[0].RowData[i]
