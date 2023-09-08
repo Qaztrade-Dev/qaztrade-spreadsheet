@@ -37,7 +37,7 @@ BEGIN
 END; $$;
 
 
-CREATE FUNCTION get_business_category_table(text, int, int)
+CREATE OR REPLACE FUNCTION get_business_category_table(text, int, int)
 RETURNS TABLE(
     spreadsheet_id text,
     sheet_title text,
@@ -59,8 +59,8 @@ BEGIN
         jsonb_array_elements(s.value -> 'data') as d
     where
         a.is_signed
-        and s.value ->> 'title' = $1
-        and d.value ->> $2 <> '';
+        and s.value ->> 'title' = $1;
+        -- and d.value ->> $2 <> '';
 END; $$;
 
 CREATE FUNCTION get_business_category_table_agg(view_name text)
@@ -87,31 +87,33 @@ END; $$;
 
 --- Functions
 
-CREATE VIEW business_category_values_view AS
+CREATE OR REPLACE VIEW business_category_values_view AS
 select
     *
 from
     (
         values
+            ('', 0),
             ('крупный', 0.3),
             ('средний', 0.5),
             ('малый', 0.6)
     ) as temp_table(category, coef);
 
 
-CREATE VIEW tnved_values_view AS
+CREATE OR REPLACE VIEW tnved_values_view AS
 select
     *
 from
     (
         values
+            ('', 0, 0),
             ('нижний', 1, 0.3),
             ('средний', 2, 0.5),
             ('высокий', 3, 0.8)
     ) as temp_table(level, index, coef);
 
 
-CREATE VIEW tnved_view AS
+CREATE OR REPLACE VIEW tnved_view AS
 select
     t.*,
     v.index,
@@ -120,7 +122,7 @@ from
     tnved t
     join tnved_values_view v on v.level = t.level;
 
-CREATE VIEW logistics_values_view AS
+CREATE OR REPLACE VIEW logistics_values_view AS
 SELECT
     title,
     coef
@@ -128,7 +130,8 @@ FROM
     (
         VALUES
             ('да', 1.05),
-            ('нет', 1.0)
+            ('нет', 1.0),
+            ('', 1.0)
     ) AS temp_table(title, coef);
 
 CREATE VIEW applicants_info_view AS
@@ -147,7 +150,7 @@ where
 
 --- Затраты на доставку транспортом
 
-CREATE VIEW expenses_dostavka_view AS
+CREATE OR REPLACE VIEW expenses_dostavka_view AS
 SELECT
     a.spreadsheet_id,
     s.value ->> 'title' as sheet_title,
@@ -160,20 +163,20 @@ FROM
     jsonb_array_elements(s.value -> 'data') as d
 where
     a.is_signed
-    and s.value ->> 'title' = 'Затраты на доставку транспортом'
-    and d.value ->> 58 <> '';
+    and s.value ->> 'title' = 'Затраты на доставку транспортом';
+    -- and d.value ->> 58 <> '';
 
 --- agg
 
-CREATE VIEW expenses_dostavka_view_agg AS
+CREATE OR REPLACE VIEW expenses_dostavka_view_agg AS
 select
     e.spreadsheet_id,
     e.sheet_title,
-    sum(e.expense * t.coef * n.coef) as expenses_sum,
-    min(t.index) as tnved_index
+    coalesce(sum(e.expense * t.coef * n.coef), 0) as expenses_sum,
+    coalesce(min(t.index), 0) as tnved_index
 from
     expenses_dostavka_view e
-    join tnved_view t on t.code = e.tnved_code
+    left join tnved_view t on t.code = e.tnved_code
     join logistics_values_view n on n.title = e.logistics_type
 group by
     (e.spreadsheet_id, e.sheet_title);
@@ -273,7 +276,7 @@ select * from get_business_category_table_agg('expenses_uchastie_vystavka_iku_vi
 
 --- Затраты на соответствие товаров требованиям
 
-CREATE VIEW expenses_sootvetstvie_tovara_view AS
+CREATE OR REPLACE VIEW expenses_sootvetstvie_tovara_view AS
 SELECT
     a.spreadsheet_id,
     s.value ->> 'title' as sheet_title,
@@ -285,8 +288,8 @@ FROM
     jsonb_array_elements(s.value -> 'data') as d
 where
     a.is_signed
-    and s.value ->> 'title' = 'Затраты на соответствие товаров требованиям'
-    and d.value ->> 62 <> '';
+    and s.value ->> 'title' = 'Затраты на соответствие товаров требованиям';
+    -- and d.value ->> 62 <> '';
 
 --- agg
 
