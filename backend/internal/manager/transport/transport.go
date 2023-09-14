@@ -90,10 +90,12 @@ func DecodeSendNotice(_ context.Context, r *http.Request) (interface{}, error) {
 	var (
 		fileSize = header.Size
 	)
+
 	return endpoint.SendNoticeRequest{
 		ApplicationID: applicationID,
 		FileReader:    fileReader,
 		FileSize:      fileSize,
+		FileName:      header.Filename,
 	}, nil
 }
 
@@ -136,13 +138,10 @@ func EncodeGetNoticeResponse(ctx context.Context, w http.ResponseWriter, respons
 		data = resp.Docx
 	)
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-	// w.Header().Set("Content-Disposition", "attachment; filename=example.docx")
-	_, err := io.Copy(w, data)
-
-	if err != nil {
-		common.EncodeError(ctx, err, w)
-		return nil
+	if _, err := io.Copy(w, data); err != nil {
+		return err
 	}
+
 	return nil
 }
 

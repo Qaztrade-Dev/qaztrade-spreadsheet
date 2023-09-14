@@ -26,6 +26,7 @@ type service struct {
 	mngRepo         domain.ManagersRepository
 	noticeSvc       domain.NoticeService
 	storage         domain.Storage
+	emailSvc        domain.EmailService
 }
 
 func NewService(
@@ -35,6 +36,7 @@ func NewService(
 	mngRepo domain.ManagersRepository,
 	noticeSvc domain.NoticeService,
 	storage domain.Storage,
+	emailSvc domain.EmailService,
 ) Service {
 	return &service{
 		spreadsheetSvc:  spreadsheetSvc,
@@ -43,5 +45,6 @@ func NewService(
 		mngRepo:         mngRepo,
 		noticeSvc:       noticeSvc,
 		storage:         storage,
+		emailSvc:        emailSvc,
 	}
 }

@@ -37,13 +37,12 @@ func (s *NoticeService) Create(revision *domain.Revision) (*bytes.Buffer, error)
 		return nil, err
 	}
 
-	err = doc.ReplaceAll(replaceMap)
-	if err != nil {
+	if err := doc.ReplaceAll(replaceMap); err != nil {
 		return nil, err
 	}
 	var buf bytes.Buffer
-	err = doc.Write(&buf)
-	if err != nil {
+
+	if err := doc.Write(&buf); err != nil {
 		return nil, err
 	}
 	return &buf, nil

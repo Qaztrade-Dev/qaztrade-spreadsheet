@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/doodocs/qaztrade/backend/internal/manager/adapters"
+	"github.com/doodocs/qaztrade/backend/internal/manager/adapters/emailservice"
 	"github.com/doodocs/qaztrade/backend/internal/manager/adapters/noticeservice"
+
 	"github.com/doodocs/qaztrade/backend/internal/manager/service"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -34,9 +36,10 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		applicationRepo = adapters.NewApplicationRepositoryPostgres(deps.pg)
 		managersRepo    = adapters.NewManagersRepositoryPostgres(deps.pg)
 		signSvc         = adapters.NewSigningServiceDoodocs(deps.signUrlBase, deps.signLogin, deps.signPassword)
+		emailSvc        = emailservice.NewEmailServiceGmail(deps.mailEmail, deps.mailPassword)
 	)
 
-	svc := service.NewService(spreadsheetSvc, applicationRepo, signSvc, managersRepo, noticeSvc, storage)
+	svc := service.NewService(spreadsheetSvc, applicationRepo, signSvc, managersRepo, noticeSvc, storage, emailSvc)
 	return svc
 }
 
@@ -58,6 +61,8 @@ type dependencies struct {
 	s3Endpoint          string
 	s3Bucket            string
 	originSpreadsheetID string
+
+	mailEmail, mailPassword string
 }
 
 func (d *dependencies) setDefaults() {
@@ -102,5 +107,12 @@ func WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket string) Option
 		d.s3SecretKey = s3SecretKey
 		d.s3Endpoint = s3Endpoint
 		d.s3Bucket = s3Bucket
+	}
+}
+
+func WithMail(mailEmail, mailPassword string) Option {
+	return func(d *dependencies) {
+		d.mailEmail = mailEmail
+		d.mailPassword = mailPassword
 	}
 }

@@ -137,32 +137,102 @@ func (s *SpreadsheetServiceGoogle) GetPublicLink(_ context.Context, spreadsheetI
 	url := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/edit?usp=sharing", spreadsheetID)
 	return url
 }
+func (s *SpreadsheetServiceGoogle) GetApplication(ctx context.Context, spreadsheetID string) (*domain.ApplicationAttrs, error) {
+	var result domain.ApplicationAttrs
+
+	var mappings = []struct {
+		Range string
+		Value *string
+	}{
+		{Range: "from", Value: &result.From},
+		{Range: "gov_reg", Value: &result.GovReg},
+		{Range: "fact_addr", Value: &result.FactAddr},
+		{Range: "bin", Value: &result.Bin},
+		{Range: "industry", Value: &result.Industry},
+		{Range: "industry_other", Value: &result.IndustryOther},
+		{Range: "activity", Value: &result.Activity},
+		{Range: "emp_count", Value: &result.EmpCount},
+		{Range: "tax_sum", Value: &result.TaxSum},
+		{Range: "product_capacity", Value: &result.ProductCapacity},
+		{Range: "manufacturer", Value: &result.Manufacturer},
+		{Range: "item", Value: &result.Item},
+		{Range: "item_volume", Value: &result.ItemVolume},
+		{Range: "fact_volume_earnings", Value: &result.FactVolumeEarnings},
+		{Range: "fact_workload", Value: &result.FactWorkload},
+		{Range: "chief_lastname", Value: &result.ChiefLastname},
+		{Range: "chief_firstname", Value: &result.ChiefFirstname},
+		{Range: "chief_middlename", Value: &result.ChiefMiddlename},
+		{Range: "chief_position", Value: &result.ChiefPosition},
+		{Range: "chief_phone", Value: &result.ChiefPhone},
+		{Range: "cont_lastname", Value: &result.ContLastname},
+		{Range: "cont_firstname", Value: &result.ContFirstname},
+		{Range: "cont_middlename", Value: &result.ContMiddlename},
+		{Range: "cont_position", Value: &result.ContPosition},
+		{Range: "cont_phone", Value: &result.ContPhone},
+		{Range: "cont_email", Value: &result.ContEmail},
+		{Range: "info_manufactured_goods", Value: &result.InfoManufacturedGoods},
+		{Range: "name_of_goods", Value: &result.NameOfGoods},
+		{Range: "spend_plan", Value: &result.SpendPlan},
+		{Range: "spend_plan_other", Value: &result.SpendPlanOther},
+		{Range: "metrics_2022", Value: &result.Metrics2022},
+		{Range: "metrics_2023", Value: &result.Metrics2023},
+		{Range: "metrics_2024", Value: &result.Metrics2024},
+		{Range: "metrics_2025", Value: &result.Metrics2025},
+		{Range: "has_agreement", Value: &result.HasAgreement},
+	}
+
+	strRanges := make([]string, 0, len(mappings))
+	for i := range mappings {
+		strRanges = append(strRanges, mappings[i].Range)
+	}
+
+	batchDataValues, err := s.getDataFromRanges(ctx, spreadsheetID, strRanges)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range batchDataValues {
+		var value string
+		if len(batchDataValues[i]) > 0 && len(batchDataValues[i][0]) > 0 {
+			value = strings.TrimSpace(batchDataValues[i][0][0].(string))
+		}
+		*mappings[i].Value = value
+	}
+
+	return &result, nil
+}
+
+func (s *SpreadsheetServiceGoogle) getDataFromRanges(ctx context.Context, spreadsheetID string, ranges []string) ([][][]interface{}, error) {
+	resp, err := s.sheetsSvc.Spreadsheets.Values.BatchGet(spreadsheetID).Ranges(ranges...).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	datas := make([][][]interface{}, len(resp.ValueRanges))
+	for i := range resp.ValueRanges {
+		datas[i] = resp.ValueRanges[i].Values
+	}
+	return datas, nil
+}
 
 func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *domain.Application) (*domain.Revision, error) {
 
-	dataMap, ok := application.Attrs.(map[string]interface{})
-	if !ok {
-		return &domain.Revision{}, nil
+	applicationAttr, err := s.GetApplication(ctx, application.SpreadsheetID)
+	if err != nil {
+		return nil, err
 	}
-	applicationRawData, ok := dataMap["application"].(map[string]interface{})
-	if !ok {
-		return &domain.Revision{}, nil
-	}
-	applicationMap := map[string]string{}
-	for i, j := range applicationRawData {
-		applicationMap[i] = j.(string)
-	}
+
 	summary := &domain.Revision{
 		ApplicationID:  application.ID,
 		SpreadsheetID:  application.SpreadsheetID,
 		No:             application.No,
 		CreatedAt:      application.CreatedAt,
 		Link:           s.GetPublicLink(ctx, application.SpreadsheetID),
-		BIN:            applicationMap["bin"],
-		Manufactor:     applicationMap["manufacturer"],
-		To:             applicationMap["from"],
-		ApplicantEmail: applicationMap["cont_email"],
-		Address:        applicationMap["fact_addr"],
+		BIN:            applicationAttr.Bin,
+		Manufactor:     applicationAttr.Manufacturer,
+		To:             applicationAttr.From,
+		ApplicantEmail: applicationAttr.ContEmail,
+		Address:        applicationAttr.FactAddr,
 	}
 
 	spreadsheetID := application.SpreadsheetID

@@ -62,6 +62,47 @@ type Revision struct {
 	Remarks        string
 }
 
+type ApplicationAttrs struct {
+	From                  string
+	GovReg                string
+	FactAddr              string
+	Bin                   string
+	Industry              string
+	IndustryOther         string
+	Activity              string
+	EmpCount              string
+	TaxSum                string
+	ProductCapacity       string
+	Manufacturer          string
+	Item                  string
+	ItemVolume            string
+	FactVolumeEarnings    string
+	FactWorkload          string
+	ChiefLastname         string
+	ChiefFirstname        string
+	ChiefMiddlename       string
+	ChiefPosition         string
+	ChiefPhone            string
+	ContLastname          string
+	ContFirstname         string
+	ContMiddlename        string
+	ContPosition          string
+	ContPhone             string
+	ContEmail             string
+	InfoManufacturedGoods string
+	NameOfGoods           string
+	HasAgreement          string
+	SpendPlan             string
+	SpendPlanOther        string
+	Metrics2022           string
+	Metrics2023           string
+	Metrics2024           string
+	Metrics2025           string
+	AgreementFile         string
+	ExpensesSum           string
+	ExpensesList          string
+	ApplicationDate       string
+}
 type ApplicationRepository interface {
 	GetMany(ctx context.Context, query *ApplicationQuery) (*ApplicationList, error)
 	GetOne(ctx context.Context, query *ApplicationQuery) (*Application, error)
@@ -74,11 +115,12 @@ type SpreadsheetService interface {
 	BlockImportantRanges(ctx context.Context, spreadsheetID string) error
 	UnlockImportantRanges(ctx context.Context, spreadsheetID string) error
 	Comments(ctx context.Context, application *Application) (*Revision, error)
+	GetApplication(ctx context.Context, spreadsheetID string) (*ApplicationAttrs, error)
 }
 
 var (
 	ErrorApplicationNotSigned      = fmt.Errorf("Заявление еще не подписано!")
-	ErrorApplicationNotUnderReview = fmt.Errorf("статус заявления не соответствует требованиям")
+	ErrorApplicationNotUnderReview = fmt.Errorf("Cтатус заявления не соответствует требованиям")
 )
 
 type SigningService interface {
@@ -92,4 +134,8 @@ type NoticeService interface {
 type Storage interface {
 	Upload(ctx context.Context, folderName, fileName string, fileSize int64, fileReader io.Reader) (string, error)
 	Remove(ctx context.Context, filePath string) error
+}
+
+type EmailService interface {
+	SendNotice(ctx context.Context, toEmail, mailName, filename string, FileReader io.Reader) error
 }

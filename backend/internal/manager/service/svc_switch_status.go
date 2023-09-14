@@ -41,8 +41,8 @@ func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) er
 	case isUserFixing:
 		mustSwitchModeEdit = true
 		mustUnlockImportantRanges = true
-		_, err := s.Revision(ctx, application)
-		if err != nil {
+
+		if _, err := s.Revision(ctx, application); err != nil {
 			return err
 		}
 	case isManagerReviewing:

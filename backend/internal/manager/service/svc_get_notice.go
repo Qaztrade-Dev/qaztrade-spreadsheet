@@ -27,6 +27,7 @@ func (s *service) Revision(ctx context.Context, application *domain.Application)
 	data, err := s.spreadsheetSvc.Comments(ctx, application)
 	data.ManagerName = manager.Fullname
 	data.ManagerEmail = manager.Email
+
 	if err != nil {
 		return nil, err
 	}

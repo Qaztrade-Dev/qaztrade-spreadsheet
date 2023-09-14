@@ -96,6 +96,7 @@ type SendNoticeRequest struct {
 	ApplicationID string
 	FileReader    io.Reader
 	FileSize      int64
+	FileName      string
 }
 
 type SendNoticeResponse struct {
@@ -170,6 +171,7 @@ func MakeSendNoticeEndpoint(s service.Service) endpoint.Endpoint {
 			ApplicationID: req.ApplicationID,
 			FileReader:    req.FileReader,
 			FileSize:      req.FileSize,
+			FileName:      req.FileName,
 		})
 		if err != nil {
 			return nil, err
