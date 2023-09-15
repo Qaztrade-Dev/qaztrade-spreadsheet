@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/google/uuid"
 )
 
 type StorageS3 struct {
@@ -44,20 +43,19 @@ func NewStorageS3(ctx context.Context, accessKey, secretKey, bucketName, endpoin
 	return result, nil
 }
 
-func (s *StorageS3) Upload(ctx context.Context, folderName, fileName string, fileSize int64, fileReader io.Reader) (string, error) {
-	key := fmt.Sprintf("%s/%s-%s", folderName, uuid.NewString(), fileName)
+func (s *StorageS3) Upload(ctx context.Context, filekey string, fileSize int64, fileReader io.Reader) (string, error) {
 	_, err := s.cli.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:        aws.String(s.bucketName),
 		Body:          fileReader,
 		ContentLength: fileSize,
-		Key:           aws.String(key),
+		Key:           aws.String(filekey),
 	})
 
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s/%s/%s", s.endpoint, s.bucketName, key), nil
+	return fmt.Sprintf("%s/%s/%s", s.endpoint, s.bucketName, filekey), nil
 }
 
 func (s *StorageS3) Remove(ctx context.Context, filePath string) error {

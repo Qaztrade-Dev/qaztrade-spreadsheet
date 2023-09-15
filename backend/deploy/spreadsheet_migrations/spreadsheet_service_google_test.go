@@ -49,7 +49,7 @@ func TestTest(t *testing.T) {
 		destinationFolderId,
 	)
 
-	err = svc.DeleteBlockedProtectedRanges(ctx)
+	err = svc.BackupSpreadsheets(ctx)
 	if err != nil {
 		t.Fatal("Test error:", err)
 	}
