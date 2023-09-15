@@ -33,7 +33,7 @@ type ApplicationList struct {
 	Applications []*Application
 }
 
-type ApplicationQuery struct {
+type GetManyInput struct {
 	Limit  uint64
 	Offset uint64
 
@@ -42,6 +42,8 @@ type ApplicationQuery struct {
 	CompensationType string
 	SignedAtFrom     time.Time
 	SignedAtUntil    time.Time
+	CompanyName      string
+	ApplicationNo    int
 }
 
 type Revision struct {
@@ -59,8 +61,8 @@ type Revision struct {
 }
 
 type ApplicationRepository interface {
-	GetMany(ctx context.Context, query *ApplicationQuery) (*ApplicationList, error)
-	GetOne(ctx context.Context, query *ApplicationQuery) (*Application, error)
+	GetMany(ctx context.Context, query *GetManyInput) (*ApplicationList, error)
+	GetOne(ctx context.Context, query *GetManyInput) (*Application, error)
 	EditStatus(ctx context.Context, applicationID, statusName string) error
 }
 

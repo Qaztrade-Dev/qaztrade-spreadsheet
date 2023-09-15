@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
 	"github.com/doodocs/qaztrade/backend/internal/assignments/endpoint"
 	"github.com/doodocs/qaztrade/backend/internal/common"
 	"github.com/gorilla/mux"
@@ -17,38 +18,84 @@ import (
 
 func DecodeGetAssignmentsRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var (
-		limitStr  = r.URL.Query().Get("limit")
-		offsetStr = r.URL.Query().Get("offset")
-		userIDStr = r.URL.Query().Get("user_id")
+		limitStr          = r.URL.Query().Get("limit")
+		offsetStr         = r.URL.Query().Get("offset")
+		assigneeIDStr     = r.URL.Query().Get("assignee_id")
+		companyNameStr    = r.URL.Query().Get("company_name")
+		applicationNoStr  = r.URL.Query().Get("application_no")
+		assignmentTypeStr = r.URL.Query().Get("assignment_type")
 
-		limit, _  = strconv.ParseUint(limitStr, 10, 0)
-		offset, _ = strconv.ParseUint(offsetStr, 10, 0)
-		userID    *string
+		limit, _            = strconv.ParseUint(limitStr, 10, 0)
+		offset, _           = strconv.ParseUint(offsetStr, 10, 0)
+		applicationNoInt, _ = strconv.Atoi(applicationNoStr)
+
+		applicationNo  *int
+		assigneeID     *string
+		companyName    *string
+		assignmentType *string
 	)
 
-	if userIDStr != "" {
-		userID = &userIDStr
+	if assigneeIDStr != "" {
+		assigneeID = &assigneeIDStr
 	}
 
-	return endpoint.GetAssignmentsRequest{
-		Limit:  limit,
-		Offset: offset,
-		UserID: userID,
+	if companyNameStr != "" {
+		companyName = &companyNameStr
+	}
+
+	if applicationNoStr != "" {
+		applicationNo = &applicationNoInt
+	}
+
+	if assignmentTypeStr != "" {
+		assignmentType = &assignmentTypeStr
+	}
+
+	return domain.GetManyInput{
+		Limit:          limit,
+		Offset:         offset,
+		AssigneeID:     assigneeID,
+		CompanyName:    companyName,
+		ApplicationNo:  applicationNo,
+		AssignmentType: assignmentType,
 	}, nil
 }
 
 func DecodeGetUserAssignmentsRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var (
-		limitStr  = r.URL.Query().Get("limit")
-		offsetStr = r.URL.Query().Get("offset")
+		limitStr          = r.URL.Query().Get("limit")
+		offsetStr         = r.URL.Query().Get("offset")
+		companyNameStr    = r.URL.Query().Get("company_name")
+		applicationNoStr  = r.URL.Query().Get("application_no")
+		assignmentTypeStr = r.URL.Query().Get("assignment_type")
 
-		limit, _  = strconv.ParseUint(limitStr, 10, 0)
-		offset, _ = strconv.ParseUint(offsetStr, 10, 0)
+		limit, _            = strconv.ParseUint(limitStr, 10, 0)
+		offset, _           = strconv.ParseUint(offsetStr, 10, 0)
+		applicationNoInt, _ = strconv.Atoi(applicationNoStr)
+
+		applicationNo  *int
+		companyName    *string
+		assignmentType *string
 	)
 
-	return endpoint.GetUserAssignmentsRequest{
-		Limit:  limit,
-		Offset: offset,
+	if companyNameStr != "" {
+		companyName = &companyNameStr
+	}
+
+	if applicationNoStr != "" {
+		applicationNo = &applicationNoInt
+	}
+
+	if assignmentTypeStr != "" {
+		assignmentType = &assignmentTypeStr
+	}
+
+	return domain.GetManyInput{
+		Limit:          limit,
+		Offset:         offset,
+		CompanyName:    companyName,
+		ApplicationNo:  applicationNo,
+		AssignmentType: assignmentType,
 	}, nil
 }
 

@@ -12,7 +12,7 @@ type GetDDCardRequest struct {
 }
 
 func (s *service) GetDDCard(ctx context.Context, req *GetDDCardRequest) (*http.Response, error) {
-	application, err := s.applicationRepo.GetOne(ctx, &domain.ApplicationQuery{
+	application, err := s.applicationRepo.GetOne(ctx, &domain.GetManyInput{
 		ApplicationID: req.ApplicationID,
 	})
 	if err != nil {

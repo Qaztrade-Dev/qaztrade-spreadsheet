@@ -33,7 +33,7 @@ func (s *service) Revision(ctx context.Context, application *domain.Application)
 }
 
 func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) error {
-	application, err := s.applicationRepo.GetOne(ctx, &domain.ApplicationQuery{
+	application, err := s.applicationRepo.GetOne(ctx, &domain.GetManyInput{
 		ApplicationID: req.ApplicationID,
 	})
 	if err != nil {
