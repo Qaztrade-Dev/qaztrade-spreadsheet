@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	"github.com/google/uuid"
@@ -17,7 +16,7 @@ type SignUpRequest struct {
 func (s *service) SignUp(ctx context.Context, input *SignUpRequest) (*domain.Credentials, error) {
 	var (
 		userID = uuid.NewString()
-		email  = strings.TrimSpace(input.Email)
+		email  = domain.CleanEmail(input.Email)
 	)
 
 	err := s.authRepo.SignUp(ctx, &domain.SignUpInput{

@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"strings"
+)
 
 type UserClaims struct {
 	UserID string   `json:"uid"`
@@ -54,4 +57,11 @@ type CredentialsRepository interface {
 
 type EmailService interface {
 	Send(ctx context.Context, toEmail, mailName string, payload interface{}) error
+}
+
+func CleanEmail(email string) string {
+	email = strings.TrimSpace(email)
+	email = strings.ToLower(email)
+
+	return email
 }
