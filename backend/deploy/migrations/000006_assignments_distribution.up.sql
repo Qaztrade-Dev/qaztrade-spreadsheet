@@ -63,7 +63,7 @@ BEGIN
         -- and d.value ->> $2 <> '';
 END; $$;
 
-CREATE FUNCTION get_business_category_table_agg(view_name text)
+CREATE OR REPLACE FUNCTION get_business_category_table_agg(view_name text)
 RETURNS TABLE (
     spreadsheet_id text,
     sheet_title text,
@@ -76,11 +76,9 @@ BEGIN
     'SELECT
         e.spreadsheet_id,
         e.sheet_title,
-        SUM(e.expense * b.coef) AS expenses_sum
+        SUM(e.expense) AS expenses_sum
     FROM
         %I e
-    JOIN
-        business_category_values_view b ON b.category = e.business_category
     GROUP BY
         e.spreadsheet_id, e.sheet_title', view_name);
 END; $$;
@@ -172,12 +170,13 @@ CREATE OR REPLACE VIEW expenses_dostavka_view_agg AS
 select
     e.spreadsheet_id,
     e.sheet_title,
-    coalesce(sum(e.expense * t.coef * n.coef), 0) as expenses_sum,
+    -- coalesce(sum(e.expense * t.coef * n.coef), 0) as expenses_sum,
+    coalesce(sum(e.expense), 0) as expenses_sum,
     coalesce(min(t.index), 0) as tnved_index
 from
     expenses_dostavka_view e
     left join tnved_view t on t.code = e.tnved_code
-    join logistics_values_view n on n.title = e.logistics_type
+    -- join logistics_values_view n on n.title = e.logistics_type
 group by
     (e.spreadsheet_id, e.sheet_title);
 
@@ -293,11 +292,12 @@ where
 
 --- agg
 
-CREATE VIEW expenses_sootvetstvie_tovara_view_agg AS
+CREATE OR REPLACE VIEW expenses_sootvetstvie_tovara_view_agg AS
 select
     e.spreadsheet_id,
     e.sheet_title,
-    sum(e.expense * t.coef) as expenses_sum,
+    -- sum(e.expense * t.coef) as expenses_sum,
+    sum(e.expense) as expenses_sum,
     min(t.index) as tnved_index
 from
     expenses_sootvetstvie_tovara_view e
