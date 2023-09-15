@@ -122,7 +122,7 @@ func (r *AuthorizationRepositoryPostgre) SignIn(ctx context.Context, input *doma
 			u.hashed_password
 		from "users" u
 		where 
-			u.email = $1
+			lower(u.email) = $1
 	`
 
 	var (
@@ -167,7 +167,7 @@ func (r *AuthorizationRepositoryPostgre) GetOne(ctx context.Context, input *doma
 			u.id
 		from "users" u
 		where 
-			u.email = $1
+			lower(u.email) = $1
 	`
 
 	var (
