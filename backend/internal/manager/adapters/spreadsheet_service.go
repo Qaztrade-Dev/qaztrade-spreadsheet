@@ -295,6 +295,10 @@ func (s *SpreadsheetServiceGoogle) deleteMetadata(ctx context.Context, spreadshe
 }
 
 func (s *SpreadsheetServiceGoogle) SetMetadata(ctx context.Context, spreadsheetID string, arr_metadata []*MetaDataCommentsPack) error {
+	if err := s.deleteMetadata(ctx, spreadsheetID); err != nil {
+		return err
+	}
+
 	batch := NewBatchUpdate(s.sheetsSvc)
 	for _, i := range arr_metadata {
 		batch.WithRequest(&sheets.Request{
