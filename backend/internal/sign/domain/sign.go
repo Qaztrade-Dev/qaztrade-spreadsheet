@@ -114,6 +114,7 @@ type SpreadsheetRepository interface {
 	SwitchModeRead(ctx context.Context, spreadsheetID string) error
 	BlockImportantRanges(ctx context.Context, spreadsheetID string) error
 	HasMergedCells(ctx context.Context, spreadsheetID string, sheets []*Sheet) (bool, error)
+	DeleteMetadata(ctx context.Context, spreadsheetID string) error
 }
 
 type CreateSigningDocumentResponse struct {

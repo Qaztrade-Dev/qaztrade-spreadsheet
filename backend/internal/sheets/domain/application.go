@@ -1,5 +1,13 @@
 package domain
 
+const (
+	StatusUserFilling      = "user_filling"
+	StatusManagerReviewing = "manager_reviewing"
+	StatusUserFixing       = "user_fixing"
+	StatusCompleted        = "completed"
+	StatusRejected         = "rejected"
+)
+
 type Application struct {
 	From                  string
 	GovReg                string
@@ -39,4 +47,9 @@ type Application struct {
 	AgreementFile         string
 
 	Token string
+}
+
+type StatusApplication struct {
+	SpreadsheetID string
+	Status        string
 }

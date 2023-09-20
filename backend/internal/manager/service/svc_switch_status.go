@@ -22,7 +22,6 @@ func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) er
 	if err := s.applicationRepo.EditStatus(ctx, req.ApplicationID, req.StatusName); err != nil {
 		return err
 	}
-
 	var (
 		isManagerReviewing = (req.StatusName == domain.StatusManagerReviewing)
 		isUserFilling      = (req.StatusName == domain.StatusUserFilling)
@@ -33,7 +32,6 @@ func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) er
 		mustBlockImportantRanges  = false
 		mustUnlockImportantRanges = false
 	)
-
 	switch {
 	case isUserFilling:
 		mustSwitchModeEdit = true
@@ -41,10 +39,6 @@ func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) er
 	case isUserFixing:
 		mustSwitchModeEdit = true
 		mustUnlockImportantRanges = true
-
-		if _, err := s.Revision(ctx, application); err != nil {
-			return err
-		}
 	case isManagerReviewing:
 		mustSwitchModeRead = true
 		mustBlockImportantRanges = true

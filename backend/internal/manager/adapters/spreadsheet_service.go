@@ -18,6 +18,7 @@ type SpreadsheetServiceGoogle struct {
 	sheetsSvc    *sheets.Service
 	adminAccount string
 	svcAccount   string
+	metaDataSvc  *sheets.SpreadsheetsDeveloperMetadataService
 }
 
 var _ domain.SpreadsheetService = (*SpreadsheetServiceGoogle)(nil)
@@ -32,12 +33,13 @@ func NewSpreadsheetService(ctx context.Context, credentialsJson []byte, adminAcc
 	if err != nil {
 		return nil, err
 	}
-
+	metaDataSvc := sheets.NewSpreadsheetsDeveloperMetadataService(sheetsSvc)
 	return &SpreadsheetServiceGoogle{
 		driveSvc:     driveSvc,
 		sheetsSvc:    sheetsSvc,
 		adminAccount: adminAccount,
 		svcAccount:   svcAccount,
+		metaDataSvc:  metaDataSvc,
 	}, err
 }
 
@@ -250,6 +252,10 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 	}
 	sheet_list := file_xlsx.GetSheetList()
 
+	if err := s.deleteMetadata(ctx, spreadsheetID); err != nil {
+		return nil, err
+	}
+
 	cnt := 0
 	for _, i := range sheet_list {
 		comments, _ := file_xlsx.GetComments(i)
@@ -261,6 +267,9 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 				y2 := 3
 				x2 := 1
 				x, y, _ := excelize.CellNameToCoordinates(j.Cell)
+				if err := s.SetMetadata(ctx, spreadsheetID, i, int64(y), int64(x)); err != nil {
+					return nil, err
+				}
 				if i != "Заявление" {
 					x2 = x
 					y = 3
@@ -292,4 +301,73 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 	}
 
 	return summary, nil
+}
+func (s *SpreadsheetServiceGoogle) deleteMetadataByKey(ctx context.Context, spreadsheetID, key string) error {
+	batch := NewBatchUpdate(s.sheetsSvc)
+
+	batch.WithRequest(&sheets.Request{
+		DeleteDeveloperMetadata: &sheets.DeleteDeveloperMetadataRequest{
+			DataFilter: &sheets.DataFilter{
+				DeveloperMetadataLookup: &sheets.DeveloperMetadataLookup{
+					Visibility:  "DOCUMENT",
+					MetadataKey: key,
+				},
+			},
+		},
+	})
+	if err := batch.Do(ctx, spreadsheetID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SpreadsheetServiceGoogle) deleteMetadata(ctx context.Context, spreadsheetID string) error {
+
+	var (
+		filter []*sheets.DataFilter
+	)
+
+	filter = append(filter, &sheets.DataFilter{
+		DeveloperMetadataLookup: &sheets.DeveloperMetadataLookup{
+			Visibility: "DOCUMENT",
+		},
+	})
+	reqMeta := &sheets.SearchDeveloperMetadataRequest{
+		DataFilters: filter,
+	}
+
+	response, err := s.metaDataSvc.Search(spreadsheetID, reqMeta).Do()
+	if err != nil {
+		return err
+	}
+	for _, i := range response.MatchedDeveloperMetadata {
+		if i.DeveloperMetadata.MetadataKey[0] == '!' {
+			s.deleteMetadataByKey(ctx, spreadsheetID, i.DeveloperMetadata.MetadataKey)
+		}
+	}
+
+	return nil
+}
+
+func (s *SpreadsheetServiceGoogle) SetMetadata(ctx context.Context, spreadsheetID string, sheetName string, rowIdx int64, colIdx int64) error {
+	batch := NewBatchUpdate(s.sheetsSvc)
+
+	batch.WithRequest(&sheets.Request{
+		CreateDeveloperMetadata: &sheets.CreateDeveloperMetadataRequest{
+			DeveloperMetadata: &sheets.DeveloperMetadata{
+				Location: &sheets.DeveloperMetadataLocation{
+					Spreadsheet: true,
+				},
+				Visibility:    "DOCUMENT",
+				MetadataKey:   fmt.Sprintf("!%s-%d:%d", sheetName, rowIdx, colIdx),
+				MetadataValue: "true",
+			},
+		},
+	})
+
+	if err := batch.Do(ctx, spreadsheetID); err != nil {
+		return err
+	}
+
+	return nil
 }

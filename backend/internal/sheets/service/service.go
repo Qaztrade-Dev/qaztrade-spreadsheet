@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
+	"google.golang.org/api/sheets/v4"
 )
 
 type Service interface {
@@ -13,13 +14,19 @@ type Service interface {
 }
 
 type service struct {
-	sheetsRepo domain.SheetsRepository
-	storage    domain.Storage
+	sheetsRepo                domain.SheetsRepository
+	storage                   domain.Storage
+	applicationRepo           domain.ApplicationRepository
+	spreadsheetSvc            domain.SpreadsheetService
+	spreadsheetDevMetadataSvc sheets.SpreadsheetsDeveloperMetadataService
 }
 
-func NewService(sheetsRepo domain.SheetsRepository, storage domain.Storage) Service {
+func NewService(sheetsRepo domain.SheetsRepository, storage domain.Storage, applicationRepo domain.ApplicationRepository, spreadsheetSvc domain.SpreadsheetService, spreadsheetDevMetadataSvc sheets.SpreadsheetsDeveloperMetadataService) Service {
 	return &service{
-		sheetsRepo: sheetsRepo,
-		storage:    storage,
+		sheetsRepo:                sheetsRepo,
+		storage:                   storage,
+		applicationRepo:           applicationRepo,
+		spreadsheetSvc:            spreadsheetSvc,
+		spreadsheetDevMetadataSvc: spreadsheetDevMetadataSvc,
 	}
 }

@@ -31,6 +31,10 @@ func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte) (*Spreads
 	}, nil
 }
 
+func (c *SpreadsheetClient) NewSpreadsheetServiceMetadata() *sheets.SpreadsheetsDeveloperMetadataService {
+	return sheets.NewSpreadsheetsDeveloperMetadataService(c.service)
+}
+
 func (c *SpreadsheetClient) UpdateApplication(ctx context.Context, spreadsheetID string, application *domain.Application) error {
 	var mappings = []struct {
 		Range string
@@ -174,21 +178,10 @@ type UpdateCellRequest struct {
 	Value       string
 }
 
-func (r *UpdateCellRequest) encode(sheetID int64) *sheets.Request {
-	var (
-		stringValue  *string
-		formulaValue *string
-	)
-
-	if strings.HasPrefix(r.Value, "=") {
-		formulaValue = &r.Value
-	} else {
-		stringValue = &r.Value
-	}
-
+func (r *UpdateCellRequest) encode(sheetID int64, newStringVal *string, newTextFormat []*sheets.TextFormatRun) *sheets.Request {
 	return &sheets.Request{
 		UpdateCells: &sheets.UpdateCellsRequest{
-			Fields: "userEnteredValue",
+			Fields: "UserEnteredValue,TextFormatRuns",
 			Start: &sheets.GridCoordinate{
 				RowIndex:    r.RowIndex,
 				ColumnIndex: r.ColumnIndex,
@@ -199,9 +192,9 @@ func (r *UpdateCellRequest) encode(sheetID int64) *sheets.Request {
 					Values: []*sheets.CellData{
 						{
 							UserEnteredValue: &sheets.ExtendedValue{
-								StringValue:  stringValue,
-								FormulaValue: formulaValue,
+								StringValue: newStringVal,
 							},
+							TextFormatRuns: newTextFormat,
 						},
 					},
 				},
@@ -218,10 +211,47 @@ func (c *SpreadsheetClient) UpdateCell(ctx context.Context, spreadsheetID string
 			ColumnIndex: input.ColumnIdx - 1,
 			Value:       input.Value,
 		}
+		TextFormat, StringVal, PrevHyperlink, err = c.getCellValue(ctx, spreadsheetID, input.SheetName, input.RowIdx, input.ColumnIdx)
 	)
+	if err != nil {
+		return err
+	}
+	var newTextFormat []*sheets.TextFormatRun
+	newTextFormat = append(newTextFormat, &sheets.TextFormatRun{
+		Format: &sheets.TextFormat{
+			Link: &sheets.Link{
+				Uri: input.Value,
+			},
+		},
+		StartIndex: 0,
+	})
+	time := time.Now()
+	timeToString := fmt.Sprintf("(%s)", time.Format("02-01-2006"))
+	newStringVal := "файл " + timeToString
+
+	if !input.Replace && *StringVal != "" {
+		newStringVal += "\nстарый " + *StringVal
+		if len(TextFormat) == 0 {
+			newTextFormat = append(newTextFormat, &sheets.TextFormatRun{
+				Format: &sheets.TextFormat{
+					Link: &sheets.Link{
+						Uri: *PrevHyperlink,
+					},
+				},
+				StartIndex: 13,
+			})
+
+		} else {
+			TextFormat[0].StartIndex += 13
+			for i := 1; i < len(TextFormat); i++ {
+				TextFormat[i].StartIndex += 20
+			}
+			newTextFormat = append(newTextFormat, TextFormat...)
+		}
+	}
 
 	batch.WithRequest(
-		updateCellRequest.encode(input.SheetID),
+		updateCellRequest.encode(input.SheetID, &newStringVal, newTextFormat),
 	)
 
 	if err := batch.Do(ctx, spreadsheetID); err != nil {
@@ -271,4 +301,37 @@ func (c *SpreadsheetClient) AddRows(ctx context.Context, spreadsheetID string, i
 	}
 
 	return nil
+}
+func (s *SpreadsheetClient) GetHyperLink(ctx context.Context, spreadsheetID string, SheetName string, Row_idx int64, Column_idx int64) (*string, error) {
+	_, _, PrevHyperlink, err := s.getCellValue(ctx, spreadsheetID, SheetName, Row_idx, Column_idx)
+	if err != nil {
+		return nil, err
+	}
+	return PrevHyperlink, nil
+}
+
+func (s *SpreadsheetClient) getCellValue(ctx context.Context, spreadsheetID string, SheetName string, Row_idx int64, Column_idx int64) ([]*sheets.TextFormatRun, *string, *string, error) {
+	A1Notion := (&Cell{
+		Col: Column_idx - 1,
+		Row: Row_idx - 1,
+	}).ToA1()
+
+	resp, err := s.service.Spreadsheets.GetByDataFilter(spreadsheetID, &sheets.GetSpreadsheetByDataFilterRequest{
+		DataFilters: []*sheets.DataFilter{
+			{A1Range: SheetName + "!" + A1Notion},
+		},
+		IncludeGridData: true,
+	}).Do()
+
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	for _, s := range resp.Sheets {
+		if s.Properties.Title == SheetName {
+			val := s.Data[0].RowData[0].Values[0]
+			return val.TextFormatRuns, &val.FormattedValue, &val.Hyperlink, nil
+		}
+	}
+	return nil, nil, nil, nil
 }

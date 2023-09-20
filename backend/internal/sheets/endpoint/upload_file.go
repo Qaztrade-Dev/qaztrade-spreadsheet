@@ -41,7 +41,6 @@ func MakeUploadFileEndpoint(s service.Service, j *jwt.Client) endpoint.Endpoint 
 			SpreadsheetID: claims.SpreadsheetID,
 			SheetID:       req.SheetID,
 			SheetName:     req.SheetName,
-			Hyperlink:     req.Hyperlink,
 			RowIdx:        req.RowIdx,
 			ColumnIdx:     req.ColumnIdx,
 			FileReader:    req.FileReader,

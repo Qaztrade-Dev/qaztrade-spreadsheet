@@ -5,6 +5,9 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/adapters"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
+	"github.com/doodocs/qaztrade/backend/pkg/jwt"
+	"github.com/doodocs/qaztrade/backend/pkg/qaztradeoauth2"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 func MakeService(ctx context.Context, opts ...Option) service.Service {
@@ -24,19 +27,44 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		panic(err)
 	}
 
-	svc := service.NewService(sheetsRepo, storage)
+	oauth2, err := qaztradeoauth2.NewClient(deps.clientSecretBytes, deps.pg)
+	if err != nil {
+		panic(err)
+	}
+
+	var (
+		spreadsheetSvc = adapters.NewSpreadsheetServiceGoogle(
+			oauth2,
+			deps.svcAccount,
+			deps.reviewerAccount,
+			deps.jwtcli,
+			deps.originSpreadsheetID,
+			deps.templateSpreadsheetID,
+			deps.destinationFolderID,
+		)
+		applicationRepo           = adapters.NewApplicationRepositoryPostgre(deps.pg)
+		spreadsheetDevMetadataSvc = sheetsRepo.NewSpreadsheetServiceMetadata()
+	)
+	svc := service.NewService(sheetsRepo, storage, applicationRepo, spreadsheetSvc, *spreadsheetDevMetadataSvc)
 	return svc
 }
 
 type Option func(*dependencies)
 
 type dependencies struct {
-	credentials         []byte
-	s3AccessKey         string
-	s3SecretKey         string
-	s3Endpoint          string
-	s3Bucket            string
-	originSpreadsheetID string
+	credentials           []byte
+	s3AccessKey           string
+	s3SecretKey           string
+	s3Endpoint            string
+	s3Bucket              string
+	originSpreadsheetID   string
+	pg                    *pgxpool.Pool
+	clientSecretBytes     []byte
+	svcAccount            string
+	reviewerAccount       string
+	templateSpreadsheetID string
+	destinationFolderID   string
+	jwtcli                *jwt.Client
 }
 
 func (d *dependencies) setDefaults() {
@@ -55,5 +83,53 @@ func WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket string) Option
 		d.s3SecretKey = s3SecretKey
 		d.s3Endpoint = s3Endpoint
 		d.s3Bucket = s3Bucket
+	}
+}
+
+func WithPostgre(pg *pgxpool.Pool) Option {
+	return func(d *dependencies) {
+		d.pg = pg
+	}
+}
+
+func WithOAuthCredentials(clientSecretBytes []byte) Option {
+	return func(d *dependencies) {
+		d.clientSecretBytes = clientSecretBytes
+	}
+}
+
+func WithServiceAccount(svcAccount string) Option {
+	return func(d *dependencies) {
+		d.svcAccount = svcAccount
+	}
+}
+
+func WithReviewer(reviewerAccount string) Option {
+	return func(d *dependencies) {
+		d.reviewerAccount = reviewerAccount
+	}
+}
+
+func WithOriginSpreadsheetID(originSpreadsheetID string) Option {
+	return func(d *dependencies) {
+		d.originSpreadsheetID = originSpreadsheetID
+	}
+}
+
+func WithTemplateSpreadsheetID(templateSpreadsheetID string) Option {
+	return func(d *dependencies) {
+		d.templateSpreadsheetID = templateSpreadsheetID
+	}
+}
+
+func WithDestinationFolderID(destinationFolderID string) Option {
+	return func(d *dependencies) {
+		d.destinationFolderID = destinationFolderID
+	}
+}
+
+func WithJWT(jwtcli *jwt.Client) Option {
+	return func(d *dependencies) {
+		d.jwtcli = jwtcli
 	}
 }
