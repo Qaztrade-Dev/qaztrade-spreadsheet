@@ -3,8 +3,8 @@ package endpoint
 import (
 	"context"
 	"net/http"
-	"time"
 
+	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 	"github.com/doodocs/qaztrade/backend/internal/manager/pkg/jsonmanager"
 	"github.com/doodocs/qaztrade/backend/internal/manager/service"
 	"github.com/go-kit/kit/endpoint"
@@ -36,15 +36,6 @@ func MakeSwitchStatusEndpoint(s service.Service) endpoint.Endpoint {
 	}
 }
 
-type ListSpreadsheetsRequest struct {
-	Limit            uint64
-	Offset           uint64
-	BIN              string
-	CompensationType string
-	SignedAtFrom     time.Time
-	SignedAtUntil    time.Time
-}
-
 type ListSpreadsheetsResponse struct {
 	ApplicationList *jsonmanager.ApplicationList `json:"list,omitempty"`
 	Err             error                        `json:"err,omitempty"`
@@ -54,16 +45,9 @@ func (r *ListSpreadsheetsResponse) Error() error { return r.Err }
 
 func MakeListSpreadsheetsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ListSpreadsheetsRequest)
+		req := request.(domain.GetManyInput)
 
-		list, err := s.ListSpreadsheets(ctx, &service.ListSpreadsheetsRequest{
-			Limit:            req.Limit,
-			Offset:           req.Offset,
-			BIN:              req.BIN,
-			CompensationType: req.CompensationType,
-			SignedAtFrom:     req.SignedAtFrom,
-			SignedAtUntil:    req.SignedAtUntil,
-		})
+		list, err := s.ListSpreadsheets(ctx, &req)
 
 		return &ListSpreadsheetsResponse{
 			ApplicationList: jsonmanager.EncodeApplicationList(list),

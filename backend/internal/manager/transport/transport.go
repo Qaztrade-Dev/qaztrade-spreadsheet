@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/common"
+	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 	"github.com/doodocs/qaztrade/backend/internal/manager/endpoint"
 	"github.com/gorilla/mux"
 )
@@ -37,20 +38,26 @@ func DecodeListSpreadsheetsRequest(_ context.Context, r *http.Request) (interfac
 		filterCompensationType = r.URL.Query().Get("compensation_type")
 		filterSignedAtFromStr  = r.URL.Query().Get("signed_at[from]")
 		filterSignedAtUntilStr = r.URL.Query().Get("signed_at[until]")
+		applicationNoStr       = r.URL.Query().Get("application_no")
+		companyNameStr         = r.URL.Query().Get("company_name")
 
-		limit, _               = strconv.ParseUint(limitStr, 10, 0)
-		offset, _              = strconv.ParseUint(offsetStr, 10, 0)
+		limit, _            = strconv.ParseUint(limitStr, 10, 0)
+		offset, _           = strconv.ParseUint(offsetStr, 10, 0)
+		applicationNoInt, _ = strconv.Atoi(applicationNoStr)
+
 		filterSignedAtFrom, _  = time.Parse(time.DateOnly, filterSignedAtFromStr)
 		filterSignedAtUntil, _ = time.Parse(time.DateOnly, filterSignedAtUntilStr)
 	)
 
-	return endpoint.ListSpreadsheetsRequest{
+	return domain.GetManyInput{
 		Limit:            limit,
 		Offset:           offset,
 		BIN:              filterBIN,
 		CompensationType: filterCompensationType,
 		SignedAtFrom:     filterSignedAtFrom,
 		SignedAtUntil:    filterSignedAtUntil,
+		CompanyName:      companyNameStr,
+		ApplicationNo:    applicationNoInt,
 	}, nil
 }
 

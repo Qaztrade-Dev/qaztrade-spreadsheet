@@ -16,15 +16,8 @@ type ListSpreadsheetsRequest struct {
 	SignedAtUntil    time.Time
 }
 
-func (s *service) ListSpreadsheets(ctx context.Context, req *ListSpreadsheetsRequest) (*domain.ApplicationList, error) {
-	list, err := s.applicationRepo.GetMany(ctx, &domain.GetManyInput{
-		Limit:            req.Limit,
-		Offset:           req.Offset,
-		BIN:              req.BIN,
-		CompensationType: req.CompensationType,
-		SignedAtFrom:     req.SignedAtFrom,
-		SignedAtUntil:    req.SignedAtUntil,
-	})
+func (s *service) ListSpreadsheets(ctx context.Context, input *domain.GetManyInput) (*domain.ApplicationList, error) {
+	list, err := s.applicationRepo.GetMany(ctx, input)
 	if err != nil {
 		return nil, err
 	}
