@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/auth/domain"
 )
@@ -12,7 +11,7 @@ type ForgotRequest struct {
 }
 
 func (s *service) Forgot(ctx context.Context, input *ForgotRequest) error {
-	email := strings.TrimSpace(input.Email)
+	email := domain.CleanEmail(input.Email)
 
 	user, err := s.authRepo.GetOne(ctx, &domain.GetQuery{Email: email})
 	if err != nil {

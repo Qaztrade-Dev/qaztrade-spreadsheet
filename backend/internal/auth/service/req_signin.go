@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/auth/domain"
 )
@@ -14,7 +13,7 @@ type SignInRequest struct {
 }
 
 func (s *service) SignIn(ctx context.Context, input *SignInRequest) (*domain.Credentials, error) {
-	email := strings.TrimSpace(input.Email)
+	email := domain.CleanEmail(input.Email)
 
 	user, err := s.authRepo.SignIn(ctx, &domain.SignInInput{
 		Email:    email,

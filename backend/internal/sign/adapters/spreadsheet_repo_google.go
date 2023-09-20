@@ -363,8 +363,8 @@ func getDataRange(sheet *sheets.Sheet) *getDataRangeResponse {
 		}
 	}
 
-	data := make([][]string, rowEnd-3)
-	for i := 3; i < rowEnd; i++ {
+	data := make([][]string, rowEnd-3+1)
+	for i := 3; i <= rowEnd; i++ {
 		idx := i - 3
 		data[idx] = make([]string, columnEnd+1)
 		row := sheet.Data[0].RowData[i]
@@ -513,47 +513,6 @@ func (s *SpreadsheetClient) SwitchModeRead(ctx context.Context, spreadsheetID st
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (s *SpreadsheetClient) BlockImportantRanges(ctx context.Context, spreadsheetID string) error {
-	spreadsheet, err := s.sheetsService.Spreadsheets.Get(spreadsheetID).Do()
-	if err != nil {
-		return err
-	}
-
-	batch := NewBatchUpdate(s.sheetsService)
-
-	for _, namedRange := range spreadsheet.NamedRanges {
-		namedRange := namedRange
-		if strings.Contains(namedRange.Name, "_blocked_") {
-			batch.WithRequest(
-				&sheets.Request{
-					AddProtectedRange: &sheets.AddProtectedRangeRequest{
-						ProtectedRange: &sheets.ProtectedRange{
-							Description: namedRange.Name,
-							Editors: &sheets.Editors{
-								Users: []string{
-									s.adminAccount,
-									s.svcAccount,
-								},
-							},
-							Range: &sheets.GridRange{
-								SheetId:          namedRange.Range.SheetId,
-								StartColumnIndex: namedRange.Range.StartColumnIndex,
-								EndColumnIndex:   namedRange.Range.EndColumnIndex,
-							},
-						},
-					},
-				},
-			)
-		}
-	}
-
-	if err := batch.Do(ctx, spreadsheetID); err != nil {
-		return err
-	}
-
 	return nil
 }
 

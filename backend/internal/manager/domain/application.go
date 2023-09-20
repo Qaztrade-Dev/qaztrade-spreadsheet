@@ -35,7 +35,7 @@ type ApplicationList struct {
 	Applications []*Application
 }
 
-type ApplicationQuery struct {
+type GetManyInput struct {
 	Limit  uint64
 	Offset uint64
 
@@ -44,6 +44,8 @@ type ApplicationQuery struct {
 	CompensationType string
 	SignedAtFrom     time.Time
 	SignedAtUntil    time.Time
+	CompanyName      string
+	ApplicationNo    int
 }
 
 type Revision struct {
@@ -104,16 +106,14 @@ type ApplicationAttrs struct {
 	ApplicationDate       string
 }
 type ApplicationRepository interface {
-	GetMany(ctx context.Context, query *ApplicationQuery) (*ApplicationList, error)
-	GetOne(ctx context.Context, query *ApplicationQuery) (*Application, error)
+	GetMany(ctx context.Context, query *GetManyInput) (*ApplicationList, error)
+	GetOne(ctx context.Context, query *GetManyInput) (*Application, error)
 	EditStatus(ctx context.Context, applicationID, statusName string) error
 }
 
 type SpreadsheetService interface {
 	SwitchModeRead(ctx context.Context, spreadsheetID string) error
 	SwitchModeEdit(ctx context.Context, spreadsheetID string) error
-	BlockImportantRanges(ctx context.Context, spreadsheetID string) error
-	UnlockImportantRanges(ctx context.Context, spreadsheetID string) error
 	Comments(ctx context.Context, application *Application) (*Revision, error)
 	GetApplication(ctx context.Context, spreadsheetID string) (*ApplicationAttrs, error)
 }

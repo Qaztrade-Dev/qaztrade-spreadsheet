@@ -383,8 +383,8 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 		LeftJoin("assignment_results assres on assres.id = ass.last_result_id").
 		OrderBy("app.no asc", "ass.type asc")
 
-	if input.UserID != nil {
-		mainStmt = mainStmt.Where("u.id = ?", *input.UserID)
+	if input.AssigneeID != nil {
+		mainStmt = mainStmt.Where("u.id = ?", *input.AssigneeID)
 	}
 
 	if input.AssignmentID != nil {
@@ -393,6 +393,18 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 
 	if input.IsCompleted != nil {
 		mainStmt = mainStmt.Where("ass.is_completed = ?", *input.IsCompleted)
+	}
+
+	if input.CompanyName != nil {
+		mainStmt = mainStmt.Where("app.attrs->'application'->>'from' ilike ?", "%"+(*input.CompanyName)+"%")
+	}
+
+	if input.ApplicationNo != nil {
+		mainStmt = mainStmt.Where("app.no = ?", *input.ApplicationNo)
+	}
+
+	if input.AssignmentType != nil {
+		mainStmt = mainStmt.Where("ass.type = ?", *input.AssignmentType)
 	}
 
 	return mainStmt

@@ -3,7 +3,6 @@ package adapters
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	excelize "github.com/xuri/excelize/v2"
 
@@ -66,72 +65,6 @@ func (s *SpreadsheetServiceGoogle) SwitchModeEdit(ctx context.Context, spreadshe
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (s *SpreadsheetServiceGoogle) BlockImportantRanges(ctx context.Context, spreadsheetID string) error {
-	spreadsheet, err := s.sheetsSvc.Spreadsheets.Get(spreadsheetID).Do()
-	if err != nil {
-		return err
-	}
-	batch := NewBatchUpdate(s.sheetsSvc)
-
-	for _, namedRange := range spreadsheet.NamedRanges {
-		namedRange := namedRange
-		if strings.Contains(namedRange.Name, "_blocked_") {
-			batch.WithRequest(
-				&sheets.Request{
-					AddProtectedRange: &sheets.AddProtectedRangeRequest{
-						ProtectedRange: &sheets.ProtectedRange{
-							Description: namedRange.Name,
-							Editors: &sheets.Editors{
-								Users: []string{s.adminAccount, s.svcAccount},
-							},
-							Range: &sheets.GridRange{
-								SheetId:          namedRange.Range.SheetId,
-								StartColumnIndex: namedRange.Range.StartColumnIndex,
-								EndColumnIndex:   namedRange.Range.EndColumnIndex,
-							},
-						},
-					},
-				},
-			)
-		}
-	}
-
-	if err := batch.Do(ctx, spreadsheetID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *SpreadsheetServiceGoogle) UnlockImportantRanges(ctx context.Context, spreadsheetID string) error {
-	spreadsheet, err := s.sheetsSvc.Spreadsheets.Get(spreadsheetID).Do()
-	if err != nil {
-		return err
-	}
-
-	batch := NewBatchUpdate(s.sheetsSvc)
-
-	for _, sheet := range spreadsheet.Sheets {
-		for _, protectedRange := range sheet.ProtectedRanges {
-			if strings.Contains(protectedRange.Description, "_blocked_") {
-				batch.WithRequest(
-					&sheets.Request{
-						DeleteProtectedRange: &sheets.DeleteProtectedRangeRequest{
-							ProtectedRangeId: protectedRange.ProtectedRangeId,
-						},
-					},
-				)
-			}
-		}
-	}
-
-	if err := batch.Do(ctx, spreadsheetID); err != nil {
-		return err
-	}
-
 	return nil
 }
 

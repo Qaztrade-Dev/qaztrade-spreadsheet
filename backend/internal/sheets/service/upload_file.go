@@ -9,6 +9,7 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
 	"google.golang.org/api/sheets/v4"
+	"github.com/google/uuid"
 )
 
 type UploadFileRequest struct {
@@ -49,13 +50,16 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 			return err
 		}
 		if len(response.MatchedDeveloperMetadata) != 0 {
-			folderName := fmt.Sprintf("%s/%s", req.SpreadsheetID, req.SheetName)
+			
+      folderName := fmt.Sprintf("%s/%s", req.SpreadsheetID, req.SheetName)
+	    filekey := fmt.Sprintf("%s/%s-%s", folderName, uuid.NewString(), req.FileName)
 
-			value, err := s.storage.Upload(ctx, folderName, req.FileName, req.FileSize, req.FileReader)
-			if err != nil {
-				log.Printf("storage.Upload error file: folderName - %s, fileName - %s\n", folderName, req.FileName)
-				return err
-			}
+	    value, err := s.storage.Upload(ctx, filekey, req.FileSize, req.FileReader)
+	    if err != nil {
+		    log.Printf("storage.Upload error file: folderName - %s, fileName - %s\n", folderName, req.FileName)
+		    return err
+	    }
+      
 			if err := s.sheetsRepo.UpdateCell(ctx, req.SpreadsheetID, &domain.UpdateCellInput{
 				SheetID:   req.SheetID,
 				RowIdx:    req.RowIdx,
@@ -80,15 +84,16 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 				return err
 			}
 		}
+    
+	  // 3. upload file, get url
+	  folderName := fmt.Sprintf("%s/%s", req.SpreadsheetID, req.SheetName)
+	  filekey := fmt.Sprintf("%s/%s-%s", folderName, uuid.NewString(), req.FileName)
 
-		// 3. upload file, get url
-		folderName := fmt.Sprintf("%s/%s", req.SpreadsheetID, req.SheetName)
-
-		value, err := s.storage.Upload(ctx, folderName, req.FileName, req.FileSize, req.FileReader)
-		if err != nil {
-			log.Printf("storage.Upload error file: folderName - %s, fileName - %s\n", folderName, req.FileName)
-			return err
-		}
+	  value, err := s.storage.Upload(ctx, filekey, req.FileSize, req.FileReader)
+	  if err != nil {
+		  log.Printf("storage.Upload error file: folderName - %s, fileName - %s\n", folderName, req.FileName)
+		  return err
+	  }
 
 		// 4. write url to cell
 		if err := s.sheetsRepo.UpdateCell(ctx, req.SpreadsheetID, &domain.UpdateCellInput{

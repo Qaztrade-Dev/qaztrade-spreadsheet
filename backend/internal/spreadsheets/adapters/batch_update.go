@@ -2,29 +2,27 @@ package adapters
 
 import (
 	"context"
-	"strconv"
-	"strings"
 
 	"google.golang.org/api/sheets/v4"
 )
 
 type BatchUpdate struct {
 	service     *sheets.Service
-	requests    []*sheets.Request
-	valueRanges []*sheets.ValueRange
+	Requests    []*sheets.Request
+	ValueRanges []*sheets.ValueRange
 }
 
 func NewBatchUpdate(service *sheets.Service) *BatchUpdate {
 	return &BatchUpdate{
 		service:     service,
-		requests:    make([]*sheets.Request, 0),
-		valueRanges: make([]*sheets.ValueRange, 0),
+		Requests:    make([]*sheets.Request, 0),
+		ValueRanges: make([]*sheets.ValueRange, 0),
 	}
 }
 
 func (b *BatchUpdate) WithProtectedRange(sheetID int64, protectedRanges []*sheets.ProtectedRange) {
 	for _, pr := range protectedRanges {
-		b.requests = append(b.requests, &sheets.Request{
+		b.Requests = append(b.Requests, &sheets.Request{
 			AddProtectedRange: &sheets.AddProtectedRangeRequest{
 				ProtectedRange: &sheets.ProtectedRange{
 					Range: &sheets.GridRange{
@@ -46,7 +44,7 @@ func (b *BatchUpdate) WithProtectedRange(sheetID int64, protectedRanges []*sheet
 }
 
 func (b *BatchUpdate) WithSheetName(sheetID int64, sheetName string) {
-	b.requests = append(b.requests, &sheets.Request{
+	b.Requests = append(b.Requests, &sheets.Request{
 		UpdateSheetProperties: &sheets.UpdateSheetPropertiesRequest{
 			Properties: &sheets.SheetProperties{
 				SheetId: sheetID,
@@ -58,25 +56,25 @@ func (b *BatchUpdate) WithSheetName(sheetID int64, sheetName string) {
 }
 
 func (b *BatchUpdate) WithRequest(requests ...*sheets.Request) {
-	b.requests = append(b.requests, requests...)
+	b.Requests = append(b.Requests, requests...)
 }
 
 func (b *BatchUpdate) WithValueRange(valueRanges ...*sheets.ValueRange) {
-	b.valueRanges = append(b.valueRanges, valueRanges...)
+	b.ValueRanges = append(b.ValueRanges, valueRanges...)
 }
 
 func (b *BatchUpdate) Do(ctx context.Context, spreadsheetID string) error {
-	if len(b.requests) == 0 {
+	if len(b.Requests) == 0 {
 		return nil
 	}
-	batchUpdateRequest := &sheets.BatchUpdateSpreadsheetRequest{Requests: b.requests}
+	batchUpdateRequest := &sheets.BatchUpdateSpreadsheetRequest{Requests: b.Requests}
 	if _, err := b.service.Spreadsheets.BatchUpdate(spreadsheetID, batchUpdateRequest).Context(ctx).Do(); err != nil {
 		return err
 	}
 
-	if len(b.valueRanges) > 0 {
+	if len(b.ValueRanges) > 0 {
 		if _, err := b.service.Spreadsheets.Values.BatchUpdate(spreadsheetID, &sheets.BatchUpdateValuesRequest{
-			Data:             b.valueRanges,
+			Data:             b.ValueRanges,
 			ValueInputOption: "USER_ENTERED",
 		}).Context(ctx).Do(); err != nil {
 			return err
@@ -84,221 +82,4 @@ func (b *BatchUpdate) Do(ctx context.Context, spreadsheetID string) error {
 	}
 
 	return nil
-}
-
-func InsertColumnLeft(sheetID int64, columnA1 string) *sheets.Request {
-	var (
-		col = columnToNumber(columnA1)
-	)
-
-	return &sheets.Request{
-		InsertDimension: &sheets.InsertDimensionRequest{
-			Range: &sheets.DimensionRange{
-				Dimension:  "COLUMNS",
-				StartIndex: col - 1,
-				EndIndex:   col,
-				SheetId:    sheetID,
-			},
-			InheritFromBefore: true,
-		},
-	}
-}
-
-func SetDataValidationOneOf(sheetID int64, fromA1 string, oneOf []string) *sheets.Request {
-	var (
-		cell        = A1ToCell(fromA1)
-		oneOfValues = make([]*sheets.ConditionValue, len(oneOf))
-	)
-
-	for i := range oneOf {
-		oneOfValues[i] = &sheets.ConditionValue{UserEnteredValue: oneOf[i]}
-	}
-
-	return &sheets.Request{
-		RepeatCell: &sheets.RepeatCellRequest{
-			Range: &sheets.GridRange{
-				StartRowIndex: cell.Row,
-				// EndRowIndex:      1000000,
-				StartColumnIndex: cell.Col,
-				EndColumnIndex:   cell.Col + 1,
-				SheetId:          sheetID,
-			},
-			Cell: &sheets.CellData{
-				DataValidation: &sheets.DataValidationRule{
-					Condition: &sheets.BooleanCondition{
-						Type:   "ONE_OF_LIST",
-						Values: oneOfValues,
-					},
-					ShowCustomUi: true,
-				},
-			},
-			Fields: "dataValidation",
-		},
-	}
-}
-
-func UnmergeRequest(sheetID int64, fromToA1 string) *sheets.Request {
-	cellRange := A1ToRange(fromToA1)
-
-	return &sheets.Request{
-		UnmergeCells: &sheets.UnmergeCellsRequest{
-			Range: &sheets.GridRange{
-				SheetId:          sheetID,
-				StartRowIndex:    cellRange.From.Row,
-				EndRowIndex:      cellRange.To.Row + 1,
-				StartColumnIndex: cellRange.From.Col,
-				EndColumnIndex:   cellRange.To.Col + 1,
-			},
-		},
-	}
-}
-
-func MergeRequest(sheetID int64, fromToA1 string) *sheets.Request {
-	cellRange := A1ToRange(fromToA1)
-
-	return &sheets.Request{
-		MergeCells: &sheets.MergeCellsRequest{
-			Range: &sheets.GridRange{
-				SheetId:          sheetID,
-				StartRowIndex:    cellRange.From.Row,
-				EndRowIndex:      cellRange.To.Row + 1,
-				StartColumnIndex: cellRange.From.Col,
-				EndColumnIndex:   cellRange.To.Col + 1,
-			},
-			MergeType: "MERGE_ALL",
-		},
-	}
-}
-
-type SetCellTextInput struct {
-	Text     string
-	Bold     bool
-	FontSize int64
-}
-
-func SetCellText(sheetID int64, a1 string, input *SetCellTextInput) *sheets.Request {
-	cell := A1ToCell(a1)
-
-	return &sheets.Request{
-		RepeatCell: &sheets.RepeatCellRequest{
-			Range: &sheets.GridRange{
-				SheetId:          sheetID,
-				StartRowIndex:    cell.Row,
-				EndRowIndex:      cell.Row + 1,
-				StartColumnIndex: cell.Col,
-				EndColumnIndex:   cell.Col + 1,
-			},
-			Cell: &sheets.CellData{
-				UserEnteredValue: &sheets.ExtendedValue{
-					StringValue: &input.Text,
-				},
-				UserEnteredFormat: &sheets.CellFormat{
-					TextFormat: &sheets.TextFormat{
-						Bold:     input.Bold,
-						FontSize: input.FontSize,
-					},
-				},
-			},
-			Fields: "userEnteredValue,userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.fontSize",
-		},
-	}
-}
-
-func SetCellFormula(sheetID int64, a1, formula string) *sheets.Request {
-	cell := A1ToCell(a1)
-
-	return &sheets.Request{
-		RepeatCell: &sheets.RepeatCellRequest{
-			Range: &sheets.GridRange{
-				SheetId:          sheetID,
-				StartRowIndex:    cell.Row,
-				EndRowIndex:      cell.Row + 1,
-				StartColumnIndex: cell.Col,
-				EndColumnIndex:   cell.Col + 1,
-			},
-			Cell: &sheets.CellData{
-				UserEnteredValue: &sheets.ExtendedValue{
-					FormulaValue: &formula,
-				},
-				UserEnteredFormat: &sheets.CellFormat{
-					NumberFormat: &sheets.NumberFormat{
-						Type:    "NUMBER",
-						Pattern: "#,##0.00",
-					},
-				},
-			},
-			Fields: "userEnteredValue,userEnteredFormat.numberFormat",
-		},
-	}
-}
-
-type Cell struct {
-	Col int64
-	Row int64
-}
-
-type Range struct {
-	From *Cell
-	To   *Cell
-}
-
-func columnToNumber(column string) int64 {
-	column = strings.ToUpper(column)
-	var num int64 = 0
-	for _, char := range column {
-		num = num*26 + int64(char-'A') + 1
-	}
-	return num
-}
-
-func A1ToCell(a1 string) *Cell {
-	for i, r := range a1 {
-		if r >= '0' && r <= '9' {
-			col := a1[:i]
-			row, _ := strconv.Atoi(a1[i:])
-			return &Cell{
-				Col: columnToNumber(col) - 1,
-				Row: int64(row - 1),
-			}
-		}
-	}
-	return nil
-}
-
-func numberToColumn(num int64) string {
-	column := ""
-	for num >= 0 {
-		column = string(rune((num%26)+'A')) + column
-		num = num/26 - 1
-	}
-	return column
-}
-
-func (cell *Cell) Equals(b *Cell) bool {
-	return cell.Col == b.Col && cell.Row == b.Row
-}
-
-func (cell *Cell) ToA1() string {
-	return numberToColumn(cell.Col) + strconv.Itoa(int(cell.Row)+1)
-}
-
-func (r *Range) ToA1() string {
-	return r.From.ToA1() + ":" + r.To.ToA1()
-}
-
-func A1ToRange(fromToA1 string) *Range {
-	splitted := strings.Split(fromToA1, ":")
-	if len(splitted) != 2 {
-		return nil
-	}
-
-	var (
-		fromCell = A1ToCell(splitted[0])
-		toCell   = A1ToCell(splitted[1])
-	)
-
-	return &Range{
-		From: fromCell,
-		To:   toCell,
-	}
 }
