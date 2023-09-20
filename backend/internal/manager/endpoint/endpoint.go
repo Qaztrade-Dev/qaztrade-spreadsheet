@@ -107,6 +107,8 @@ func (r *GetDDCardResponse) Error() error { return r.Err }
 
 func (r *GetNoticeResponse) Error() error { return r.Err }
 
+func (r *SendNoticeResponse) Error() error { return r.Err }
+
 func MakeGetDDCardEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetDDCardRequest)
@@ -167,15 +169,14 @@ func MakeGetNoticeEndpoint(s service.Service) endpoint.Endpoint {
 func MakeSendNoticeEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(SendNoticeRequest)
-		hyperlink, err := s.SendNotice(ctx, &service.SendNoticeRequest{
+		err := s.SendNotice(ctx, &service.SendNoticeRequest{
 			ApplicationID: req.ApplicationID,
 			FileReader:    req.FileReader,
 			FileSize:      req.FileSize,
 			FileName:      req.FileName,
 		})
-		if err != nil {
-			return nil, err
-		}
-		return hyperlink, nil
+		return &SendNoticeResponse{
+			Err: err,
+		}, err
 	}
 }

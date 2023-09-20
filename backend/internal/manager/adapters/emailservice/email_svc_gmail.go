@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"text/template"
 
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 	"gopkg.in/gomail.v2"
@@ -19,14 +18,12 @@ var textTemplate []byte
 type EmailServiceGmail struct {
 	email    string
 	password string
-	template *template.Template
 	dialer   *gomail.Dialer
 }
 
 var _ domain.EmailService = (*EmailServiceGmail)(nil)
 
 func NewEmailServiceGmail(email, password string) *EmailServiceGmail {
-	templ := template.Must(template.ParseFiles("./templates/forgot.html"))
 
 	dialer := gomail.NewDialer("webmail.p-s.kz", 587, email, password)
 	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
@@ -34,7 +31,6 @@ func NewEmailServiceGmail(email, password string) *EmailServiceGmail {
 	return &EmailServiceGmail{
 		email:    email,
 		password: password,
-		template: templ,
 		dialer:   dialer,
 	}
 }

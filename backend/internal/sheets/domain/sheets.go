@@ -42,6 +42,3 @@ type SpreadsheetClaims struct {
 type ApplicationRepository interface {
 	GetApplication(ctx context.Context, spreadsheetID string) (*StatusApplication, error)
 }
-
-type SpreadsheetService interface {
-}

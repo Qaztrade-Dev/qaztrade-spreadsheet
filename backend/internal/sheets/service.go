@@ -6,7 +6,6 @@ import (
 	"github.com/doodocs/qaztrade/backend/internal/sheets/adapters"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
-	"github.com/doodocs/qaztrade/backend/pkg/qaztradeoauth2"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -27,44 +26,24 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		panic(err)
 	}
 
-	oauth2, err := qaztradeoauth2.NewClient(deps.clientSecretBytes, deps.pg)
-	if err != nil {
-		panic(err)
-	}
-
 	var (
-		spreadsheetSvc = adapters.NewSpreadsheetServiceGoogle(
-			oauth2,
-			deps.svcAccount,
-			deps.reviewerAccount,
-			deps.jwtcli,
-			deps.originSpreadsheetID,
-			deps.templateSpreadsheetID,
-			deps.destinationFolderID,
-		)
 		applicationRepo           = adapters.NewApplicationRepositoryPostgre(deps.pg)
 		spreadsheetDevMetadataSvc = sheetsRepo.NewSpreadsheetServiceMetadata()
 	)
-	svc := service.NewService(sheetsRepo, storage, applicationRepo, spreadsheetSvc, *spreadsheetDevMetadataSvc)
+	svc := service.NewService(sheetsRepo, storage, applicationRepo, *spreadsheetDevMetadataSvc)
 	return svc
 }
 
 type Option func(*dependencies)
 
 type dependencies struct {
-	credentials           []byte
-	s3AccessKey           string
-	s3SecretKey           string
-	s3Endpoint            string
-	s3Bucket              string
-	originSpreadsheetID   string
-	pg                    *pgxpool.Pool
-	clientSecretBytes     []byte
-	svcAccount            string
-	reviewerAccount       string
-	templateSpreadsheetID string
-	destinationFolderID   string
-	jwtcli                *jwt.Client
+	credentials         []byte
+	s3AccessKey         string
+	s3SecretKey         string
+	s3Endpoint          string
+	s3Bucket            string
+	originSpreadsheetID string
+	pg                  *pgxpool.Pool
 }
 
 func (d *dependencies) setDefaults() {

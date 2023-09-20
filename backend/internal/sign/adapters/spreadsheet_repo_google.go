@@ -612,9 +612,7 @@ func sliceContains(slice []string, input string) bool {
 
 	return false
 }
-func (s *SpreadsheetClient) deleteMetadataByKey(ctx context.Context, spreadsheetID, key string) error {
-	batch := NewBatchUpdate(s.sheetsService)
-
+func (s *SpreadsheetClient) deleteMetadataByKey(ctx context.Context, spreadsheetID, key string, batch *BatchUpdate) {
 	batch.WithRequest(&sheets.Request{
 		DeleteDeveloperMetadata: &sheets.DeleteDeveloperMetadataRequest{
 			DataFilter: &sheets.DataFilter{
@@ -625,13 +623,11 @@ func (s *SpreadsheetClient) deleteMetadataByKey(ctx context.Context, spreadsheet
 			},
 		},
 	})
-	if err := batch.Do(ctx, spreadsheetID); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (s *SpreadsheetClient) DeleteMetadata(ctx context.Context, spreadsheetID string) error {
+	batch := NewBatchUpdate(s.sheetsService)
+
 	var (
 		filter []*sheets.DataFilter
 	)
@@ -651,34 +647,12 @@ func (s *SpreadsheetClient) DeleteMetadata(ctx context.Context, spreadsheetID st
 	}
 	for _, i := range response.MatchedDeveloperMetadata {
 		if i.DeveloperMetadata.MetadataKey[0] == '!' {
-			if err := s.deleteMetadataByKey(ctx, spreadsheetID, i.DeveloperMetadata.MetadataKey); err != nil {
-				return err
-			}
+			s.deleteMetadataByKey(ctx, spreadsheetID, i.DeveloperMetadata.MetadataKey, batch)
 		}
 	}
-
-	return nil
-}
-
-func (s *SpreadsheetClient) SetMetadata(ctx context.Context, spreadsheetID string, sheetName string, rowIdx int64, colIdx int64) error {
-	batch := NewBatchUpdate(s.sheetsService)
-
-	batch.WithRequest(&sheets.Request{
-		CreateDeveloperMetadata: &sheets.CreateDeveloperMetadataRequest{
-			DeveloperMetadata: &sheets.DeveloperMetadata{
-				Location: &sheets.DeveloperMetadataLocation{
-					Spreadsheet: true,
-				},
-				Visibility:    "DOCUMENT",
-				MetadataKey:   fmt.Sprintf("!%s-%d:%d", sheetName, rowIdx, colIdx),
-				MetadataValue: "true",
-			},
-		},
-	})
 
 	if err := batch.Do(ctx, spreadsheetID); err != nil {
 		return err
 	}
-
 	return nil
 }

@@ -17,16 +17,14 @@ type service struct {
 	sheetsRepo                domain.SheetsRepository
 	storage                   domain.Storage
 	applicationRepo           domain.ApplicationRepository
-	spreadsheetSvc            domain.SpreadsheetService
 	spreadsheetDevMetadataSvc sheets.SpreadsheetsDeveloperMetadataService
 }
 
-func NewService(sheetsRepo domain.SheetsRepository, storage domain.Storage, applicationRepo domain.ApplicationRepository, spreadsheetSvc domain.SpreadsheetService, spreadsheetDevMetadataSvc sheets.SpreadsheetsDeveloperMetadataService) Service {
+func NewService(sheetsRepo domain.SheetsRepository, storage domain.Storage, applicationRepo domain.ApplicationRepository, spreadsheetDevMetadataSvc sheets.SpreadsheetsDeveloperMetadataService) Service {
 	return &service{
 		sheetsRepo:                sheetsRepo,
 		storage:                   storage,
 		applicationRepo:           applicationRepo,
-		spreadsheetSvc:            spreadsheetSvc,
 		spreadsheetDevMetadataSvc: spreadsheetDevMetadataSvc,
 	}
 }

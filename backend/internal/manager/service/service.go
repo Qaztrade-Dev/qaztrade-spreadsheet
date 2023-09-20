@@ -16,7 +16,7 @@ type Service interface {
 	// GetManagers returns a list of managers
 	GetManagers(ctx context.Context) ([]*domain.Manager, error)
 	GetNotice(ctx context.Context, req *GetNoticeRequest) (*bytes.Buffer, error)
-	SendNotice(ctx context.Context, req *SendNoticeRequest) (string, error)
+	SendNotice(ctx context.Context, req *SendNoticeRequest) error
 }
 
 type service struct {
