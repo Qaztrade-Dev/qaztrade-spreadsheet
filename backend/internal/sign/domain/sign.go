@@ -112,7 +112,6 @@ type SpreadsheetRepository interface {
 	GetAttachments(ctx context.Context, spreadsheetID string, sheets []*Sheet) ([]io.ReadSeeker, error)
 	UpdateSigningTime(ctx context.Context, spreadsheetID string, signedAt time.Time) error
 	SwitchModeRead(ctx context.Context, spreadsheetID string) error
-	BlockImportantRanges(ctx context.Context, spreadsheetID string) error
 	HasMergedCells(ctx context.Context, spreadsheetID string, sheets []*Sheet) (bool, error)
 	DeleteMetadata(ctx context.Context, spreadsheetID string) error
 }

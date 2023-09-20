@@ -121,12 +121,6 @@ func main() {
 			sheets.WithSheetsCredentials(credentialsSA),
 			sheets.WithPostgre(pg),
 			sheets.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
-			sheets.WithJWT(jwtcli),
-			sheets.WithOAuthCredentials(credentialsOAuth),
-			sheets.WithServiceAccount(svcAccount),
-			sheets.WithReviewer(reviewerAccount),
-			sheets.WithTemplateSpreadsheetID(templateSpreadsheetID),
-			sheets.WithDestinationFolderID(destinationFolderID),
 			sheets.WithOriginSpreadsheetID(originSpreadsheetID),
 		)
 

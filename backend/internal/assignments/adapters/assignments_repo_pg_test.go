@@ -264,9 +264,9 @@ func (s *AssignmentsRepositoryPostgresSuite) TestGetMany_User() {
 	)
 
 	assignmentsList, err := s.repo.GetMany(s.ctx, &domain.GetManyInput{
-		UserID: &userID,
-		Limit:  10,
-		Offset: 0,
+		AssigneeID: &userID,
+		Limit:      10,
+		Offset:     0,
 	})
 	s.Require().Nil(err)
 	s.Require().Equal(assignmentsList.Total, expAssignmentsTotal)
@@ -357,9 +357,9 @@ func (s *AssignmentsRepositoryPostgresSuite) TestChangeAssignee() {
 	s.Require().Nil(err)
 
 	assignmentsList, err := s.repo.GetMany(s.ctx, &domain.GetManyInput{
-		UserID: &newUserID,
-		Limit:  10,
-		Offset: 0,
+		AssigneeID: &newUserID,
+		Limit:      10,
+		Offset:     0,
 	})
 	s.Require().Nil(err)
 	s.Require().Equal(assignmentsList.Total, 3)

@@ -12,7 +12,7 @@ type SwitchStatusRequest struct {
 }
 
 func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) error {
-	application, err := s.applicationRepo.GetOne(ctx, &domain.ApplicationQuery{
+	application, err := s.applicationRepo.GetOne(ctx, &domain.GetManyInput{
 		ApplicationID: req.ApplicationID,
 	})
 	if err != nil {
@@ -27,21 +27,16 @@ func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) er
 		isUserFilling      = (req.StatusName == domain.StatusUserFilling)
 		isUserFixing       = (req.StatusName == domain.StatusUserFixing)
 
-		mustSwitchModeEdit        = false
-		mustSwitchModeRead        = false
-		mustBlockImportantRanges  = false
-		mustUnlockImportantRanges = false
+		mustSwitchModeEdit = false
+		mustSwitchModeRead = false
 	)
 	switch {
 	case isUserFilling:
 		mustSwitchModeEdit = true
-		mustUnlockImportantRanges = true
 	case isUserFixing:
 		mustSwitchModeEdit = true
-		mustUnlockImportantRanges = true
 	case isManagerReviewing:
 		mustSwitchModeRead = true
-		mustBlockImportantRanges = true
 	default:
 		mustSwitchModeRead = true
 	}
@@ -54,18 +49,6 @@ func (s *service) SwitchStatus(ctx context.Context, req *SwitchStatusRequest) er
 
 	if mustSwitchModeRead {
 		if err := s.spreadsheetSvc.SwitchModeRead(ctx, application.SpreadsheetID); err != nil {
-			return err
-		}
-	}
-
-	if mustBlockImportantRanges {
-		if err := s.spreadsheetSvc.BlockImportantRanges(ctx, application.SpreadsheetID); err != nil {
-			return err
-		}
-	}
-
-	if mustUnlockImportantRanges {
-		if err := s.spreadsheetSvc.UnlockImportantRanges(ctx, application.SpreadsheetID); err != nil {
 			return err
 		}
 	}

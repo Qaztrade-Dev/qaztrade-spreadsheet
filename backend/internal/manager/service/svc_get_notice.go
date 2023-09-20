@@ -35,7 +35,7 @@ func (s *service) Revision(ctx context.Context, application *domain.Application)
 }
 
 func (s *service) GetNotice(ctx context.Context, req *GetNoticeRequest) (*bytes.Buffer, error) {
-	application, err := s.applicationRepo.GetOne(ctx, &domain.ApplicationQuery{
+	application, err := s.applicationRepo.GetOne(ctx, &domain.GetManyInput{
 		ApplicationID: req.ApplicationID,
 	})
 

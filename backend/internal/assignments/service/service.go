@@ -10,10 +10,10 @@ type Service interface {
 	CreateBatch(ctx context.Context) error
 
 	// GetUserAssignments returns assignments of a user.
-	GetUserAssignments(ctx context.Context, input *GetUserAssignmentsRequest) (*GetUserAssignmentsResponse, error)
+	GetUserAssignments(ctx context.Context, input *domain.GetManyInput) (*GetUserAssignmentsResponse, error)
 
 	// GetAssignments returns all assignments.
-	GetAssignments(ctx context.Context, input *GetAssignmentsRequest) (*GetAssignmentsResponse, error)
+	GetAssignments(ctx context.Context, input *domain.GetManyInput) (*GetAssignmentsResponse, error)
 
 	// ChangeAssignee changes assignee to the given assignee
 	ChangeAssignee(ctx context.Context, input *ChangeAssigneeRequest) error

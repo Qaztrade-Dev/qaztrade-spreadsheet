@@ -5,7 +5,6 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/adapters"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
-	"github.com/doodocs/qaztrade/backend/pkg/jwt"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -71,44 +70,8 @@ func WithPostgre(pg *pgxpool.Pool) Option {
 	}
 }
 
-func WithOAuthCredentials(clientSecretBytes []byte) Option {
-	return func(d *dependencies) {
-		d.clientSecretBytes = clientSecretBytes
-	}
-}
-
-func WithServiceAccount(svcAccount string) Option {
-	return func(d *dependencies) {
-		d.svcAccount = svcAccount
-	}
-}
-
-func WithReviewer(reviewerAccount string) Option {
-	return func(d *dependencies) {
-		d.reviewerAccount = reviewerAccount
-	}
-}
-
 func WithOriginSpreadsheetID(originSpreadsheetID string) Option {
 	return func(d *dependencies) {
 		d.originSpreadsheetID = originSpreadsheetID
-	}
-}
-
-func WithTemplateSpreadsheetID(templateSpreadsheetID string) Option {
-	return func(d *dependencies) {
-		d.templateSpreadsheetID = templateSpreadsheetID
-	}
-}
-
-func WithDestinationFolderID(destinationFolderID string) Option {
-	return func(d *dependencies) {
-		d.destinationFolderID = destinationFolderID
-	}
-}
-
-func WithJWT(jwtcli *jwt.Client) Option {
-	return func(d *dependencies) {
-		d.jwtcli = jwtcli
 	}
 }

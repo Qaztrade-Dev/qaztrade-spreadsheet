@@ -17,7 +17,7 @@ type ListSpreadsheetsRequest struct {
 }
 
 func (s *service) ListSpreadsheets(ctx context.Context, req *ListSpreadsheetsRequest) (*domain.ApplicationList, error) {
-	list, err := s.applicationRepo.GetMany(ctx, &domain.ApplicationQuery{
+	list, err := s.applicationRepo.GetMany(ctx, &domain.GetManyInput{
 		Limit:            req.Limit,
 		Offset:           req.Offset,
 		BIN:              req.BIN,

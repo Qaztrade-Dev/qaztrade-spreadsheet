@@ -37,9 +37,5 @@ func (s *service) ConfirmSign(ctx context.Context, req *ConfirmSignRequest) erro
 		return err
 	}
 
-	if err := s.spreadsheetRepo.BlockImportantRanges(ctx, application.SpreadsheetID); err != nil {
-		return err
-	}
-
 	return nil
 }

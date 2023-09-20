@@ -50,7 +50,6 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 			return err
 		}
 		if len(response.MatchedDeveloperMetadata) != 0 {
-
 			folderName := fmt.Sprintf("%s/%s", req.SpreadsheetID, req.SheetName)
 			filekey := fmt.Sprintf("%s/%s-%s", folderName, uuid.NewString(), req.FileName)
 

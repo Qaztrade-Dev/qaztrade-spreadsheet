@@ -19,7 +19,7 @@ type SendNoticeRequest struct {
 
 func (s *service) SendNotice(ctx context.Context, req *SendNoticeRequest) error {
 
-	application, err := s.applicationRepo.GetOne(ctx, &domain.ApplicationQuery{
+	application, err := s.applicationRepo.GetOne(ctx, &domain.GetManyInput{
 		ApplicationID: req.ApplicationID,
 	})
 

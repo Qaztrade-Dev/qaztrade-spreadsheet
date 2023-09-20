@@ -33,9 +33,9 @@ func TestStorageS3(t *testing.T) {
 	}
 
 	// 3. upload file, get url
-	folderName := fmt.Sprintf("%s/%s", spreadsheetID, sheetName)
+	filekey := fmt.Sprintf("%s/%s/%s", spreadsheetID, sheetName, fileName)
 
-	value, err := storage.Upload(ctx, folderName, fileName, fileSize, reader)
+	value, err := storage.Upload(ctx, filekey, fileSize, reader)
 	fmt.Println(value, err)
 	if err != nil {
 		t.Fatal("NewStorageS3 Upload error:", err)

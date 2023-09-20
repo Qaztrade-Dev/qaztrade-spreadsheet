@@ -39,7 +39,7 @@ func (r *ApplicationRepositoryPostgre) EditStatus(ctx context.Context, applicati
 	return nil
 }
 
-func (r *ApplicationRepositoryPostgre) GetOne(ctx context.Context, query *domain.ApplicationQuery) (*domain.Application, error) {
+func (r *ApplicationRepositoryPostgre) GetOne(ctx context.Context, query *domain.GetManyInput) (*domain.Application, error) {
 	query.Limit = 1
 	query.Offset = 0
 	applications, err := r.getMany(ctx, query)
@@ -54,7 +54,7 @@ func (r *ApplicationRepositoryPostgre) GetOne(ctx context.Context, query *domain
 	return applications[0], nil
 }
 
-func (r *ApplicationRepositoryPostgre) GetMany(ctx context.Context, query *domain.ApplicationQuery) (*domain.ApplicationList, error) {
+func (r *ApplicationRepositoryPostgre) GetMany(ctx context.Context, query *domain.GetManyInput) (*domain.ApplicationList, error) {
 	applicationsCount, err := r.getCount(ctx, query)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (r *ApplicationRepositoryPostgre) GetMany(ctx context.Context, query *domai
 	return result, nil
 }
 
-func getApplicationQueryStatement(input *domain.ApplicationQuery) squirrel.SelectBuilder {
+func getApplicationQueryStatement(input *domain.GetManyInput) squirrel.SelectBuilder {
 	mainStmt := psql.
 		Select(
 			"a.id",
@@ -85,13 +85,27 @@ func getApplicationQueryStatement(input *domain.ApplicationQuery) squirrel.Selec
 			"a.sign_document_id",
 			"a.sign_at",
 			`
-			jsonb_set(
-				a.attrs,
-				'{sheets}', 
-				(
+			jsonb_build_object(
+				'application', a.attrs->'application',
+				'sheets_agg', a.attrs->'sheets_agg',
+				'sheets', (
 					SELECT jsonb_agg(
-						to_jsonb(sub.item) - 'data' - 'header'
-					) 
+						jsonb_build_object(
+							'title', sub.item->>'title',
+							'sheet_id', coalesce(sub.item->>'sheet_id', '0')::double precision,
+							'rows', coalesce(sub.item->>'rows', '0')::double precision,
+							'expenses', coalesce(sub.item->>'expenses', '0')::double precision,
+							'assignee_id_digital', (
+								select user_id from assignments where sheet_id = coalesce(sub.item->>'sheet_id', '0')::bigint and type = 'digital'
+							),
+							'assignee_id_finance', (
+								select user_id from assignments where sheet_id = coalesce(sub.item->>'sheet_id', '0')::bigint and type = 'finance'
+							),
+							'assignee_id_legal', (
+								select user_id from assignments where sheet_id = coalesce(sub.item->>'sheet_id', '0')::bigint and type = 'legal'
+							)
+						)
+					)
 					FROM jsonb_array_elements(a.attrs->'sheets') sub(item)
 				)
 			)
@@ -99,7 +113,8 @@ func getApplicationQueryStatement(input *domain.ApplicationQuery) squirrel.Selec
 		).
 		From("applications a").
 		Join("application_statuses ast on ast.id = a.status_id").
-		OrderBy("a.no desc")
+		Where("a.no > 0").
+		OrderBy("a.no asc")
 
 	if input.BIN != "" {
 		mainStmt = mainStmt.Where("a.attrs->'application'->>'bin' = ?", input.BIN)
@@ -133,12 +148,20 @@ func getApplicationQueryStatement(input *domain.ApplicationQuery) squirrel.Selec
 		mainStmt = mainStmt.Where("a.id = ?", input.ApplicationID)
 	}
 
+	if input.CompanyName != "" {
+		mainStmt = mainStmt.Where("a.attrs->'application'->>'from' ilike ?", "%"+input.CompanyName+"%")
+	}
+
+	if input.ApplicationNo != 0 {
+		mainStmt = mainStmt.Where("a.no = ?", input.ApplicationNo)
+	}
+
 	return mainStmt
 }
 
 var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
-func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, input *domain.ApplicationQuery) ([]*domain.Application, error) {
+func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, input *domain.GetManyInput) ([]*domain.Application, error) {
 	stmt := getApplicationQueryStatement(input).Limit(input.Limit).Offset(input.Offset)
 	sql, args, err := stmt.ToSql()
 	if err != nil {
@@ -157,7 +180,7 @@ func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, input *domai
 	return applications, nil
 }
 
-func (r *ApplicationRepositoryPostgre) getCount(ctx context.Context, query *domain.ApplicationQuery) (uint64, error) {
+func (r *ApplicationRepositoryPostgre) getCount(ctx context.Context, query *domain.GetManyInput) (uint64, error) {
 	stmt := getApplicationQueryStatement(query)
 	sql, args, err := psql.Select("count(*)").FromSelect(stmt, "q").ToSql()
 	if err != nil {

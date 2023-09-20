@@ -67,7 +67,7 @@ func TestGetSheets(t *testing.T) {
 		adminAccount = os.Getenv("ADMIN_ACCOUNT")
 		svcAccount   = os.Getenv("SERVICE_ACCOUNT")
 		// spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
-		spreadsheetID = "12BFz2hEBE9Su9-ahPX8L9tK6EkLb22dP1vnvOZMixO4"
+		spreadsheetID = "1OzAX2ADKcjhiewdaTSLzwRFpoHscL2bJ2g1dPrwfGJg"
 	)
 
 	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
@@ -75,7 +75,7 @@ func TestGetSheets(t *testing.T) {
 
 	sheets, err := cli.GetSheets(ctx, spreadsheetID)
 	require.Nil(t, err)
-	fmt.Printf("%#v\n", sheets[0])
+	fmt.Printf("%#v\n", sheets[0].Data)
 }
 
 func TestHasMergedCells(t *testing.T) {
@@ -95,19 +95,4 @@ func TestHasMergedCells(t *testing.T) {
 	hasMergedCells, err := cli.HasMergedCells(ctx, spreadsheetID, sheets)
 	require.Nil(t, err)
 	require.False(t, hasMergedCells)
-}
-
-func TestBlockImportantRanges(t *testing.T) {
-	var (
-		ctx           = context.Background()
-		adminAccount  = os.Getenv("ADMIN_ACCOUNT")
-		svcAccount    = os.Getenv("SERVICE_ACCOUNT")
-		spreadsheetID = "13mbVQopQziZO4lEok42y-ThyVdX8Fk8AHF5qbrVR0nw"
-	)
-
-	cli, err := NewSpreadsheetClient(ctx, credentialsSA, adminAccount, svcAccount)
-	require.Nil(t, err)
-
-	err = cli.BlockImportantRanges(ctx, spreadsheetID)
-	require.Nil(t, err)
 }

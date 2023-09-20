@@ -56,11 +56,14 @@ var (
 )
 
 type GetManyInput struct {
-	UserID       *string
-	AssignmentID *uint64
-	IsCompleted  *bool
-	Limit        uint64
-	Offset       uint64
+	AssigneeID     *string
+	AssignmentID   *uint64
+	IsCompleted    *bool
+	CompanyName    *string // название компании
+	ApplicationNo  *int    // номер заявки
+	AssignmentType *string // тип задачи
+	Limit          uint64
+	Offset         uint64
 }
 
 type GetInfoInput struct {
