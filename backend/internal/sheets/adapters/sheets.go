@@ -211,12 +211,15 @@ func (c *SpreadsheetClient) UpdateCell(ctx context.Context, spreadsheetID string
 			ColumnIndex: input.ColumnIdx - 1,
 			Value:       input.Value,
 		}
-		TextFormat, StringVal, PrevHyperlink, err = c.getCellValue(ctx, spreadsheetID, input.SheetName, input.RowIdx, input.ColumnIdx)
+		cell          = c.getCellValue(ctx, spreadsheetID, input.SheetName, input.RowIdx, input.ColumnIdx)
+		time          = time.Now()
+		timeToString  = fmt.Sprintf("(%s)", time.Format("02-01-2006"))
+		newStringVal  = "файл " + timeToString
+		newTextFormat = []*sheets.TextFormatRun{}
 	)
-	if err != nil {
-		return err
+	if cell.Err != nil {
+		return cell.Err
 	}
-	var newTextFormat []*sheets.TextFormatRun
 	newTextFormat = append(newTextFormat, &sheets.TextFormatRun{
 		Format: &sheets.TextFormat{
 			Link: &sheets.Link{
@@ -225,28 +228,25 @@ func (c *SpreadsheetClient) UpdateCell(ctx context.Context, spreadsheetID string
 		},
 		StartIndex: 0,
 	})
-	time := time.Now()
-	timeToString := fmt.Sprintf("(%s)", time.Format("02-01-2006"))
-	newStringVal := "файл " + timeToString
 
-	if !input.Replace && *StringVal != "" {
-		newStringVal += "\nстарый " + *StringVal
-		if len(TextFormat) == 0 {
+	if !input.Replace && *cell.FormattedValue != "" {
+		newStringVal += "\nстарый " + *cell.FormattedValue
+		if len(cell.TextFormatRun) == 0 {
 			newTextFormat = append(newTextFormat, &sheets.TextFormatRun{
 				Format: &sheets.TextFormat{
 					Link: &sheets.Link{
-						Uri: *PrevHyperlink,
+						Uri: *cell.Hyperlink,
 					},
 				},
-				StartIndex: 13,
+				StartIndex: 18,
 			})
 
 		} else {
-			TextFormat[0].StartIndex += 13
-			for i := 1; i < len(TextFormat); i++ {
-				TextFormat[i].StartIndex += 20
+			cell.TextFormatRun[0].StartIndex += 18
+			for i := 1; i < len(cell.TextFormatRun); i++ {
+				cell.TextFormatRun[i].StartIndex += 25
 			}
-			newTextFormat = append(newTextFormat, TextFormat...)
+			newTextFormat = append(newTextFormat, cell.TextFormatRun...)
 		}
 	}
 
@@ -302,15 +302,23 @@ func (c *SpreadsheetClient) AddRows(ctx context.Context, spreadsheetID string, i
 
 	return nil
 }
-func (s *SpreadsheetClient) GetHyperLink(ctx context.Context, spreadsheetID string, SheetName string, Row_idx int64, Column_idx int64) (*string, error) {
-	_, _, PrevHyperlink, err := s.getCellValue(ctx, spreadsheetID, SheetName, Row_idx, Column_idx)
-	if err != nil {
-		return nil, err
-	}
-	return PrevHyperlink, nil
+
+type CellValue struct {
+	TextFormatRun  []*sheets.TextFormatRun
+	FormattedValue *string
+	Hyperlink      *string
+	Err            error
 }
 
-func (s *SpreadsheetClient) getCellValue(ctx context.Context, spreadsheetID string, SheetName string, Row_idx int64, Column_idx int64) ([]*sheets.TextFormatRun, *string, *string, error) {
+func (s *SpreadsheetClient) GetHyperLink(ctx context.Context, spreadsheetID string, SheetName string, Row_idx int64, Column_idx int64) (*string, error) {
+	Cell := s.getCellValue(ctx, spreadsheetID, SheetName, Row_idx, Column_idx)
+	if Cell.Err != nil {
+		return nil, Cell.Err
+	}
+	return Cell.Hyperlink, nil
+}
+
+func (s *SpreadsheetClient) getCellValue(ctx context.Context, spreadsheetID string, SheetName string, Row_idx int64, Column_idx int64) *CellValue {
 	A1Notion := (&Cell{
 		Col: Column_idx - 1,
 		Row: Row_idx - 1,
@@ -324,14 +332,20 @@ func (s *SpreadsheetClient) getCellValue(ctx context.Context, spreadsheetID stri
 	}).Do()
 
 	if err != nil {
-		return nil, nil, nil, err
+		return &CellValue{
+			Err: err,
+		}
 	}
 
 	for _, s := range resp.Sheets {
 		if s.Properties.Title == SheetName {
 			val := s.Data[0].RowData[0].Values[0]
-			return val.TextFormatRuns, &val.FormattedValue, &val.Hyperlink, nil
+			return &CellValue{
+				TextFormatRun:  val.TextFormatRuns,
+				FormattedValue: &val.FormattedValue,
+				Hyperlink:      &val.Hyperlink,
+			}
 		}
 	}
-	return nil, nil, nil, nil
+	return &CellValue{}
 }
