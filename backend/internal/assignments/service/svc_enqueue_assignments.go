@@ -19,7 +19,7 @@ func (s *service) EnqueueAssignments(ctx context.Context) error {
 
 	assignmentIDs := make([]uint64, 0, assignments.Total)
 	for _, assignment := range assignments.Objects {
-		assignmentIDs = append(assignmentIDs, assignment.ID)
+		assignmentIDs = append(assignmentIDs, assignment.AssignmentID)
 	}
 
 	if err := s.publisher.Publish(ctx, assignmentIDs...); err != nil {
