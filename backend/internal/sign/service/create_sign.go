@@ -21,9 +21,9 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 	}
 
 	if signApplication.Status == domain.StatusUserFixing {
-		if err := s.spreadsheetRepo.DeleteMetadata(ctx, req.SpreadsheetID); err != nil {
-			return "", err
-		}
+		// if err := s.spreadsheetRepo.DeleteMetadata(ctx, req.SpreadsheetID); err != nil {
+		// 	return "", err
+		// }
 		if err := s.applicationRepo.EditStatus(ctx, req.SpreadsheetID, domain.StatusManagerReviewing); err != nil {
 			return "", err
 		}
