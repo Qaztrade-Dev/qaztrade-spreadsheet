@@ -69,6 +69,7 @@ type ApplicationRepository interface {
 type SpreadsheetService interface {
 	SwitchModeRead(ctx context.Context, spreadsheetID string) error
 	SwitchModeEdit(ctx context.Context, spreadsheetID string) error
+	GrantAdminPermissions(ctx context.Context, spreadsheetID, email string) error
 	Comments(ctx context.Context, application *Application) (*Revision, error)
 }
 

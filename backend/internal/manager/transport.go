@@ -57,12 +57,19 @@ func MakeHandler(svc managerService.Service, jwtcli *jwt.Client, logger kitlog.L
 			managerTransport.DecodeGetManagers, common.EncodeResponse,
 			opts...,
 		)
+
+		grantPermissionsHandler = kithttp.NewServer(
+			mdlwChain(managerEndpoint.MakeGrantPermissionsEndpoint(svc)),
+			managerTransport.DecodeGrantPermissions, common.EncodeResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
 	r.Handle("/manager/spreadsheets/", switchStatusHandler).Methods("PATCH")
 	r.Handle("/manager/spreadsheets/", listSpreadsheetsHandler).Methods("GET")
 	r.Handle("/manager/applications/{application_id}/ddcard", getDDCardHandler).Methods("GET")
+	r.Handle("/manager/applications/{application_id}/access", grantPermissionsHandler).Methods("POST")
 	r.Handle("/manager/managers/", getManagersHandler).Methods("GET")
 
 	return r

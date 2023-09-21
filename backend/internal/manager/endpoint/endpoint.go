@@ -105,3 +105,27 @@ func MakeGetManagersEndpoint(s service.Service) endpoint.Endpoint {
 		}, nil
 	}
 }
+
+type GrantPermissionsRequest struct {
+	ApplicationID string
+}
+
+type GrantPermissionsResponse struct {
+	Err error `json:"err,omitempty"`
+}
+
+func (r *GrantPermissionsResponse) Error() error { return r.Err }
+
+func MakeGrantPermissionsEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GrantPermissionsRequest)
+
+		err := s.GrantPermissions(ctx, &service.GrantPermissionsRequest{
+			ApplicationID: req.ApplicationID,
+		})
+
+		return &GrantPermissionsResponse{
+			Err: err,
+		}, nil
+	}
+}

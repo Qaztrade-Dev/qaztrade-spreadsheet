@@ -14,6 +14,8 @@ type Service interface {
 
 	// GetManagers returns a list of managers
 	GetManagers(ctx context.Context) ([]*domain.Manager, error)
+
+	GrantPermissions(ctx context.Context, req *GrantPermissionsRequest) error
 }
 
 type service struct {

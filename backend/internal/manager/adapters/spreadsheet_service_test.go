@@ -53,3 +53,19 @@ func getenv(env string, fallback ...string) string {
 	}
 	return e
 }
+
+func TestGrantAdminPermissions(t *testing.T) {
+	var (
+		ctx           = context.Background()
+		adminAccount  = getenv("ADMIN_ACCOUNT")
+		svcAccount    = getenv("SERVICE_ACCOUNT")
+		spreadsheetID = "1IBbhwlDLYkD0vUT2PHn6d92xsszAJXD95yfKO8ieltQ"
+		email         = "ali.tlekbai@gmail.com"
+	)
+
+	svc, err := NewSpreadsheetService(ctx, credentialsSA, adminAccount, svcAccount)
+	require.Nil(t, err)
+
+	err = svc.GrantAdminPermissions(ctx, spreadsheetID, email)
+	require.Nil(t, err)
+}

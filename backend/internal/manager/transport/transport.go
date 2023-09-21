@@ -107,3 +107,13 @@ func EncodeGetDDCardResponse(ctx context.Context, w http.ResponseWriter, respons
 func DecodeGetManagers(_ context.Context, _ *http.Request) (interface{}, error) {
 	return nil, nil
 }
+
+func DecodeGrantPermissions(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		applicationID = mux.Vars(r)["application_id"]
+	)
+
+	return endpoint.GrantPermissionsRequest{
+		ApplicationID: applicationID,
+	}, nil
+}
