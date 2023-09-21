@@ -49,7 +49,7 @@ func TestTest(t *testing.T) {
 		destinationFolderId,
 	)
 
-	err = svc.BackupSpreadsheets(ctx)
+	err = svc.FixVLOOKUP(ctx)
 	if err != nil {
 		t.Fatal("Test error:", err)
 	}

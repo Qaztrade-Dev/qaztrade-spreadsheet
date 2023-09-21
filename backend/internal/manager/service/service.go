@@ -10,13 +10,15 @@ import (
 
 type Service interface {
 	SwitchStatus(ctx context.Context, req *SwitchStatusRequest) error
-	ListSpreadsheets(ctx context.Context, req *ListSpreadsheetsRequest) (*domain.ApplicationList, error)
+	ListSpreadsheets(ctx context.Context, input *domain.GetManyInput) (*domain.ApplicationList, error)
 	GetDDCard(ctx context.Context, req *GetDDCardRequest) (*http.Response, error)
 
 	// GetManagers returns a list of managers
 	GetManagers(ctx context.Context) ([]*domain.Manager, error)
 	GetNotice(ctx context.Context, req *GetNoticeRequest) (*bytes.Buffer, error)
 	SendNotice(ctx context.Context, req *SendNoticeRequest) error
+
+	GrantPermissions(ctx context.Context, req *GrantPermissionsRequest) error
 }
 
 type service struct {

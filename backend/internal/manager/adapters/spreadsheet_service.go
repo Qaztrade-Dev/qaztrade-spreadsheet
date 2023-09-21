@@ -74,6 +74,76 @@ func (s *SpreadsheetServiceGoogle) SwitchModeEdit(ctx context.Context, spreadshe
 	return nil
 }
 
+func (s *SpreadsheetServiceGoogle) GrantAdminPermissions(ctx context.Context, spreadsheetID, email string) error {
+	if err := s.grantWritePermission(ctx, spreadsheetID, email); err != nil {
+		return err
+	}
+
+	if err := s.grantPermissionToProtectedRanges(ctx, spreadsheetID, email); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SpreadsheetServiceGoogle) grantWritePermission(ctx context.Context, spreadsheetID, email string) error {
+	permission := &drive.Permission{
+		Type:         "user",
+		Role:         "writer",
+		EmailAddress: email,
+	}
+	_, err := s.driveSvc.Permissions.Create(spreadsheetID, permission).Context(ctx).Do()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SpreadsheetServiceGoogle) grantPermissionToProtectedRanges(ctx context.Context, spreadsheetID, email string) error {
+	spreadsheet, err := s.sheetsSvc.Spreadsheets.Get(spreadsheetID).Context(ctx).Do()
+	if err != nil {
+		return err
+	}
+
+	updateRanges := make([]*sheets.Request, 0)
+
+	for _, sheet := range spreadsheet.Sheets {
+		for _, protectedRange := range sheet.ProtectedRanges {
+			protectedRange := protectedRange
+
+			if s.editorsContains(email, protectedRange.Editors.Users) {
+				continue
+			}
+
+			protectedRange.Editors.Users = append(protectedRange.Editors.Users, email)
+
+			updateRanges = append(updateRanges, &sheets.Request{
+				UpdateProtectedRange: &sheets.UpdateProtectedRangeRequest{
+					ProtectedRange: protectedRange,
+					Fields:         "editors",
+				},
+			})
+		}
+	}
+
+	batch := NewBatchUpdate(s.sheetsSvc)
+	batch.WithRequest(updateRanges...)
+	if err := batch.Do(ctx, spreadsheetID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SpreadsheetServiceGoogle) editorsContains(email string, editors []string) bool {
+	for _, editor := range editors {
+		if editor == email {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *SpreadsheetServiceGoogle) GetPublicLink(_ context.Context, spreadsheetID string) string {
 	url := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/edit?usp=sharing", spreadsheetID)
 	return url
