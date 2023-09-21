@@ -196,8 +196,8 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 	}
 
 	var (
-		arr_metadata = []*MetaDataCommentsPack{}
-		cnt          = 0
+		arrMetadata = []*MetaDataCommentsPack{}
+		cnt         = 0
 	)
 	for _, i := range sheet_list {
 		comments, _ := file_xlsx.GetComments(i)
@@ -209,7 +209,7 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 				y2 := 3
 				x2 := 1
 				x, y, _ := excelize.CellNameToCoordinates(j.Cell)
-				arr_metadata = append(arr_metadata, &MetaDataCommentsPack{
+				arrMetadata = append(arrMetadata, &MetaDataCommentsPack{
 					sheetName: i,
 					rowIdx:    int64(y),
 					colIdx:    int64(x),
@@ -239,7 +239,7 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 			}
 		}
 	}
-	if err := s.SetMetadata(ctx, spreadsheetID, arr_metadata); err != nil {
+	if err := s.SetMetadata(ctx, spreadsheetID, arrMetadata); err != nil {
 		return nil, err
 	}
 
@@ -294,13 +294,13 @@ func (s *SpreadsheetServiceGoogle) deleteMetadata(ctx context.Context, spreadshe
 	return nil
 }
 
-func (s *SpreadsheetServiceGoogle) SetMetadata(ctx context.Context, spreadsheetID string, arr_metadata []*MetaDataCommentsPack) error {
+func (s *SpreadsheetServiceGoogle) SetMetadata(ctx context.Context, spreadsheetID string, arrMetadata []*MetaDataCommentsPack) error {
 	if err := s.deleteMetadata(ctx, spreadsheetID); err != nil {
 		return err
 	}
 
 	batch := NewBatchUpdate(s.sheetsSvc)
-	for _, i := range arr_metadata {
+	for _, i := range arrMetadata {
 		batch.WithRequest(&sheets.Request{
 			CreateDeveloperMetadata: &sheets.CreateDeveloperMetadataRequest{
 				DeveloperMetadata: &sheets.DeveloperMetadata{

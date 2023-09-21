@@ -211,14 +211,14 @@ func (c *SpreadsheetClient) UpdateCell(ctx context.Context, spreadsheetID string
 			ColumnIndex: input.ColumnIdx - 1,
 			Value:       input.Value,
 		}
-		cell          = c.getCellValue(ctx, spreadsheetID, input.SheetName, input.RowIdx, input.ColumnIdx)
-		time          = time.Now()
-		timeToString  = fmt.Sprintf("(%s)", time.Format("02-01-2006"))
+		cell, err     = c.getCellValue(ctx, spreadsheetID, input.SheetName, input.RowIdx, input.ColumnIdx)
+		curTime       = time.Now()
+		timeToString  = fmt.Sprintf("(%s)", curTime.Format("02-01-2006"))
 		newStringVal  = "файл " + timeToString
 		newTextFormat = []*sheets.TextFormatRun{}
 	)
-	if cell.Err != nil {
-		return cell.Err
+	if err != nil {
+		return err
 	}
 	newTextFormat = append(newTextFormat, &sheets.TextFormatRun{
 		Format: &sheets.TextFormat{
@@ -307,18 +307,17 @@ type CellValue struct {
 	TextFormatRun  []*sheets.TextFormatRun
 	FormattedValue *string
 	Hyperlink      *string
-	Err            error
 }
 
 func (s *SpreadsheetClient) GetHyperLink(ctx context.Context, spreadsheetID string, SheetName string, Row_idx int64, Column_idx int64) (*string, error) {
-	Cell := s.getCellValue(ctx, spreadsheetID, SheetName, Row_idx, Column_idx)
-	if Cell.Err != nil {
-		return nil, Cell.Err
+	cell, err := s.getCellValue(ctx, spreadsheetID, SheetName, Row_idx, Column_idx)
+	if err != nil {
+		return nil, err
 	}
-	return Cell.Hyperlink, nil
+	return cell.Hyperlink, nil
 }
 
-func (s *SpreadsheetClient) getCellValue(ctx context.Context, spreadsheetID string, SheetName string, Row_idx int64, Column_idx int64) *CellValue {
+func (s *SpreadsheetClient) getCellValue(ctx context.Context, spreadsheetID string, SheetName string, Row_idx int64, Column_idx int64) (*CellValue, error) {
 	A1Notion := (&Cell{
 		Col: Column_idx - 1,
 		Row: Row_idx - 1,
@@ -332,9 +331,7 @@ func (s *SpreadsheetClient) getCellValue(ctx context.Context, spreadsheetID stri
 	}).Do()
 
 	if err != nil {
-		return &CellValue{
-			Err: err,
-		}
+		return nil, err
 	}
 
 	for _, s := range resp.Sheets {
@@ -344,8 +341,8 @@ func (s *SpreadsheetClient) getCellValue(ctx context.Context, spreadsheetID stri
 				TextFormatRun:  val.TextFormatRuns,
 				FormattedValue: &val.FormattedValue,
 				Hyperlink:      &val.Hyperlink,
-			}
+			}, nil
 		}
 	}
-	return &CellValue{}
+	return nil, err
 }
