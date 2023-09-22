@@ -144,7 +144,8 @@ func EncodeGetNoticeResponse(ctx context.Context, w http.ResponseWriter, respons
 		resp = response.(*endpoint.GetNoticeResponse)
 		data = resp.Docx
 	)
-	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+	w.Header().Set("Content-Type", "application/octet-stream")
 	if _, err := io.Copy(w, data); err != nil {
 		return err
 	}
