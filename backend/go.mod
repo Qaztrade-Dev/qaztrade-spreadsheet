@@ -15,6 +15,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/jackc/pgconn v1.14.0
 	github.com/jackc/pgx/v4 v4.18.1
+	github.com/lukasjarosch/go-docx v0.4.7
 	github.com/mattermost/squirrel v0.2.0
 	github.com/pdfcpu/pdfcpu v0.3.14-0.20221101223428-07d97625e3fa
 	github.com/phpdave11/gofpdf v1.4.2

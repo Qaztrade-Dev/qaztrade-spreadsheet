@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 
@@ -14,6 +15,8 @@ type Service interface {
 
 	// GetManagers returns a list of managers
 	GetManagers(ctx context.Context) ([]*domain.Manager, error)
+	GetNotice(ctx context.Context, req *GetNoticeRequest) (*bytes.Buffer, error)
+	SendNotice(ctx context.Context, req *SendNoticeRequest) error
 
 	GrantPermissions(ctx context.Context, req *GrantPermissionsRequest) error
 }
@@ -23,6 +26,9 @@ type service struct {
 	applicationRepo domain.ApplicationRepository
 	signingSvc      domain.SigningService
 	mngRepo         domain.ManagersRepository
+	noticeSvc       domain.NoticeService
+	storage         domain.Storage
+	emailSvc        domain.EmailService
 }
 
 func NewService(
@@ -30,11 +36,17 @@ func NewService(
 	applicationRepo domain.ApplicationRepository,
 	signingSvc domain.SigningService,
 	mngRepo domain.ManagersRepository,
+	noticeSvc domain.NoticeService,
+	storage domain.Storage,
+	emailSvc domain.EmailService,
 ) Service {
 	return &service{
 		spreadsheetSvc:  spreadsheetSvc,
 		applicationRepo: applicationRepo,
 		signingSvc:      signingSvc,
 		mngRepo:         mngRepo,
+		noticeSvc:       noticeSvc,
+		storage:         storage,
+		emailSvc:        emailSvc,
 	}
 }

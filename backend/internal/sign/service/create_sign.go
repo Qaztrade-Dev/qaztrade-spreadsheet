@@ -20,6 +20,16 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 		return "", err
 	}
 
+	if signApplication.Status == domain.StatusUserFixing {
+		// if err := s.spreadsheetRepo.DeleteMetadata(ctx, req.SpreadsheetID); err != nil {
+		// 	return "", err
+		// }
+		if err := s.applicationRepo.EditStatus(ctx, req.SpreadsheetID, domain.StatusManagerReviewing); err != nil {
+			return "", err
+		}
+		return "", nil
+	}
+
 	if signApplication.Status != domain.StatusUserFilling {
 		return linkbase + signApplication.SignLink, nil
 	}

@@ -19,7 +19,7 @@ func TestComments(t *testing.T) {
 		adminAccount = getenv("ADMIN_ACCOUNT")
 		svcAccount   = getenv("SERVICE_ACCOUNT")
 		// spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
-		spreadsheetID = "15Y8kld4d3PmFdNEXjjLHgFoTC4TtDeJjwPCAe1aLXD4"
+		spreadsheetID = "1Kp6AQDxCD3Mgj46a6eTuL0hy8Dxds03Jy5PT-7bomhw"
 	)
 
 	svc, err := NewSpreadsheetService(ctx, credentialsSA, adminAccount, svcAccount)
@@ -29,14 +29,6 @@ func TestComments(t *testing.T) {
 		ID:            "1",
 		SpreadsheetID: spreadsheetID,
 		No:            1,
-		Attrs: map[string]interface{}{
-			"application": map[string]interface{}{
-				"bin":          "123456",
-				"manufacturer": "manufacturer",
-				"from":         "from",
-				"cont_email":   "cont_email",
-			},
-		},
 	})
 	require.Nil(t, err)
 	require.NotNil(t, revision)

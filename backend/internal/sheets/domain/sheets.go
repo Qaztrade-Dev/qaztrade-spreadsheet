@@ -7,10 +7,13 @@ import (
 
 type (
 	UpdateCellInput struct {
-		SheetID   int64
-		RowIdx    int64
-		ColumnIdx int64
-		Value     string
+		SheetID       int64
+		PrevHyperlink string
+		SheetName     string
+		RowIdx        int64
+		ColumnIdx     int64
+		Value         string
+		Replace       bool
 	}
 
 	AddRowsInput struct {
@@ -23,6 +26,7 @@ type (
 		UpdateApplication(ctx context.Context, spreadsheetID string, application *Application) error
 		UpdateCell(ctx context.Context, spreadsheetID string, input *UpdateCellInput) error
 		AddRows(ctx context.Context, spreadsheetID string, input *AddRowsInput) error
+		GetHyperLink(ctx context.Context, spreadsheetID string, SheetName string, Row_idx int64, Column_idx int64) (*string, error)
 	}
 
 	Storage interface {
@@ -33,4 +37,8 @@ type (
 
 type SpreadsheetClaims struct {
 	SpreadsheetID string `json:"sid"`
+}
+
+type ApplicationRepository interface {
+	GetApplication(ctx context.Context, spreadsheetID string) (*StatusApplication, error)
 }

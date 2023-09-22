@@ -57,7 +57,16 @@ func MakeHandler(svc managerService.Service, jwtcli *jwt.Client, logger kitlog.L
 			managerTransport.DecodeGetManagers, common.EncodeResponse,
 			opts...,
 		)
-
+		getNoticeHandler = kithttp.NewServer(
+			mdlwChain(managerEndpoint.MakeGetNoticeEndpoint(svc)),
+			managerTransport.DecodeGetNotice, managerTransport.EncodeGetNoticeResponse,
+			opts...,
+		)
+		sendNoticeHandler = kithttp.NewServer(
+			mdlwChain(managerEndpoint.MakeSendNoticeEndpoint(svc)),
+			managerTransport.DecodeSendNotice, common.EncodeResponse,
+			opts...,
+		)
 		grantPermissionsHandler = kithttp.NewServer(
 			mdlwChain(managerEndpoint.MakeGrantPermissionsEndpoint(svc)),
 			managerTransport.DecodeGrantPermissions, common.EncodeResponse,
@@ -71,6 +80,8 @@ func MakeHandler(svc managerService.Service, jwtcli *jwt.Client, logger kitlog.L
 	r.Handle("/manager/applications/{application_id}/ddcard", getDDCardHandler).Methods("GET")
 	r.Handle("/manager/applications/{application_id}/access", grantPermissionsHandler).Methods("POST")
 	r.Handle("/manager/managers/", getManagersHandler).Methods("GET")
+	r.Handle("/manager/{application_id}/notice", getNoticeHandler).Methods("GET")
+	r.Handle("/manager/{application_id}/notice", sendNoticeHandler).Methods("POST")
 
 	return r
 }

@@ -32,6 +32,7 @@ func (s *service) SignIn(ctx context.Context, input *SignInRequest) (*domain.Cre
 		UserID: user.ID,
 		Roles:  roles,
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf("error Create: %w", err)
 	}

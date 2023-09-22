@@ -119,7 +119,9 @@ func main() {
 		sheetsService = sheets.MakeService(
 			ctx,
 			sheets.WithSheetsCredentials(credentialsSA),
+			sheets.WithPostgre(pg),
 			sheets.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
+			sheets.WithOriginSpreadsheetID(originSpreadsheetID),
 		)
 
 		authService = auth.MakeService(
@@ -154,6 +156,8 @@ func main() {
 			manager.WithSignCredentials(signUrlBase, signLogin, signPassword),
 			manager.WithAdmin(adminAccount),
 			manager.WithServiceAccount(svcAccount),
+			manager.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
+			manager.WithMail(mailLogin, mailPassword),
 		)
 
 		signService = sign.MakeService(

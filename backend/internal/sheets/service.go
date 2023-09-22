@@ -5,6 +5,7 @@ import (
 
 	"github.com/doodocs/qaztrade/backend/internal/sheets/adapters"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 func MakeService(ctx context.Context, opts ...Option) service.Service {
@@ -24,7 +25,11 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 		panic(err)
 	}
 
-	svc := service.NewService(sheetsRepo, storage)
+	var (
+		applicationRepo           = adapters.NewApplicationRepositoryPostgre(deps.pg)
+		spreadsheetDevMetadataSvc = sheetsRepo.NewSpreadsheetServiceMetadata()
+	)
+	svc := service.NewService(sheetsRepo, storage, applicationRepo, *spreadsheetDevMetadataSvc)
 	return svc
 }
 
@@ -37,6 +42,7 @@ type dependencies struct {
 	s3Endpoint          string
 	s3Bucket            string
 	originSpreadsheetID string
+	pg                  *pgxpool.Pool
 }
 
 func (d *dependencies) setDefaults() {
@@ -55,5 +61,17 @@ func WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket string) Option
 		d.s3SecretKey = s3SecretKey
 		d.s3Endpoint = s3Endpoint
 		d.s3Bucket = s3Bucket
+	}
+}
+
+func WithPostgre(pg *pgxpool.Pool) Option {
+	return func(d *dependencies) {
+		d.pg = pg
+	}
+}
+
+func WithOriginSpreadsheetID(originSpreadsheetID string) Option {
+	return func(d *dependencies) {
+		d.originSpreadsheetID = originSpreadsheetID
 	}
 }

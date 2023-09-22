@@ -113,6 +113,7 @@ type SpreadsheetRepository interface {
 	UpdateSigningTime(ctx context.Context, spreadsheetID string, signedAt time.Time) error
 	SwitchModeRead(ctx context.Context, spreadsheetID string) error
 	HasMergedCells(ctx context.Context, spreadsheetID string, sheets []*Sheet) (bool, error)
+	DeleteMetadata(ctx context.Context, spreadsheetID string) error
 }
 
 type CreateSigningDocumentResponse struct {

@@ -22,6 +22,7 @@ import (
 type SpreadsheetClient struct {
 	sheetsService *sheets.Service
 	driveService  *drive.Service
+	metaDataSvc   *sheets.SpreadsheetsDeveloperMetadataService
 	credentials   *google.Credentials
 	adminAccount  string
 	svcAccount    string
@@ -46,6 +47,7 @@ func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte, adminAcco
 		return nil, err
 	}
 
+	metaDataSvc := sheets.NewSpreadsheetsDeveloperMetadataService(sheetsService)
 	credentials, err := google.CredentialsFromJSON(
 		ctx,
 		credentialsJson,
@@ -61,6 +63,7 @@ func NewSpreadsheetClient(ctx context.Context, credentialsJson []byte, adminAcco
 		credentials:   credentials,
 		adminAccount:  adminAccount,
 		svcAccount:    svcAccount,
+		metaDataSvc:   metaDataSvc,
 	}, nil
 }
 
@@ -567,4 +570,48 @@ func sliceContains(slice []string, input string) bool {
 	}
 
 	return false
+}
+func (s *SpreadsheetClient) deleteMetadataByKey(ctx context.Context, spreadsheetID, key string, batch *BatchUpdate) {
+	batch.WithRequest(&sheets.Request{
+		DeleteDeveloperMetadata: &sheets.DeleteDeveloperMetadataRequest{
+			DataFilter: &sheets.DataFilter{
+				DeveloperMetadataLookup: &sheets.DeveloperMetadataLookup{
+					Visibility:  "DOCUMENT",
+					MetadataKey: key,
+				},
+			},
+		},
+	})
+}
+
+func (s *SpreadsheetClient) DeleteMetadata(ctx context.Context, spreadsheetID string) error {
+	batch := NewBatchUpdate(s.sheetsService)
+
+	var (
+		filter []*sheets.DataFilter
+	)
+
+	filter = append(filter, &sheets.DataFilter{
+		DeveloperMetadataLookup: &sheets.DeveloperMetadataLookup{
+			Visibility: "DOCUMENT",
+		},
+	})
+	reqMeta := &sheets.SearchDeveloperMetadataRequest{
+		DataFilters: filter,
+	}
+
+	response, err := s.metaDataSvc.Search(spreadsheetID, reqMeta).Do()
+	if err != nil {
+		return err
+	}
+	for _, i := range response.MatchedDeveloperMetadata {
+		if i.DeveloperMetadata.MetadataKey[0] == '!' {
+			s.deleteMetadataByKey(ctx, spreadsheetID, i.DeveloperMetadata.MetadataKey, batch)
+		}
+	}
+
+	if err := batch.Do(ctx, spreadsheetID); err != nil {
+		return err
+	}
+	return nil
 }
