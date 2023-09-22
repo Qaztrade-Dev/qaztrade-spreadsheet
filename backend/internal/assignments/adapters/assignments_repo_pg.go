@@ -361,6 +361,7 @@ func getOne(ctx context.Context, querier postgres.Querier, input *domain.GetMany
 func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBuilder {
 	mainStmt := psql.
 		Select(
+			"app.id",
 			"ass.id",
 			"app.no",
 			"app.attrs->'application'->>'from'",
@@ -463,6 +464,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		objects = make([]*domain.AssignmentView, 0)
 
 		// scans
+		tmpApplicationID  *string
 		tmpAssignmentID   *uint64
 		tmpID             *uint64
 		tmpApplicantName  *string
@@ -482,6 +484,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 	)
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
+		&tmpApplicationID,
 		&tmpAssignmentID,
 		&tmpID,
 		&tmpApplicantName,
@@ -500,6 +503,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		&tmpCompletedAt,
 	}, func(pgx.QueryFuncRow) error {
 		objects = append(objects, &domain.AssignmentView{
+			ApplicationID:  postgres.Value(tmpApplicationID),
 			AssignmentID:   postgres.Value(tmpAssignmentID),
 			ID:             postgres.Value(tmpID),
 			ApplicantName:  postgres.Value(tmpApplicantName),

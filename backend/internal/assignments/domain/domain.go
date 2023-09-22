@@ -24,6 +24,7 @@ type AssignmentInput struct {
 }
 
 type AssignmentView struct {
+	ApplicationID  string
 	AssignmentID   uint64
 	ID             uint64
 	ApplicantName  string

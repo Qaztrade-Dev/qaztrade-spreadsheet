@@ -7,6 +7,7 @@ import (
 )
 
 type AssignmentView struct {
+	ApplicationID  string    `json:"application_id"`
 	AssignmentID   uint64    `json:"assignment_id"`
 	ID             uint64    `json:"id"`
 	ApplicantName  string    `json:"applicant_name"`
@@ -30,6 +31,7 @@ func EncodeAssignmentView(input *domain.AssignmentView) *AssignmentView {
 	}
 
 	return &AssignmentView{
+		ApplicationID:  input.ApplicationID,
 		AssignmentID:   input.AssignmentID,
 		ID:             input.ID,
 		ApplicantName:  input.ApplicantName,
