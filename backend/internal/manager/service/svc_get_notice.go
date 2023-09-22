@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 
-	authDomain "github.com/doodocs/qaztrade/backend/internal/auth/domain"
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 )
 
@@ -13,20 +12,20 @@ type GetNoticeRequest struct {
 }
 
 func (s *service) Revision(ctx context.Context, application *domain.Application) (*domain.Revision, error) {
-	claims, err := authDomain.ExtractClaims[authDomain.UserClaims](ctx)
+	// claims, err := authDomain.ExtractClaims[authDomain.UserClaims](ctx)
 
-	if err != nil {
-		return nil, err
-	}
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	manager, err := s.mngRepo.GetCurrent(ctx, claims.UserID)
-	if err != nil {
-		return nil, err
-	}
+	// manager, err := s.mngRepo.GetCurrent(ctx, claims.UserID)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	data, err := s.spreadsheetSvc.Comments(ctx, application)
-	data.ManagerName = manager.Fullname
-	data.ManagerEmail = manager.Email
+	// data.ManagerName = manager.Fullname
+	// data.ManagerEmail = manager.Email
 
 	if err != nil {
 		return nil, err
