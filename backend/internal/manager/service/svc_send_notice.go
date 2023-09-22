@@ -53,7 +53,7 @@ func (s *service) SendNotice(ctx context.Context, req *SendNoticeRequest) error 
 		return err
 	}
 
-	if err := s.emailSvc.SendNotice(ctx, applicationAttr.ContEmail, "Уведомления по замечанием в заявление", req.FileName, readSeeker2); err != nil {
+	if err := s.emailSvc.SendNotice(ctx, applicationAttr.ContEmail, "Уведомление по заявке от АО «QazTrade»", req.FileName, readSeeker2); err != nil {
 		return err
 	}
 

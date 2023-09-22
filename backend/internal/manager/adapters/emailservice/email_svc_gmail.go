@@ -36,7 +36,6 @@ func NewEmailServiceGmail(email, password string) *EmailServiceGmail {
 }
 
 func (s *EmailServiceGmail) SendNotice(ctx context.Context, toEmail, mailName, fileName string, FileReader io.Reader) error {
-
 	tempDir, err := os.MkdirTemp("", "mails")
 	if err != nil {
 		return err
