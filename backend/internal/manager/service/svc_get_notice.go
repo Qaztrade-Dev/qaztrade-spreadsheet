@@ -14,7 +14,6 @@ type GetNoticeRequest struct {
 
 func (s *service) Revision(ctx context.Context, application *domain.Application) (*domain.Revision, error) {
 	claims, err := authDomain.ExtractClaims[authDomain.UserClaims](ctx)
-
 	if err != nil {
 		return nil, err
 	}
@@ -25,12 +24,13 @@ func (s *service) Revision(ctx context.Context, application *domain.Application)
 	}
 
 	data, err := s.spreadsheetSvc.Comments(ctx, application)
-	data.ManagerName = manager.Fullname
-	data.ManagerEmail = manager.Email
-
 	if err != nil {
 		return nil, err
 	}
+
+	data.ManagerName = manager.Fullname
+	data.ManagerEmail = manager.Email
+
 	return data, nil
 }
 
@@ -38,7 +38,6 @@ func (s *service) GetNotice(ctx context.Context, req *GetNoticeRequest) (*bytes.
 	application, err := s.applicationRepo.GetOne(ctx, &domain.GetManyInput{
 		ApplicationID: req.ApplicationID,
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +45,7 @@ func (s *service) GetNotice(ctx context.Context, req *GetNoticeRequest) (*bytes.
 	if application.Status != domain.StatusManagerReviewing {
 		return nil, domain.ErrorApplicationNotUnderReview
 	}
+
 	remarks, err := s.Revision(ctx, application)
 	if err != nil {
 		return nil, err

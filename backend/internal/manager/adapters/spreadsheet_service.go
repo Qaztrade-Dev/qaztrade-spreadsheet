@@ -227,7 +227,6 @@ func (s *SpreadsheetServiceGoogle) getDataFromRanges(ctx context.Context, spread
 }
 
 func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *domain.Application) (*domain.Revision, error) {
-
 	applicationAttr, err := s.GetApplication(ctx, application.SpreadsheetID)
 	if err != nil {
 		return nil, err
@@ -246,20 +245,23 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 		Address:        applicationAttr.FactAddr,
 	}
 
-	spreadsheetID := application.SpreadsheetID
-	exportMimeType := "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	var (
+		spreadsheetID  = application.SpreadsheetID
+		exportMimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	)
+
 	exportedContent, err := s.driveSvc.Files.Export(spreadsheetID, exportMimeType).Download()
 	if err != nil {
 		return summary, err
 	}
-
-	content := exportedContent.Body
 	defer exportedContent.Body.Close()
-	file_xlsx, err := excelize.OpenReader(content)
+
+	fileXLSX, err := excelize.OpenReader(exportedContent.Body)
 	if err != nil {
 		return summary, err
 	}
-	sheet_list := file_xlsx.GetSheetList()
+
+	sheetList := fileXLSX.GetSheetList()
 
 	if err := s.deleteMetadata(ctx, spreadsheetID); err != nil {
 		return nil, err
@@ -269,8 +271,9 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 		arrMetadata = []*MetaDataCommentsPack{}
 		cnt         = 0
 	)
-	for _, i := range sheet_list {
-		comments, _ := file_xlsx.GetComments(i)
+
+	for _, i := range sheetList {
+		comments, _ := fileXLSX.GetComments(i)
 		if len(comments) != 0 {
 			summary.Remarks += fmt.Sprint("\u200b         Таблица " + i + ":\n")
 
@@ -295,9 +298,9 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 				}
 				var (
 					column_cell, _     = excelize.CoordinatesToCellName(x, y2)
-					column, _          = file_xlsx.GetCellValue(i, column_cell)
+					column, _          = fileXLSX.GetCellValue(i, column_cell)
 					column_add_cell, _ = excelize.CoordinatesToCellName(x2, y)
-					column_add, _      = file_xlsx.GetCellValue(i, column_add_cell)
+					column_add, _      = fileXLSX.GetCellValue(i, column_add_cell)
 				)
 
 				summary.Remarks += fmt.Sprintf("%d) %s", cnt, column)

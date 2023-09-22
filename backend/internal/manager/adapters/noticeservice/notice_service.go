@@ -46,5 +46,4 @@ func (s *NoticeService) Create(revision *domain.Revision) (*bytes.Buffer, error)
 		return nil, err
 	}
 	return &buf, nil
-
 }
