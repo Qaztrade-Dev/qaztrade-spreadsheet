@@ -30,6 +30,7 @@ func (r *ManagersRepositoryPostgres) GetCurrent(ctx context.Context, userID stri
 		return nil, err
 	}
 	for _, j := range managers {
+		j := j
 		if j.UserID == userID {
 			return j, nil
 		}
