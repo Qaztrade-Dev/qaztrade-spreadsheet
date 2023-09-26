@@ -29,7 +29,7 @@ func (s *NoticeService) Create(revision *domain.Revision) (*bytes.Buffer, error)
 		"CompanyName":     revision.To,
 		"CompanyAddress":  revision.Address,
 		"ApplicationNum":  revision.No,
-		"ApplicationDate": revision.CreatedAt.Format("2006-01-02"),
+		"ApplicationDate": revision.SignedAt.Format("02.01.2006"),
 		"Remarks":         revision.Remarks,
 	}
 	doc, err := docx.OpenBytes(docxFile)

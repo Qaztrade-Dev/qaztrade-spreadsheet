@@ -236,7 +236,7 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 		ApplicationID:  application.ID,
 		SpreadsheetID:  application.SpreadsheetID,
 		No:             application.No,
-		CreatedAt:      application.CreatedAt,
+		SignedAt:       application.SignedAt,
 		Link:           s.GetPublicLink(ctx, application.SpreadsheetID),
 		BIN:            applicationAttr.Bin,
 		Manufactor:     applicationAttr.Manufacturer,
