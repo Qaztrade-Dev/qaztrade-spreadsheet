@@ -62,3 +62,59 @@ Access Token работает несколько часов. Для его об�
 
 < 200 OK
 ```
+
+
+```sql
+CREATE VIEW applications_agg AS
+select
+    app.no as "№",
+    app.sign_at as "Дата подписания",
+    appst.value as "Статус",
+    sheet.value->>'title' as "Название",
+    sheet.value->>'expenses' as "Заявленная сумма",
+    sheet.value->>'rows' as "Строки",
+    app.attrs->>'from' as "От кого",
+    app.attrs->>'gov_reg' as "Гос. регистрация",
+    app.attrs->>'fact_addr' as "Фактический адрес",
+    app.attrs->>'bin' as "БИН",
+    app.attrs->>'industry' as "Отрасль",
+    app.attrs->>'industry_other' as "Отрасль (другое)",
+    app.attrs->>'activity' as "Вид деятельности",
+    app.attrs->>'emp_count' as "Кол-во сотрудников",
+    app.attrs->>'tax_sum' as "Сумма налогов",
+    app.attrs->>'product_capacity' as "Производственная мощность",
+    app.attrs->>'manufacturer' as "Производитель",
+    app.attrs->>'item' as "Наименование",
+    app.attrs->>'item_volume' as "Объем",
+    app.attrs->>'fact_volume_earnings' as "Фактический объем выручки",
+    app.attrs->>'fact_workload' as "Фактическая загрузка",
+    app.attrs->>'chief_lastname' as "Фамилия руководителя",
+    app.attrs->>'chief_firstname' as "Имя руководителя",
+    app.attrs->>'chief_middlename' as "Отчество руководителя",
+    app.attrs->>'chief_position' as "Должность руководителя",
+    app.attrs->>'chief_phone' as "Телефон руководителя",
+    app.attrs->>'cont_lastname' as "Фамилия контактного лица",
+    app.attrs->>'cont_firstname' as "Имя контактного лица",
+    app.attrs->>'cont_middlename' as "Отчество контактного лица",
+    app.attrs->>'cont_position' as "Должность контактного лица",
+    app.attrs->>'cont_phone' as "Телефон контактного лица",
+    app.attrs->>'cont_email' as "Email контактного лица",
+    app.attrs->>'info_manufactured_goods' as "Информация о производимых товарах",
+    app.attrs->>'name_of_goods' as "Наименование товара",
+    app.attrs->>'has_agreement' as "Наличие договора",
+    app.attrs->>'spend_plan' as "План расходов",
+    app.attrs->>'spend_plan_other' as "План расходов (другое)",
+    app.attrs->>'metrics_2022' as "Показатели 2022",
+    app.attrs->>'metrics_2023' as "Показатели 2023",
+    app.attrs->>'metrics_2024' as "Показатели 2024",
+    app.attrs->>'metrics_2025' as "Показатели 2025",
+    app.attrs->>'agreement_file' as "Файл договора",
+    app.attrs->>'expenses_sum' as "Сумма расходов",
+    app.attrs->>'expenses_list' as "Список расходов",
+    app.attrs->>'application_date ' as "Дата подачи заявки"
+from applications app
+cross join jsonb_array_elements(app.attrs -> 'sheets') as sheet
+join application_statuses appst on appst.id = app.status_id
+where app.no > 0
+order by app.no asc
+```
