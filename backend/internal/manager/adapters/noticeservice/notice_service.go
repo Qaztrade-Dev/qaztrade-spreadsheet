@@ -3,7 +3,6 @@ package noticeservice
 import (
 	"bytes"
 	_ "embed"
-	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/manager/domain"
 	"github.com/lukasjarosch/go-docx"
@@ -30,7 +29,7 @@ func (s *NoticeService) Create(revision *domain.Revision) (*bytes.Buffer, error)
 		"CompanyName":     revision.To,
 		"CompanyAddress":  revision.Address,
 		"ApplicationNum":  revision.No,
-		"ApplicationDate": strings.ReplaceAll(revision.SignedAt.Format("02-01-2006"), "-", "."),
+		"ApplicationDate": revision.SignedAt.Format("02.01.2006"),
 		"Remarks":         revision.Remarks,
 	}
 	doc, err := docx.OpenBytes(docxFile)
