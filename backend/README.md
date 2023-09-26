@@ -67,6 +67,7 @@ Access Token работает несколько часов. Для его об�
 ```sql
 CREATE OR REPLACE VIEW applications_agg AS
 select
+    app.id as "ID",
     app.no as "№",
     app.sign_at as "Дата подписания",
     appst.value as "Статус",
