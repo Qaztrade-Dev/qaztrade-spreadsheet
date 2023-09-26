@@ -60,7 +60,7 @@ type Revision struct {
 	ApplicantEmail string
 	ManagerName    string
 	ManagerEmail   string
-	CreatedAt      time.Time
+	SignedAt       time.Time
 	Remarks        string
 }
 
