@@ -42,9 +42,9 @@ func (s *service) GetNotice(ctx context.Context, req *GetNoticeRequest) (*bytes.
 		return nil, err
 	}
 
-	if application.Status != domain.StatusManagerReviewing {
-		return nil, domain.ErrorApplicationNotUnderReview
-	}
+	// if application.Status != domain.StatusManagerReviewing {
+	// 	return nil, domain.ErrorApplicationNotUnderReview
+	// }
 
 	remarks, err := s.Revision(ctx, application)
 	if err != nil {
