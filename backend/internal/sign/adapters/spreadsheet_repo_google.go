@@ -527,9 +527,9 @@ func (s *SpreadsheetClient) UnlockSheets(ctx context.Context, spreadsheetID stri
 	for _, sheet := range spreadsheet.Sheets {
 		sheet := sheet
 
-		if !(sheet.Properties.Title == "Заявление" ||
+		if sheet.Properties.Title == "Заявление" ||
 			sheet.Properties.Title == "ТНВЭД" ||
-			sheet.Properties.Title == "ОКВЭД") {
+			sheet.Properties.Title == "ОКВЭД" {
 			continue
 		}
 
