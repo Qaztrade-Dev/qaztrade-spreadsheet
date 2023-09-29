@@ -516,6 +516,47 @@ func (s *SpreadsheetClient) SwitchModeRead(ctx context.Context, spreadsheetID st
 	return nil
 }
 
+func (s *SpreadsheetClient) UnlockSheets(ctx context.Context, spreadsheetID string) error {
+	spreadsheet, err := s.sheetsService.Spreadsheets.Get(spreadsheetID).Context(ctx).Do()
+	if err != nil {
+		return err
+	}
+
+	batch := NewBatchUpdate(s.sheetsService)
+
+	for _, sheet := range spreadsheet.Sheets {
+		sheet := sheet
+
+		if !(sheet.Properties.Title == "Заявление" ||
+			sheet.Properties.Title == "ТНВЭД" ||
+			sheet.Properties.Title == "ОКВЭД") {
+			continue
+		}
+
+		for _, protectedRange := range sheet.ProtectedRanges {
+			protectedRange := protectedRange
+
+			if !strings.HasPrefix(protectedRange.Description, "Protecting entire sheet") {
+				continue
+			}
+
+			batch.WithRequest(
+				&sheets.Request{
+					DeleteProtectedRange: &sheets.DeleteProtectedRangeRequest{
+						ProtectedRangeId: protectedRange.ProtectedRangeId,
+					},
+				},
+			)
+		}
+	}
+
+	if err := batch.Do(ctx, spreadsheetID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *SpreadsheetClient) HasMergedCells(ctx context.Context, spreadsheetID string, sheets []*domain.Sheet) (bool, error) {
 	resp, err := s.sheetsService.Spreadsheets.Get(spreadsheetID).IncludeGridData(true).Do()
 	if err != nil {

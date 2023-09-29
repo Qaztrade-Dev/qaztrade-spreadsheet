@@ -108,6 +108,7 @@ type SpreadsheetRepository interface {
 
 	// GetSheets returns SheetInformation for each sheet in a spreadsheet.
 	GetSheets(ctx context.Context, spreadsheetID string) ([]*Sheet, error)
+	UnlockSheets(ctx context.Context, spreadsheetID string) error
 
 	GetAttachments(ctx context.Context, spreadsheetID string, sheets []*Sheet) ([]io.ReadSeeker, error)
 	UpdateSigningTime(ctx context.Context, spreadsheetID string, signedAt time.Time) error

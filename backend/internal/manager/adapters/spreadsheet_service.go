@@ -38,6 +38,7 @@ func NewSpreadsheetService(ctx context.Context, credentialsJson []byte, adminAcc
 	if err != nil {
 		return nil, err
 	}
+
 	metaDataSvc := sheets.NewSpreadsheetsDeveloperMetadataService(sheetsSvc)
 	return &SpreadsheetServiceGoogle{
 		driveSvc:     driveSvc,
@@ -71,6 +72,45 @@ func (s *SpreadsheetServiceGoogle) SwitchModeEdit(ctx context.Context, spreadshe
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *SpreadsheetServiceGoogle) LockSheets(ctx context.Context, spreadsheetID string) error {
+	spreadsheet, err := s.sheetsSvc.Spreadsheets.Get(spreadsheetID).Context(ctx).Do()
+	if err != nil {
+		return err
+	}
+
+	batch := NewBatchUpdate(s.sheetsSvc)
+
+	for _, sheet := range spreadsheet.Sheets {
+		sheet := sheet
+
+		if !(sheet.Properties.Title == "Заявление" ||
+			sheet.Properties.Title == "ТНВЭД" ||
+			sheet.Properties.Title == "ОКВЭД") {
+			continue
+		}
+
+		batch.WithRequest(
+			&sheets.Request{
+				AddProtectedRange: &sheets.AddProtectedRangeRequest{
+					ProtectedRange: &sheets.ProtectedRange{
+						Range: &sheets.GridRange{
+							SheetId: sheet.Properties.SheetId,
+						},
+						Description: "Protecting entire sheet" + " " + sheet.Properties.Title,
+						WarningOnly: false,
+					},
+				},
+			},
+		)
+	}
+
+	if err := batch.Do(ctx, spreadsheetID); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -148,6 +188,7 @@ func (s *SpreadsheetServiceGoogle) GetPublicLink(_ context.Context, spreadsheetI
 	url := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/edit?usp=sharing", spreadsheetID)
 	return url
 }
+
 func (s *SpreadsheetServiceGoogle) GetApplication(ctx context.Context, spreadsheetID string) (*domain.ApplicationAttrs, error) {
 	var result domain.ApplicationAttrs
 
