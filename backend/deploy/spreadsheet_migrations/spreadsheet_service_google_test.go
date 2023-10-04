@@ -49,7 +49,7 @@ func TestTest(t *testing.T) {
 		destinationFolderId,
 	)
 
-	err = svc.FixUserFixingSpreadsheets(ctx)
+	err = svc.FixEmptyExpensesSum(ctx)
 	if err != nil {
 		t.Fatal("Test error:", err)
 	}
