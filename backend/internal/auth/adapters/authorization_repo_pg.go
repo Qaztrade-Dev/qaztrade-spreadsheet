@@ -26,11 +26,11 @@ func NewAuthorizationRepositoryPostgre(pg *pgxpool.Pool) *AuthorizationRepositor
 func (r *AuthorizationRepositoryPostgre) SignUp(ctx context.Context, input *domain.SignUpInput) error {
 	err := postgres.InTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
 		if err := r.signUp(ctx, tx, input); err != nil {
-			return nil
+			return err
 		}
 
 		if err := r.assignRole(ctx, tx, input.UserID, domain.RoleUser); err != nil {
-			return nil
+			return err
 		}
 
 		return nil

@@ -3,7 +3,6 @@ package transport
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"mime"
 	"net/http"
@@ -149,8 +148,7 @@ func EncodeGetArchiveResponse(ctx context.Context, w http.ResponseWriter, respon
 
 	_, err := io.Copy(w, resp.ArchiveReader)
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		return err
 	}
 
 	return nil
