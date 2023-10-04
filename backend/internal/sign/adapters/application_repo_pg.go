@@ -65,11 +65,11 @@ func (r *ApplicationRepositoryPostgre) ConfirmSigningInfo(ctx context.Context, s
 	err := postgres.InTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
 		no, err := assignApplicationNo(ctx, tx, spreadsheetID)
 		if err != nil {
-			return nil
+			return err
 		}
 
 		if err := confirmApplicationSigning(ctx, tx, spreadsheetID, signedAt, no); err != nil {
-			return nil
+			return err
 		}
 
 		return nil
