@@ -67,7 +67,7 @@ func (s *service) distributeDigital(ctx context.Context, legal, finance []*domai
 		}
 
 		result = append(result, &domain.AssignmentInput{
-			AssignmentID: digital.Objects[i].AssignmentID,
+			AssignmentID: assignment.AssignmentID,
 			ManagerID:    managerID,
 		})
 	}
@@ -107,9 +107,10 @@ func (s *service) distributeAssignments(ctx context.Context, assignmentType stri
 	for _, assignment := range list.Objects {
 		if assignment.RowsCompleted == 0 {
 			sheets = append(sheets, &domain.Sheet{
-				AssignmentID: assignment.AssignmentID,
-				TotalRows:    uint64(assignment.TotalRows),
-				TotalSum:     float64(assignment.TotalSum),
+				AssignmentID:  assignment.AssignmentID,
+				ApplicationID: assignment.ApplicationID,
+				TotalRows:     uint64(assignment.TotalRows),
+				TotalSum:      float64(assignment.TotalSum),
 			})
 			continue
 		}
@@ -126,9 +127,10 @@ func (s *service) distributeAssignments(ctx context.Context, assignmentType stri
 		manager.TotalSum += float64(assignment.TotalSum)
 
 		manager.Sheets = append(manager.Sheets, &domain.Sheet{
-			AssignmentID: assignment.AssignmentID,
-			TotalRows:    uint64(assignment.TotalRows),
-			TotalSum:     float64(assignment.TotalSum),
+			AssignmentID:  assignment.AssignmentID,
+			ApplicationID: assignment.ApplicationID,
+			TotalRows:     uint64(assignment.TotalRows),
+			TotalSum:      float64(assignment.TotalSum),
 		})
 	}
 
@@ -159,8 +161,9 @@ func (s *service) distributeAssignments(ctx context.Context, assignmentType stri
 	for i, assignee := range assignees.GetManagers() {
 		for _, sheet := range assignee.Sheets {
 			assignments = append(assignments, &domain.AssignmentInput{
-				AssignmentID: sheet.AssignmentID,
-				ManagerID:    managerIDs[i],
+				AssignmentID:  sheet.AssignmentID,
+				ApplicationID: sheet.ApplicationID,
+				ManagerID:     managerIDs[i],
 			})
 		}
 	}
