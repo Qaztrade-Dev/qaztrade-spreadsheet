@@ -29,7 +29,7 @@ func (s *service) GrantPermissions(ctx context.Context, req *GrantPermissionsReq
 		return err
 	}
 
-	isManagerAssigner, err := s.applicationRepo.IsManagerAssigned(ctx, manager.UserID, req.ApplicationID)
+	isManagerAssigner, err := s.applicationRepo.IsManagerAssigned(ctx, req.ApplicationID, manager.UserID)
 	if err != nil {
 		return err
 	}
