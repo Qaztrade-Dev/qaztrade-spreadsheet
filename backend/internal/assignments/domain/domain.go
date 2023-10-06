@@ -14,6 +14,7 @@ const (
 )
 
 type AssignmentInput struct {
+	AssignmentID   uint64
 	ApplicationID  string
 	SheetTitle     string
 	SheetID        uint64
@@ -36,6 +37,7 @@ type AssignmentView struct {
 	Link           string
 	SignLink       string
 	AssigneeName   string
+	AssigneeID     string
 	TotalRows      int
 	TotalSum       int
 	RowsCompleted  int
@@ -104,6 +106,8 @@ type AssignmentsRepository interface {
 
 	// InsertAssignmentResult inserts assignment result and updates along related tables
 	InsertAssignmentResult(ctx context.Context, assignmentID uint64, total uint64) error
+
+	UpdateAssignees(ctx context.Context, inputs []*AssignmentInput) error
 }
 
 type RemoveFunction func() error

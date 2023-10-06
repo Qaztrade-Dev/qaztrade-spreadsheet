@@ -373,6 +373,7 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 			"app.link",
 			"app.sign_link",
 			"u.attrs->>'full_name'",
+			"u.id",
 			"ass.total_rows",
 			"ass.total_sum",
 			"coalesce(assres.total_completed, 0)",
@@ -476,6 +477,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		tmpLink           *string
 		tmpSignLink       *string
 		tmpAssigneeName   *string
+		tmpAssigneeID     *string
 		tmpTotalRows      *int
 		tmpTotalSum       *int
 		tmpRowsCompleted  *int
@@ -496,6 +498,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		&tmpLink,
 		&tmpSignLink,
 		&tmpAssigneeName,
+		&tmpAssigneeID,
 		&tmpTotalRows,
 		&tmpTotalSum,
 		&tmpRowsCompleted,
@@ -515,6 +518,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 			Link:           postgres.Value(tmpLink),
 			SignLink:       postgres.Value(tmpSignLink),
 			AssigneeName:   postgres.Value(tmpAssigneeName),
+			AssigneeID:     postgres.Value(tmpAssigneeID),
 			TotalRows:      postgres.Value(tmpTotalRows),
 			TotalSum:       postgres.Value(tmpTotalSum),
 			RowsCompleted:  postgres.Value(tmpRowsCompleted),
@@ -528,4 +532,23 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 	}
 
 	return objects, err
+}
+
+func (r *AssignmentsRepositoryPostgres) UpdateAssignees(ctx context.Context, inputs []*domain.AssignmentInput) error {
+	if err := postgres.InTransaction(ctx, r.pg, func(ctx context.Context, tx pgx.Tx) error {
+		var query = `update "assignments" set user_id = $1 where id = $2`
+
+		for _, input := range inputs {
+			_, err := tx.Exec(ctx, query, input.ManagerID, int(input.AssignmentID))
+			if err != nil {
+				return fmt.Errorf("update user_id: %w", err)
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }

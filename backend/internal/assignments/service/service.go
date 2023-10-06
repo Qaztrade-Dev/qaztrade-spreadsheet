@@ -25,6 +25,9 @@ type Service interface {
 
 	// CheckAssignment checks the assignment
 	CheckAssignment(ctx context.Context, assignmentID uint64) error
+
+	// RedistributeAssignments redistributes assignments
+	RedistributeAssignments(ctx context.Context, assignmentType string) error
 }
 
 type service struct {

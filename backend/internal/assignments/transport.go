@@ -45,6 +45,14 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 			opts...,
 		)
 
+		redistributeAssignmentsHandler = kithttp.NewServer(
+			mdlwChainAdmin(
+				assignmentsEndpoint.MakeRedistributeAssignmentsEndpoint(svc),
+			),
+			assignmentsTransport.DecodeRedistributeAssignmentsRequest, common.EncodeResponse,
+			opts...,
+		)
+
 		getAssignmentsHandler = kithttp.NewServer(
 			mdlwChainAdmin(assignmentsEndpoint.MakeGetAssignmentsEndpoint(svc)),
 			assignmentsTransport.DecodeGetAssignmentsRequest, common.EncodeResponse,
@@ -86,6 +94,7 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 	r.Handle("/assignments/manager/", getUserAssignmentsHandler).Methods(http.MethodGet)
 	r.Handle("/assignments/admin/", getAssignmentsHandler).Methods(http.MethodGet)
 	r.Handle("/assignments/admin/batch/", createBatchHandler).Methods(http.MethodPost)
+	r.Handle("/assignments/admin/batch/redistribute", redistributeAssignmentsHandler).Methods(http.MethodPost)
 	r.Handle("/assignments/{assignment_id}/user", changeAssigneeHandler).Methods(http.MethodPatch)
 	r.Handle("/assignments/{assignment_id}/archive", getArchiveHandler).Methods(http.MethodGet)
 	r.Handle("/assignments/{assignment_id}/check", checkAssignmentHandler).Methods(http.MethodPost)

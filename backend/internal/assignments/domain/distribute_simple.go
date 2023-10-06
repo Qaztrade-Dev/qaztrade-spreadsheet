@@ -5,8 +5,16 @@ import (
 	"sort"
 )
 
+type Queue interface {
+	GetManagers() []*Manager
+}
+
 type SimplePriorityQueue struct {
 	Managers []*Manager
+}
+
+func (pq SimplePriorityQueue) GetManagers() []*Manager {
+	return pq.Managers
 }
 
 func (pq SimplePriorityQueue) Len() int { return len(pq.Managers) }
@@ -38,18 +46,12 @@ func (pq *SimplePriorityQueue) Pop() interface{} {
 	return item
 }
 
-// DistributeSimple distributes sheets based on total rows of a sheet
-func DistributeSimple(managersCount int, sheets []*Sheet) SimplePriorityQueue {
-	pq := SimplePriorityQueue{Managers: make([]*Manager, managersCount)}
-
-	for i := 0; i < managersCount; i++ {
-		pq.Managers[i] = &Manager{
-			TotalRows: 0,
-			TotalSum:  0,
-			index:     i,
-		}
+func DistributeSimpleWithData(managers []*Manager, sheets []*Sheet) SimplePriorityQueue {
+	for i := 0; i < len(managers); i++ {
+		managers[i].index = i
 	}
 
+	pq := SimplePriorityQueue{Managers: managers}
 	heap.Init(&pq)
 
 	sort.Slice(sheets, func(i, j int) bool {
@@ -65,4 +67,9 @@ func DistributeSimple(managersCount int, sheets []*Sheet) SimplePriorityQueue {
 	}
 
 	return pq
+}
+
+// DistributeSimple distributes sheets based on total rows of a sheet
+func DistributeSimple(managersCount int, sheets []*Sheet) SimplePriorityQueue {
+	return DistributeSimpleWithData(make([]*Manager, managersCount), sheets)
 }

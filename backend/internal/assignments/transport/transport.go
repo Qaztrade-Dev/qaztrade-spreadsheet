@@ -168,3 +168,12 @@ func DecodeCheckAssignmentRequest(_ context.Context, r *http.Request) (interface
 func DecodeEnqueueAssignmentsRequest(_ context.Context, _ *http.Request) (interface{}, error) {
 	return nil, nil
 }
+
+func DecodeRedistributeAssignmentsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		assignmentType = r.URL.Query().Get("assignment_type")
+	)
+	return endpoint.RedistributeAssignmentsRequest{
+		AssignmentType: assignmentType,
+	}, nil
+}

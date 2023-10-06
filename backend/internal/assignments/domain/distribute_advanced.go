@@ -14,6 +14,10 @@ type AdvancedPriorityQueue struct {
 	stdSum   float64
 }
 
+func (pq AdvancedPriorityQueue) GetManagers() []*Manager {
+	return pq.Managers
+}
+
 func (pq AdvancedPriorityQueue) Len() int { return len(pq.Managers) }
 
 func (pq AdvancedPriorityQueue) Less(i, j int) bool {
@@ -52,17 +56,12 @@ func (pq *AdvancedPriorityQueue) Pop() interface{} {
 }
 
 // DistributeAdvanced distributes sheets based on total rows and total sum of a sheet
-func DistributeAdvanced(managersCount int, sheets []*Sheet) AdvancedPriorityQueue {
-	pq := AdvancedPriorityQueue{Managers: make([]*Manager, managersCount)}
-
-	for i := 0; i < managersCount; i++ {
-		pq.Managers[i] = &Manager{
-			TotalRows: 0,
-			TotalSum:  0,
-			index:     i,
-		}
+func DistributeAdvancedWithData(managers []*Manager, sheets []*Sheet) AdvancedPriorityQueue {
+	for i := 0; i < len(managers); i++ {
+		managers[i].index = i
 	}
 
+	pq := AdvancedPriorityQueue{Managers: managers}
 	heap.Init(&pq)
 
 	meanRows, meanSum, varRows, varSum := calculateStats(sheets)
@@ -93,6 +92,11 @@ func DistributeAdvanced(managersCount int, sheets []*Sheet) AdvancedPriorityQueu
 	}
 
 	return pq
+}
+
+// DistributeAdvanced distributes sheets based on total rows and total sum of a sheet
+func DistributeAdvanced(managersCount int, sheets []*Sheet) AdvancedPriorityQueue {
+	return DistributeAdvancedWithData(make([]*Manager, managersCount), sheets)
 }
 
 func calculateStats(sheets []*Sheet) (meanRows, meanSum, varRows, varSum float64) {

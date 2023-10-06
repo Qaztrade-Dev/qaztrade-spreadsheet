@@ -1,6 +1,7 @@
 package domain
 
 type Sheet struct {
+	AssignmentID  uint64
 	ApplicationID string
 	SheetTitle    string
 	SheetID       uint64
@@ -9,6 +10,7 @@ type Sheet struct {
 }
 
 type Manager struct {
+	UserID    string
 	TotalRows uint64
 	TotalSum  float64
 	Sheets    []*Sheet
