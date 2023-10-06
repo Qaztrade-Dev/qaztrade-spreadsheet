@@ -6,16 +6,97 @@ import (
 )
 
 func (s *service) RedistributeAssignments(ctx context.Context, assignmentType string) error {
-	list, err := s.assignmentRepo.GetMany(ctx, &domain.GetManyInput{
-		AssignmentType: &assignmentType,
-	})
+	legalAssignments, err := s.distributeAssignments(ctx, domain.TypeLegal)
 	if err != nil {
 		return err
 	}
 
-	managerIDs, err := s.assignmentRepo.GetManagerIDs(ctx, assignmentType)
+	financeAssignments, err := s.distributeAssignments(ctx, domain.TypeFinance)
 	if err != nil {
 		return err
+	}
+
+	digitalAssignment, err := s.distributeDigital(ctx, legalAssignments, financeAssignments)
+	if err != nil {
+		return err
+	}
+
+	if err := s.assignmentRepo.UpdateAssignees(ctx, legalAssignments); err != nil {
+		return err
+	}
+
+	if err := s.assignmentRepo.UpdateAssignees(ctx, financeAssignments); err != nil {
+		return err
+	}
+
+	if err := s.assignmentRepo.UpdateAssignees(ctx, digitalAssignment); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) distributeDigital(ctx context.Context, legal, finance []*domain.AssignmentInput) ([]*domain.AssignmentInput, error) {
+	assignmentType := domain.TypeDigital
+
+	digital, err := s.assignmentRepo.GetMany(ctx, &domain.GetManyInput{
+		AssignmentType: &assignmentType,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		legalMap   = toMap(legal)
+		financeMap = toMap(finance)
+	)
+
+	managerID := ""
+	result := make([]*domain.AssignmentInput, 0, len(digital.Objects))
+	for i := 0; i < len(digital.Objects); i++ {
+		assignment := digital.Objects[i]
+
+		if _, ok := legalMap[assignment.AssignmentID]; !ok {
+			continue
+		}
+
+		if i%2 == 0 {
+			managerID = legalMap[assignment.AssignmentID].ManagerID
+		} else {
+			managerID = financeMap[assignment.AssignmentID].ManagerID
+		}
+
+		result = append(result, &domain.AssignmentInput{
+			AssignmentID: digital.Objects[i].AssignmentID,
+			ManagerID:    managerID,
+		})
+	}
+
+	return result, nil
+}
+
+func toMap(assignments []*domain.AssignmentInput) map[uint64]*domain.AssignmentInput {
+	assignmentsMap := make(map[uint64]*domain.AssignmentInput, len(assignments))
+
+	for _, assignment := range assignments {
+		assignment := assignment
+		assignmentsMap[assignment.AssignmentID] = assignment
+	}
+
+	return assignmentsMap
+}
+
+func (s *service) distributeAssignments(ctx context.Context, assignmentType string) ([]*domain.AssignmentInput, error) {
+	list, err := s.assignmentRepo.GetMany(ctx, &domain.GetManyInput{
+		AssignmentType: &assignmentType,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	managerIDs, err := s.assignmentRepo.GetManagerIDs(ctx, assignmentType)
+	if err != nil {
+		return nil, err
 	}
 
 	var (
@@ -84,9 +165,5 @@ func (s *service) RedistributeAssignments(ctx context.Context, assignmentType st
 		}
 	}
 
-	if err := s.assignmentRepo.UpdateAssignees(ctx, assignments); err != nil {
-		return err
-	}
-
-	return nil
+	return assignments, nil
 }
