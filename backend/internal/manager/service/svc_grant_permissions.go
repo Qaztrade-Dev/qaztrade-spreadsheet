@@ -36,7 +36,7 @@ func (s *service) GrantPermissions(ctx context.Context, req *GrantPermissionsReq
 
 	isAdmin := sliceContains(manager.Roles, authDomain.RoleAdmin)
 
-	if !(isManagerAssigner || isAdmin) {
+	if !isManagerAssigner && !isAdmin {
 		return domain.ErrorPermissionDenied
 	}
 
