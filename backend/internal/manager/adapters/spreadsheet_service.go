@@ -349,7 +349,12 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 					summary.Remarks += fmt.Sprintf(" - %s", column_add)
 				}
 				index := strings.LastIndex(j.Text, "-")
-				summary.Remarks += fmt.Sprintf(" (Клетка-%s), Замечания: %s\n", j.Cell, j.Text[:index-2])
+				idx := len(j.Text)
+				if index != -1 {
+					idx = index - 2
+				}
+
+				summary.Remarks += fmt.Sprintf(" (Клетка-%s), Замечания: %s\n", j.Cell, j.Text[:idx])
 			}
 		}
 	}
