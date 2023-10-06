@@ -2,3 +2,4 @@
 *.pdf
 .env
 .DS_Store
+dump*.sql

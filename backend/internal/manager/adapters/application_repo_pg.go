@@ -39,6 +39,25 @@ func (r *ApplicationRepositoryPostgre) EditStatus(ctx context.Context, applicati
 	return nil
 }
 
+func (r *ApplicationRepositoryPostgre) IsManagerAssigned(ctx context.Context, applicationID, userID string) (bool, error) {
+	const sql = `
+		select exists (
+			select 1
+			from "assignments"
+			where 
+				application_id = $1 and
+				user_id = $2
+		)
+	`
+
+	var tmp bool
+	if err := r.pg.QueryRow(ctx, sql, applicationID, userID).Scan(&tmp); err != nil {
+		return false, err
+	}
+
+	return tmp, nil
+}
+
 func (r *ApplicationRepositoryPostgre) GetOne(ctx context.Context, query *domain.GetManyInput) (*domain.Application, error) {
 	query.Limit = 1
 	query.Offset = 0

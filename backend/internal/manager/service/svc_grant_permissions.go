@@ -29,9 +29,30 @@ func (s *service) GrantPermissions(ctx context.Context, req *GrantPermissionsReq
 		return err
 	}
 
+	isManagerAssigner, err := s.applicationRepo.IsManagerAssigned(ctx, manager.UserID, req.ApplicationID)
+	if err != nil {
+		return err
+	}
+
+	isAdmin := sliceContains(manager.Roles, authDomain.RoleAdmin)
+
+	if !(isManagerAssigner || isAdmin) {
+		return domain.ErrorPermissionDenied
+	}
+
 	if err := s.spreadsheetSvc.GrantAdminPermissions(ctx, application.SpreadsheetID, manager.Email); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func sliceContains(slice []string, val string) bool {
+	for _, v := range slice {
+		if v == val {
+			return true
+		}
+	}
+
+	return false
 }

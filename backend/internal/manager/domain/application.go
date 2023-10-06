@@ -109,6 +109,7 @@ type ApplicationRepository interface {
 	GetMany(ctx context.Context, query *GetManyInput) (*ApplicationList, error)
 	GetOne(ctx context.Context, query *GetManyInput) (*Application, error)
 	EditStatus(ctx context.Context, applicationID, statusName string) error
+	IsManagerAssigned(ctx context.Context, applicationID, userID string) (bool, error)
 }
 
 type SpreadsheetService interface {
@@ -123,6 +124,7 @@ type SpreadsheetService interface {
 var (
 	ErrorApplicationNotSigned      = fmt.Errorf("Заявление еще не подписано!")
 	ErrorApplicationNotUnderReview = fmt.Errorf("Cтатус заявления не соответствует требованиям")
+	ErrorPermissionDenied          = fmt.Errorf("Доступ запрещен")
 )
 
 type SigningService interface {
