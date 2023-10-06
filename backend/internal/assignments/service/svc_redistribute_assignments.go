@@ -56,14 +56,14 @@ func (s *service) distributeDigital(ctx context.Context, legal, finance []*domai
 	for i := 0; i < len(digital.Objects); i++ {
 		assignment := digital.Objects[i]
 
-		if _, ok := legalMap[assignment.AssignmentID]; !ok {
+		if _, ok := legalMap[assignment.ApplicationID]; !ok {
 			continue
 		}
 
 		if i%2 == 0 {
-			managerID = legalMap[assignment.AssignmentID].ManagerID
+			managerID = legalMap[assignment.ApplicationID].ManagerID
 		} else {
-			managerID = financeMap[assignment.AssignmentID].ManagerID
+			managerID = financeMap[assignment.ApplicationID].ManagerID
 		}
 
 		result = append(result, &domain.AssignmentInput{
@@ -75,12 +75,12 @@ func (s *service) distributeDigital(ctx context.Context, legal, finance []*domai
 	return result, nil
 }
 
-func toMap(assignments []*domain.AssignmentInput) map[uint64]*domain.AssignmentInput {
-	assignmentsMap := make(map[uint64]*domain.AssignmentInput, len(assignments))
+func toMap(assignments []*domain.AssignmentInput) map[string]*domain.AssignmentInput {
+	assignmentsMap := make(map[string]*domain.AssignmentInput, len(assignments))
 
 	for _, assignment := range assignments {
 		assignment := assignment
-		assignmentsMap[assignment.AssignmentID] = assignment
+		assignmentsMap[assignment.ApplicationID] = assignment
 	}
 
 	return assignmentsMap
