@@ -31,6 +31,9 @@ func MakeGetUserAssignmentsEndpoint(s service.Service) endpoint.Endpoint {
 		input.AssigneeID = &claims.UserID
 
 		response, err := s.GetUserAssignments(ctx, &input)
+		if err != nil {
+			return &GetUserAssignmentsResponse{Err: err}, nil
+		}
 
 		return &GetUserAssignmentsResponse{
 			Err:             err,
