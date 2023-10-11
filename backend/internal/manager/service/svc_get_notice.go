@@ -23,7 +23,7 @@ func (s *service) Revision(ctx context.Context, application *domain.Application)
 		return nil, err
 	}
 
-	data, err := s.spreadsheetSvc.Comments(ctx, application)
+	data, err := s.spreadsheetSvc.Comments(ctx, application, manager.Fullname)
 	if err != nil {
 		return nil, err
 	}
