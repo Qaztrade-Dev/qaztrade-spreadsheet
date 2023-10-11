@@ -384,7 +384,7 @@ func commentOwnedByUser(commentText, managerName string) bool {
 		authorName          = commentSplit[len(commentSplit)-1]
 		managerSplit        = strings.Split(managerName, " ")
 		lastName, firstName = managerSplit[0], managerSplit[1]
-		owned               = authorName == fmt.Sprintf("%s %s", firstName, lastName)
+		owned               = (authorName == fmt.Sprintf("%s %s", firstName, lastName)) || (authorName == fmt.Sprintf("%s %s", lastName, firstName))
 	)
 
 	return owned
