@@ -130,13 +130,14 @@ select
 	ap.no as "Номер заявления",
 	ap.attrs->'application'->>'from' as "От кого",
 	ass.sheet_title as "Вид затрат",
-	sum(ass.total_rows)::bigint as "Всего строк",
-	sum(ass.total_sum)::bigint as "Заявленная сумма",
+	sum(distinct coalesce(s.value->>'rows', '0')::numeric)::bigint as "Всего строк",
+	sum(distinct coalesce(s.value->>'expenses', '0')::numeric)::bigint as "Заявленная сумма",
 	MAX(CASE WHEN ass.type = 'digital' THEN u.email ELSE NULL END) as "Оцифровка",
 	MAX(CASE WHEN ass.type = 'legal' THEN u.email ELSE NULL END) as "Юр.часть",
 	MAX(CASE WHEN ass.type = 'finance' THEN u.email ELSE NULL END) as "Фин.часть"
 from assignments ass
 join applications ap on ap.id = ass.application_id
+cross join jsonb_array_elements(ap.attrs -> 'sheets') as s
 join users u on u.id = ass.user_id
 group by 
 	ap.id, 
