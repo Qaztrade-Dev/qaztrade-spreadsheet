@@ -117,7 +117,7 @@ type SpreadsheetService interface {
 	SwitchModeEdit(ctx context.Context, spreadsheetID string) error
 	LockSheets(ctx context.Context, spreadsheetID string) error
 	GrantAdminPermissions(ctx context.Context, spreadsheetID, email string) error
-	Comments(ctx context.Context, application *Application) (*Revision, error)
+	Comments(ctx context.Context, application *Application, managerName string) (*Revision, error)
 	GetApplication(ctx context.Context, spreadsheetID string) (*ApplicationAttrs, error)
 }
 

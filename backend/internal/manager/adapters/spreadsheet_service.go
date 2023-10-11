@@ -267,7 +267,7 @@ func (s *SpreadsheetServiceGoogle) getDataFromRanges(ctx context.Context, spread
 	return datas, nil
 }
 
-func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *domain.Application) (*domain.Revision, error) {
+func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *domain.Application, managerName string) (*domain.Revision, error) {
 	applicationAttr, err := s.GetApplication(ctx, application.SpreadsheetID)
 	if err != nil {
 		return nil, err
@@ -319,6 +319,10 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 			summary.Remarks += fmt.Sprint("\u200b         Таблица " + i + ":\n")
 
 			for _, j := range comments {
+				if !commentOwnedByUser(j.Text, managerName) {
+					continue
+				}
+
 				cnt++
 				y2 := 3
 				x2 := 1
@@ -358,6 +362,7 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 			}
 		}
 	}
+
 	if err := s.SetMetadata(ctx, spreadsheetID, arrMetadata); err != nil {
 		return nil, err
 	}
@@ -368,6 +373,23 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 
 	return summary, nil
 }
+
+func commentOwnedByUser(commentText, managerName string) bool {
+	commentSplit := strings.Split(commentText, "\n\t-")
+	if len(commentSplit) == 0 {
+		return false
+	}
+
+	var (
+		authorName          = commentSplit[len(commentSplit)-1]
+		managerSplit        = strings.Split(managerName, " ")
+		lastName, firstName = managerSplit[0], managerSplit[1]
+		owned               = authorName == fmt.Sprintf("%s %s", firstName, lastName)
+	)
+
+	return owned
+}
+
 func (s *SpreadsheetServiceGoogle) deleteMetadataByKey(ctx context.Context, spreadsheetID, key string, batch *BatchUpdate) {
 	batch.WithRequest(&sheets.Request{
 		DeleteDeveloperMetadata: &sheets.DeleteDeveloperMetadataRequest{

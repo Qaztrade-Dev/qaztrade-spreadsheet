@@ -29,7 +29,7 @@ func TestComments(t *testing.T) {
 		ID:            "1",
 		SpreadsheetID: spreadsheetID,
 		No:            1,
-	})
+	}, "Оспанова Динара Шариповна")
 	require.Nil(t, err)
 	require.NotNil(t, revision)
 }
