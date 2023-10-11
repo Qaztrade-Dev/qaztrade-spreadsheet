@@ -22,6 +22,9 @@ func MakeGetAssignmentsEndpoint(s service.Service) endpoint.Endpoint {
 		input := request.(domain.GetManyInput)
 
 		response, err := s.GetAssignments(ctx, &input)
+		if err != nil {
+			return &GetAssignmentsResponse{Err: err}, nil
+		}
 
 		return &GetAssignmentsResponse{
 			Err:             err,

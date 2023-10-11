@@ -130,8 +130,8 @@ select
 	ap.no as "Номер заявления",
 	ap.attrs->'application'->>'from' as "От кого",
 	ass.sheet_title as "Вид затрат",
-	ass.total_rows as "Всего строк",
-	ass.total_sum as "Заявленная сумма",
+	sum(ass.total_rows)::bigint as "Всего строк",
+	sum(ass.total_sum)::bigint as "Заявленная сумма",
 	MAX(CASE WHEN ass.type = 'digital' THEN u.email ELSE NULL END) as "Оцифровка",
 	MAX(CASE WHEN ass.type = 'legal' THEN u.email ELSE NULL END) as "Юр.часть",
 	MAX(CASE WHEN ass.type = 'finance' THEN u.email ELSE NULL END) as "Фин.часть"
@@ -142,9 +142,7 @@ group by
 	ap.id, 
 	ap.no, 
 	ap.attrs->'application'->>'from',
-	ass.sheet_title,
-	ass.total_rows,
-	ass.total_sum
+	ass.sheet_title
 order by ap.no asc
 ```
 
