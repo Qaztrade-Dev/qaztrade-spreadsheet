@@ -71,9 +71,6 @@ select
     app.no as "№",
     app.sign_at as "Дата подписания",
     appst.value as "Статус",
-    sheet.value->>'title' as "Название",
-    sheet.value->>'expenses' as "Заявленная сумма",
-    sheet.value->>'rows' as "Строки",
     app.attrs->'application'->>'from' as "От кого",
     app.attrs->'application'->>'gov_reg' as "Гос. регистрация",
     app.attrs->'application'->>'fact_addr' as "Фактический адрес",
@@ -112,10 +109,93 @@ select
     app.attrs->'application'->>'agreement_file' as "Файл договора",
     app.attrs->'application'->>'expenses_sum' as "Сумма расходов",
     app.attrs->'application'->>'expenses_list' as "Список расходов",
-    app.attrs->'application'->>'application_date ' as "Дата подачи заявки"
+    app.attrs->'application'->>'application_date ' as "Дата подачи заявки",
+    ass."Вид затрат",
+    ass."Всего строк",
+    ass."Заявленная сумма",
+    ass."Оцифровка",
+    ass."Юр.часть",
+    ass."Фин.часть"
 from applications app
-cross join jsonb_array_elements(app.attrs -> 'sheets') as sheet
 join application_statuses appst on appst.id = app.status_id
+join assignments_agg ass on ass."Идентификатор заявления" = app.id
 where app.no > 0
 order by app.no asc
+```
+
+```sql
+CREATE OR REPLACE VIEW assignments_agg AS
+select
+	ap.id as "Идентификатор заявления",
+	ap.no as "Номер заявления",
+	ap.attrs->'application'->>'from' as "От кого",
+	ass.sheet_title as "Вид затрат",
+	ass.total_rows as "Всего строк",
+	ass.total_sum as "Заявленная сумма",
+	MAX(CASE WHEN ass.type = 'digital' THEN u.email ELSE NULL END) as "Оцифровка",
+	MAX(CASE WHEN ass.type = 'legal' THEN u.email ELSE NULL END) as "Юр.часть",
+	MAX(CASE WHEN ass.type = 'finance' THEN u.email ELSE NULL END) as "Фин.часть"
+from assignments ass
+join applications ap on ap.id = ass.application_id
+join users u on u.id = ass.user_id
+group by 
+	ap.id, 
+	ap.no, 
+	ap.attrs->'application'->>'from',
+	ass.sheet_title,
+	ass.total_rows,
+	ass.total_sum
+order by ap.no asc
+```
+
+Миграции чтобы объеденить задания по заявлениям, а не по выгрузкам:
+
+```sql
+with application_sheets as (
+    select
+        app.id,
+        string_agg(distinct ass.sheet_title, ', ') as sheet_title
+    from assignments ass
+    join applications app on app.id = ass.application_id
+    group by app.id
+)
+update assignments as ass set
+    sheet_title = appsh.sheet_title
+from application_sheets appsh
+where 
+    appsh.id = ass.application_id
+;
+
+with assignment_totals as (
+    select
+        app.id,
+        ass.type,
+        sum(ass.total_rows) as total_rows,
+        sum(ass.total_sum) as total_sum
+    from assignments ass
+    join applications app on app.id = ass.application_id
+    group by 
+        app.id, ass.type
+)
+update assignments as ass set
+    total_rows = asstot.total_rows,
+    total_sum = asstot.total_sum
+from assignment_totals asstot
+where 
+    asstot.id = ass.application_id
+    and asstot.type = ass.type
+;
+
+WITH assignments_rn AS (
+    SELECT
+        ass.id,
+        ROW_NUMBER() OVER(PARTITION BY ass.sheet_title, ass.application_id, ass.type ORDER BY (SELECT NULL)) AS rn
+    FROM assignments ass
+)
+DELETE FROM assignments
+WHERE id IN (
+    SELECT id
+    FROM assignments_rn
+    WHERE rn > 1
+);
 ```

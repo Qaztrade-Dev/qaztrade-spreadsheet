@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
 	"golang.org/x/net/context"
@@ -15,34 +16,36 @@ func (s *service) CheckAssignment(ctx context.Context, assignmentID uint64) erro
 
 	var (
 		spreadsheetID = assignment.SpreadsheetID
-		sheetTitle    = assignment.SheetTitle
 		asgnType      = assignment.AssignmentType
 	)
 
-	// На оцифровку только "Затраты на доставку транспортом"
-	if asgnType == domain.TypeDigital && sheetTitle != domain.TitleЗатратыНаДоставкуТранспортом {
-		return nil
-	}
-
-	sheetData, err := s.spreadsheetRepo.GetSheetData(ctx, spreadsheetID, sheetTitle)
-	if err != nil {
-		return fmt.Errorf("spreadsheetRepo.GetSheetData: %w", err)
-	}
-
-	var (
-		totalCompleted uint64 = 0
-		headerOffset          = 3
-		col                   = columnMapping[sheetTitle][asgnType]
-	)
-
-	for _, row := range sheetData[headerOffset:] {
-		if row[col] != "" {
-			totalCompleted++
+	sheetTitles := strings.Split(assignment.SheetTitle, ", ")
+	for _, sheetTitle := range sheetTitles {
+		// На оцифровку только "Затраты на доставку транспортом"
+		if asgnType == domain.TypeDigital && sheetTitle != domain.TitleЗатратыНаДоставкуТранспортом {
+			return nil
 		}
-	}
 
-	if err := s.assignmentRepo.InsertAssignmentResult(ctx, assignmentID, totalCompleted); err != nil {
-		return fmt.Errorf("assignmentRepo.InsertAssignmentResult: %w", err)
+		sheetData, err := s.spreadsheetRepo.GetSheetData(ctx, spreadsheetID, sheetTitle)
+		if err != nil {
+			return fmt.Errorf("spreadsheetRepo.GetSheetData: %w", err)
+		}
+
+		var (
+			totalCompleted uint64 = 0
+			headerOffset          = 3
+			col                   = columnMapping[sheetTitle][asgnType]
+		)
+
+		for _, row := range sheetData[headerOffset:] {
+			if row[col] != "" {
+				totalCompleted++
+			}
+		}
+
+		if err := s.assignmentRepo.InsertAssignmentResult(ctx, assignmentID, totalCompleted); err != nil {
+			return fmt.Errorf("assignmentRepo.InsertAssignmentResult: %w", err)
+		}
 	}
 
 	return nil
