@@ -54,9 +54,9 @@ func (s *service) CheckAssignment(ctx context.Context, assignmentID uint64) erro
 var (
 	columnMapping = map[string]map[string]int{
 		domain.TitleЗатратыНаДоставкуТранспортом: {
-			domain.TypeDigital: 135,
+			domain.TypeDigital: 136,
 			domain.TypeFinance: 130,
-			domain.TypeLegal:   136,
+			domain.TypeLegal:   135,
 		},
 		domain.TitleЗатратыНаСертификациюПредприятия: {
 			domain.TypeFinance: 60,
