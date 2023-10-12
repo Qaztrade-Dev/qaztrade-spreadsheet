@@ -18,6 +18,7 @@ type SpreadsheetService interface {
 type Application struct {
 	UserID        string
 	SpreadsheetID string
+	ApplicationNo int
 	Link          string
 	Status        string
 	CreatedAt     time.Time

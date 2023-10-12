@@ -8,6 +8,7 @@ import (
 
 type Application struct {
 	SpreadsheetID string    `json:"spreadsheet_id"`
+	ApplicationNo int       `json:"application_no"`
 	Link          string    `json:"link"`
 	Status        string    `json:"status,omitempty"`
 	CreatedAt     time.Time `json:"created_at,omitempty"`
@@ -25,6 +26,7 @@ func EncodeApplication(input *domain.Application) *Application {
 
 	return &Application{
 		SpreadsheetID: input.SpreadsheetID,
+		ApplicationNo: input.ApplicationNo,
 		Link:          input.Link,
 		Status:        input.Status,
 		CreatedAt:     input.CreatedAt,

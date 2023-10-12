@@ -187,14 +187,15 @@ func getSheetsQueryStatement(batchID int, sheetTable string) squirrel.SelectBuil
 			"a.id",
 			"e.sheet_title",
 			"safe_cast_to_int(s.value->>'sheet_id')",
-			"safe_cast_to_int(s.value->>'rows')",
-			"least(e.expenses_sum, info.tax_sum)",
+			"e.total_rows",
+			"e.total_sum",
 		).
 		From("applications a").
 		CrossJoin("jsonb_array_elements(a.attrs -> 'sheets') as s").
-		Join(sheetTable + " e on e.spreadsheet_id = a.spreadsheet_id and e.sheet_title = s.value ->> 'title'").
-		Join("applicants_info_view info on info.id = a.id")
-		// Where("a.id in (select application_id from batch_applications where batch_id = ?)", batchID)
+		Join("expenses_agg e on e.id = a.id and e.sheet_title = s.value ->> 'title'")
+		// Join(sheetTable + " e on e.spreadsheet_id = a.spreadsheet_id and e.sheet_title = s.value ->> 'title'").
+		// Join("applicants_info_view info on info.id = a.id")
+		// // Where("a.id in (select application_id from batch_applications where batch_id = ?)", batchID)
 
 	return mainStmt
 }
