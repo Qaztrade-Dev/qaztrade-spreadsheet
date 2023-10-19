@@ -92,6 +92,22 @@ func (s *SpreadsheetServiceGoogle) LockSheets(ctx context.Context, spreadsheetID
 			continue
 		}
 
+		for _, protectedRange := range sheet.ProtectedRanges {
+			protectedRange := protectedRange
+
+			if !strings.HasPrefix(protectedRange.Description, "Protecting entire sheet") {
+				continue
+			}
+
+			batch.WithRequest(
+				&sheets.Request{
+					DeleteProtectedRange: &sheets.DeleteProtectedRangeRequest{
+						ProtectedRangeId: protectedRange.ProtectedRangeId,
+					},
+				},
+			)
+		}
+
 		batch.WithRequest(
 			&sheets.Request{
 				AddProtectedRange: &sheets.AddProtectedRangeRequest{
