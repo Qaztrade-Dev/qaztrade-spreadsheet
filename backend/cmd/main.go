@@ -190,10 +190,10 @@ func main() {
 			)
 
 			fmt.Printf("processing - %d\n", assignmentID)
-			if err := assignmentsService.CheckAssignment(msg.Context(), assignmentID); err != nil {
-				fmt.Println("error happened", err)
-				return err
-			}
+			// if err := assignmentsService.CheckAssignment(msg.Context(), assignmentID); err != nil {
+			// 	fmt.Println("error happened", err)
+			// 	return err
+			// }
 
 			return nil
 		},

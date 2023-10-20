@@ -25,9 +25,9 @@ func (s *service) SendNotice(ctx context.Context, req *SendNoticeRequest) error 
 		return err
 	}
 
-	if application.Status != domain.StatusManagerReviewing {
-		return domain.ErrorApplicationNotUnderReview
-	}
+	// if application.Status != domain.StatusManagerReviewing {
+	// 	return domain.ErrorApplicationNotUnderReview
+	// }
 
 	applicationAttr, err := s.spreadsheetSvc.GetApplication(ctx, application.SpreadsheetID)
 	if err != nil {
