@@ -336,6 +336,15 @@ func (s *SpreadsheetClient) getCellValue(ctx context.Context, spreadsheetID stri
 
 	for _, s := range resp.Sheets {
 		if s.Properties.Title == SheetName {
+			if len(s.Data) == 0 || len(s.Data[0].RowData) == 0 || len(s.Data[0].RowData[0].Values) == 0 {
+				emptyString := ""
+				return &CellValue{
+					TextFormatRun:  nil,
+					FormattedValue: &emptyString,
+					Hyperlink:      &emptyString,
+				}, nil
+			}
+
 			val := s.Data[0].RowData[0].Values[0]
 			return &CellValue{
 				TextFormatRun:  val.TextFormatRuns,
