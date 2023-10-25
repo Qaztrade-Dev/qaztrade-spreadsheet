@@ -181,7 +181,16 @@ func getApplicationQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
 func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, input *domain.GetManyInput) ([]*domain.Application, error) {
-	stmt := getApplicationQueryStatement(input).Limit(input.Limit).Offset(input.Offset)
+	stmt := getApplicationQueryStatement(input)
+
+	if input.Limit > 0 {
+		stmt = stmt.Limit(input.Limit)
+	}
+
+	if input.Offset > 0 {
+		stmt = stmt.Offset(input.Offset)
+	}
+
 	sql, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, err

@@ -45,7 +45,7 @@ type AssignmentInput struct {
 type AssignmentView struct {
 	ApplicationID     string
 	AssignmentID      uint64
-	ID                uint64
+	ID                int64
 	ApplicantName     string
 	ApplicantBIN      string
 	SpreadsheetID     string

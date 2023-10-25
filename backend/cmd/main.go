@@ -215,7 +215,6 @@ func main() {
 
 			if err := assignmentsService.RespondNoticeConfirm(msg.Context(), documentID); err != nil {
 				fmt.Println("error happened", err)
-				return err
 			}
 
 			return nil

@@ -41,9 +41,13 @@ func MakeRespondNoticeEndpoint(s service.Service) endpoint.Endpoint {
 			FileSize:       input.FileSize,
 			FileName:       input.FileName,
 		})
+		if err != nil {
+			return &RespondNoticeResponse{
+				Err: err,
+			}, nil
+		}
 
 		return &RespondNoticeResponse{
-			Err:  err,
 			Link: response.SignLink,
 		}, nil
 	}

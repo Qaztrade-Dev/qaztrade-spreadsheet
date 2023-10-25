@@ -117,7 +117,7 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 	r.Handle("/assignments/{assignment_id}/check", checkAssignmentHandler).Methods(http.MethodPost)
 	r.Handle("/assignments/enqueue", enqueueAssignmentsHandler).Methods(http.MethodPost)
 	r.Handle("/assignments/{assignment_id}/notice", sendNoticeHandler).Methods(http.MethodPost)
-	r.Handle("/applications/{application_id}/replies/{assignment_type}", respondNoticeHandler).Methods(http.MethodPost)
+	r.Handle("/assignments/applications/{application_id}/replies/{assignment_type}", respondNoticeHandler).Methods(http.MethodPost)
 
 	return r
 }

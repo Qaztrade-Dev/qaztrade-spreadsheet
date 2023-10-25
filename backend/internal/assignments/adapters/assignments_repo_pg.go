@@ -386,7 +386,7 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 		).
 		From("assignments ass").
 		Join("applications app on app.id = ass.application_id").
-		Join("application_statuses appst on appst.id = ass.resolution_status_id").
+		LeftJoin("application_statuses appst on appst.id = ass.resolution_status_id").
 		Join("users u on u.id = ass.user_id").
 		LeftJoin("assignment_results assres on assres.id = ass.last_result_id").
 		OrderBy("app.no asc", "ass.type asc")
@@ -472,7 +472,7 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		// scans
 		tmpApplicationID     *string
 		tmpAssignmentID      *uint64
-		tmpID                *uint64
+		tmpID                *int64
 		tmpApplicantName     *string
 		tmpApplicantBIN      *string
 		tmpSpreadsheetID     *string
@@ -569,17 +569,11 @@ func (r *AssignmentsRepositoryPostgres) UpdateAssignees(ctx context.Context, inp
 
 func (r *AssignmentsRepositoryPostgres) SetResolution(ctx context.Context, input *domain.SetResolutionInput) error {
 	stmt := psql.Update("assignments").Where("id = ?", input.AssignmentID)
-
-	if input.ResolvedAt != nil {
-		stmt.Set("resolved_at", *input.ResolvedAt)
-	}
-
-	if input.CountdownDuration != nil {
-		stmt.Set("countdown_duration", *input.CountdownDuration)
-	}
+	stmt = stmt.Set("resolved_at", input.ResolvedAt)
+	stmt = stmt.Set("countdown_duration", input.CountdownDuration)
 
 	if input.ResolutionStatus != "" {
-		stmt.Set("resolution_status_id", psql.Select("id").From("application_statuses").Where("value = ?", input.ResolutionStatus))
+		stmt = stmt.Set("resolution_status_id", squirrel.Expr("(select id from application_statuses where value = ?)", input.ResolutionStatus))
 	}
 
 	sql, args, err := stmt.ToSql()
