@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
 	"github.com/doodocs/qaztrade/backend/internal/assignments/service"
+	"github.com/doodocs/qaztrade/backend/pkg/storage"
 	"github.com/go-kit/kit/endpoint"
 )
 
@@ -15,7 +15,7 @@ type GetArchiveRequest struct {
 
 type GetArchiveResponse struct {
 	ArchiveReader io.ReadCloser
-	RemoveFunc    domain.RemoveFunction
+	RemoveFunc    storage.RemoveFunction
 	Err           error `json:"err,omitempty"`
 }
 

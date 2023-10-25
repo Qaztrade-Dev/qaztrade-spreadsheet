@@ -177,3 +177,60 @@ func DecodeRedistributeAssignmentsRequest(_ context.Context, r *http.Request) (i
 		AssignmentType: assignmentType,
 	}, nil
 }
+
+func DecodeSendNotice(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		assignmentIDStr = mux.Vars(r)["assignment_id"]
+		assignmentID, _ = strconv.ParseUint(assignmentIDStr, 10, 0)
+	)
+
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		return nil, err
+	}
+
+	fileReader, header, err := r.FormFile("file")
+	if err != nil {
+		return nil, err
+	}
+	defer fileReader.Close()
+
+	var (
+		fileSize = header.Size
+	)
+
+	return endpoint.SendNoticeRequest{
+		AssignmentID: assignmentID,
+		FileReader:   fileReader,
+		FileSize:     fileSize,
+		FileName:     header.Filename,
+	}, nil
+}
+
+func DecodeRespondNotice(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		applicationID  = mux.Vars(r)["application_id"]
+		assignmentType = mux.Vars(r)["assignment_type"]
+	)
+
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		return nil, err
+	}
+
+	fileReader, header, err := r.FormFile("file")
+	if err != nil {
+		return nil, err
+	}
+	defer fileReader.Close()
+
+	var (
+		fileSize = header.Size
+	)
+
+	return endpoint.RespondNoticeRequest{
+		ApplicationID:  applicationID,
+		AssignmentType: assignmentType,
+		FileReader:     fileReader,
+		FileSize:       fileSize,
+		FileName:       header.Filename,
+	}, nil
+}

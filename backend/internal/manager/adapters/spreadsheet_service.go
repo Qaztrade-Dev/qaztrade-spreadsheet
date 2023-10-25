@@ -452,9 +452,9 @@ func (s *SpreadsheetServiceGoogle) deleteMetadata(ctx context.Context, spreadshe
 }
 
 func (s *SpreadsheetServiceGoogle) SetMetadata(ctx context.Context, spreadsheetID string, arrMetadata []*MetaDataCommentsPack) error {
-	if err := s.deleteMetadata(ctx, spreadsheetID); err != nil {
-		return err
-	}
+	// if err := s.deleteMetadata(ctx, spreadsheetID); err != nil {
+	// 	return err
+	// }
 
 	batch := NewBatchUpdate(s.sheetsSvc)
 	for _, i := range arrMetadata {

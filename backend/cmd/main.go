@@ -66,6 +66,7 @@ func main() {
 		signPassword          = getenv("SIGN_PASSWORD")
 		redisAddr             = getenv("REDIS_ADDR")
 		topicCheckAssignments = getenv("TOPIC_CHECK_ASSIGNMENTS", "check-assignments")
+		topicDoodocsSigned    = getenv("TOPIC_DOODOCS_SIGNED", "doodocs-signed")
 
 		addr        = ":" + port
 		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
@@ -168,6 +169,8 @@ func main() {
 			sign.WithCredentialsSA(credentialsSA),
 			sign.WithAdmin(adminAccount),
 			sign.WithServiceAccount(svcAccount),
+			sign.WithPublisher(publisher),
+			sign.WithTopicDoodocsDocumentSigned(topicDoodocsSigned),
 		)
 
 		assignmentsService = assignments.MakeService(
@@ -176,6 +179,8 @@ func main() {
 			assignments.WithStorageS3(s3AccessKey, s3SecretKey, s3Endpoint, s3Bucket),
 			assignments.WithCredentialsSA(credentialsSA),
 			assignments.WithPublisher(publisher, topicCheckAssignments),
+			assignments.WithMail(mailLogin, mailPassword),
+			assignments.WithSignCredentials(signUrlBase, signLogin, signPassword),
 		)
 	)
 
@@ -194,6 +199,24 @@ func main() {
 			// 	fmt.Println("error happened", err)
 			// 	return err
 			// }
+
+			return nil
+		},
+	)
+
+	router.AddNoPublisherHandler(
+		topicDoodocsSigned,
+		topicDoodocsSigned,
+		sub,
+		func(msg *message.Message) error {
+			var (
+				documentID = string(msg.Payload)
+			)
+
+			if err := assignmentsService.RespondNoticeConfirm(msg.Context(), documentID); err != nil {
+				fmt.Println("error happened", err)
+				return err
+			}
 
 			return nil
 		},

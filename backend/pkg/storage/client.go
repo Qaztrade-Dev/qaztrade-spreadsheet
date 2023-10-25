@@ -1,4 +1,4 @@
-package adapters
+package storage
 
 import (
 	"archive/zip"
@@ -13,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
 )
 
 type StorageS3 struct {
@@ -77,7 +76,7 @@ func customHTTPClient() *http.Client {
 	}
 }
 
-func (s *StorageS3) GetArchive(ctx context.Context, folderName string) (io.ReadCloser, domain.RemoveFunction, error) {
+func (s *StorageS3) GetArchive(ctx context.Context, folderName string) (io.ReadCloser, RemoveFunction, error) {
 	tempDir, err := os.MkdirTemp("", "archive")
 	if err != nil {
 		return nil, nil, err
@@ -213,4 +212,31 @@ func archiveDir(dirPath string) (string, error) {
 	})
 
 	return zipfile.Name(), nil
+}
+
+func (s *StorageS3) Remove(ctx context.Context, filePath string) error {
+	_, err := s.cli.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucketName),
+		Key:    aws.String(filePath),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *StorageS3) Upload(ctx context.Context, filekey string, fileSize int64, fileReader io.Reader) (string, error) {
+	_, err := s.cli.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:        aws.String(s.bucketName),
+		Body:          fileReader,
+		ContentLength: fileSize,
+		Key:           aws.String(filekey),
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/%s/%s", s.endpoint, s.bucketName, filekey), nil
 }

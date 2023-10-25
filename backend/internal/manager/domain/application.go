@@ -105,6 +105,7 @@ type ApplicationAttrs struct {
 	ExpensesList          string
 	ApplicationDate       string
 }
+
 type ApplicationRepository interface {
 	GetMany(ctx context.Context, query *GetManyInput) (*ApplicationList, error)
 	GetOne(ctx context.Context, query *GetManyInput) (*Application, error)

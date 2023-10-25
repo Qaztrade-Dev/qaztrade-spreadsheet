@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
+	"github.com/doodocs/qaztrade/backend/pkg/publisher"
 )
 
 type Service interface {
@@ -18,6 +19,7 @@ type service struct {
 	signSvc         domain.SigningService
 	spreadsheetRepo domain.SpreadsheetRepository
 	applicationRepo domain.ApplicationRepository
+	publisher       publisher.Publisher
 }
 
 func NewService(
@@ -25,11 +27,13 @@ func NewService(
 	signSvc domain.SigningService,
 	spreadsheetRepo domain.SpreadsheetRepository,
 	applicationRepo domain.ApplicationRepository,
+	publisher publisher.Publisher,
 ) Service {
 	return &service{
 		pdfSvc:          pdfSvc,
 		signSvc:         signSvc,
 		spreadsheetRepo: spreadsheetRepo,
 		applicationRepo: applicationRepo,
+		publisher:       publisher,
 	}
 }
