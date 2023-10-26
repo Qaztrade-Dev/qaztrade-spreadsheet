@@ -106,6 +106,11 @@ type SetResolutionInput struct {
 	ResolutionStatus  string
 }
 
+type UpdateStatusInput struct {
+	AssignmentID uint64
+	StatusName   string
+}
+
 type AssignmentsRepository interface {
 	GetInfo(ctx context.Context, input *GetInfoInput) (*AssignmentsInfo, error)
 	GetMany(ctx context.Context, input *GetManyInput) (*AssignmentsList, error)
@@ -134,6 +139,8 @@ type AssignmentsRepository interface {
 	SetResolution(ctx context.Context, input *SetResolutionInput) error
 
 	AllAssignmentsStatusEq(ctx context.Context, applicationID, statusName string) (bool, error)
+
+	UpdateStatus(ctx context.Context, input *UpdateStatusInput) error
 }
 
 var (

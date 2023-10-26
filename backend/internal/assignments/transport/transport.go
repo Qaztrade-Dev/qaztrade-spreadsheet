@@ -234,3 +234,23 @@ func DecodeRespondNotice(_ context.Context, r *http.Request) (interface{}, error
 		FileName:       header.Filename,
 	}, nil
 }
+
+func DecodeUpdateAssignmentStatusRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		assignmentIDStr = mux.Vars(r)["assignment_id"]
+		assignmentID, _ = strconv.ParseUint(assignmentIDStr, 10, 0)
+	)
+
+	var body struct {
+		StatusName string `json:"status_name"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+
+	return endpoint.UpdateAssignmentStatusRequest{
+		AssignmentID: assignmentID,
+		StatusName:   body.StatusName,
+	}, nil
+}

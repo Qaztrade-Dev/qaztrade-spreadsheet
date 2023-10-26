@@ -105,6 +105,12 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 			assignmentsTransport.DecodeRespondNotice, common.EncodeResponse,
 			opts...,
 		)
+
+		updateAssignmentStatusHandler = kithttp.NewServer(
+			mdlwChainManager(assignmentsEndpoint.MakeUpdateAssignmentStatusEndpoint(svc)),
+			assignmentsTransport.DecodeUpdateAssignmentStatusRequest, common.EncodeResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
@@ -118,6 +124,7 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 	r.Handle("/assignments/enqueue", enqueueAssignmentsHandler).Methods(http.MethodPost)
 	r.Handle("/assignments/{assignment_id}/notice", sendNoticeHandler).Methods(http.MethodPost)
 	r.Handle("/assignments/applications/{application_id}/replies/{assignment_type}", respondNoticeHandler).Methods(http.MethodPost)
+	r.Handle("/assignments/{assignment_id}/status", updateAssignmentStatusHandler).Methods(http.MethodPatch)
 
 	return r
 }

@@ -40,6 +40,8 @@ type Service interface {
 	RespondNotice(ctx context.Context, input *RespondNoticeRequest) (*RespondNoticeResponse, error)
 
 	RespondNoticeConfirm(ctx context.Context, documentID string) error
+
+	UpdateAssignmentStatus(ctx context.Context, input *UpdateAssignmentStatusRequest) error
 }
 
 type service struct {

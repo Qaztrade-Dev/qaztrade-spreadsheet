@@ -634,3 +634,18 @@ func (r *AssignmentsRepositoryPostgres) AllAssignmentsStatusEq(ctx context.Conte
 
 	return all, nil
 }
+
+func (r *AssignmentsRepositoryPostgres) UpdateStatus(ctx context.Context, input *domain.UpdateStatusInput) error {
+	const sql = `
+		update "assignments" set
+			resolution_status_id = (select id from application_statuses where value = $2)
+		where 
+			id = $1
+	`
+
+	if _, err := r.pg.Exec(ctx, sql, input.AssignmentID, input.StatusName); err != nil {
+		return err
+	}
+
+	return nil
+}
