@@ -390,7 +390,7 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 			"coalesce(assres.total_completed, 0)",
 			"ass.is_completed",
 			"ass.completed_at",
-			"appst.value",
+			"coalesce(appst.value, 'manager_reviewing')",
 			"ass.resolved_at",
 			"ass.countdown_duration",
 			"digital.status",
