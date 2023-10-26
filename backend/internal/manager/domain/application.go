@@ -28,6 +28,9 @@ type Application struct {
 	Attrs          interface{}
 	SignedAt       time.Time
 	CreatedAt      time.Time
+	AttrsDigital   interface{}
+	AttrsFinance   interface{}
+	AttrsLegal     interface{}
 }
 
 type ApplicationList struct {
