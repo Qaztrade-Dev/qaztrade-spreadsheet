@@ -28,6 +28,8 @@ type Application struct {
 	Attrs          interface{}
 	SignedAt       time.Time
 	CreatedAt      time.Time
+	TotalRows      int
+	TotalSum       int
 	AttrsDigital   interface{}
 	AttrsFinance   interface{}
 	AttrsLegal     interface{}

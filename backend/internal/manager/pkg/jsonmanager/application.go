@@ -15,6 +15,8 @@ type Application struct {
 	CreatedAt     time.Time   `json:"created_at,omitempty"`
 	SignedAt      time.Time   `json:"signed_at,omitempty"`
 	Attrs         interface{} `json:"attrs"`
+	TotalRows     int         `json:"total_rows"`
+	TotalSum      int         `json:"total_sum"`
 	AttrsDigital  interface{} `json:"digital,omitempty"`
 	AttrsFinance  interface{} `json:"finance"`
 	AttrsLegal    interface{} `json:"legal"`
@@ -34,6 +36,8 @@ func EncodeApplication(input *domain.Application) *Application {
 		CreatedAt:     input.CreatedAt,
 		SignedAt:      input.SignedAt,
 		Attrs:         input.Attrs,
+		TotalRows:     input.TotalRows,
+		TotalSum:      input.TotalSum,
 		AttrsDigital:  input.AttrsDigital,
 		AttrsFinance:  input.AttrsFinance,
 		AttrsLegal:    input.AttrsLegal,

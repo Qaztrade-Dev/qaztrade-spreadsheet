@@ -146,6 +146,8 @@ func getApplicationQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 			"a.sign_document_id",
 			"a.sign_at",
 			"a.attrs->'application'",
+			"apr.total_rows",
+			"apr.total_sum",
 			"apr.digital",
 			"apr.finance",
 			"apr.legal",
@@ -259,6 +261,8 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 		applSignDocumentID *string
 		applSignAt         *time.Time
 		applAttrs          *interface{}
+		applTotalRows      *int
+		applTotalSum       *int
 		attrsDigital       *interface{}
 		attrsFinance       *interface{}
 		attrsLegal         *interface{}
@@ -274,6 +278,8 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 		&applSignDocumentID,
 		&applSignAt,
 		&applAttrs,
+		&applTotalRows,
+		&applTotalSum,
 		&attrsDigital,
 		&attrsFinance,
 		&attrsLegal,
@@ -288,6 +294,8 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 			SignDocumentID: postgres.Value(applSignDocumentID),
 			SignedAt:       postgres.Value(applSignAt),
 			Attrs:          postgres.Value(applAttrs),
+			TotalRows:      postgres.Value(applTotalRows),
+			TotalSum:       postgres.Value(applTotalSum),
 			AttrsDigital:   postgres.Value(attrsDigital),
 			AttrsFinance:   postgres.Value(attrsFinance),
 			AttrsLegal:     postgres.Value(attrsLegal),
