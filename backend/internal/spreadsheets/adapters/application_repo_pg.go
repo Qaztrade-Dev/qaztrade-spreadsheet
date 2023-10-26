@@ -107,6 +107,7 @@ func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domai
 			left join application_statuses legal_status on legal_status.id = legal.resolution_status_id
 		)
 		select 
+			a.id,
 			a.created_at,
 			ast.value,
 			a.spreadsheet_id,
@@ -155,6 +156,7 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 		applications = make([]*domain.Application, 0)
 
 		// scans
+		applID            *string
 		applCreatedAt     *time.Time
 		applStatus        *string
 		applSpreadsheetID *string
@@ -166,6 +168,7 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 	)
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
+		&applID,
 		&applCreatedAt,
 		&applStatus,
 		&applSpreadsheetID,
@@ -176,6 +179,7 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 		&legalAttrs,
 	}, func(pgx.QueryFuncRow) error {
 		applications = append(applications, &domain.Application{
+			ID:            postgres.Value(applID),
 			CreatedAt:     postgres.Value(applCreatedAt),
 			Status:        postgres.Value(applStatus),
 			SpreadsheetID: postgres.Value(applSpreadsheetID),

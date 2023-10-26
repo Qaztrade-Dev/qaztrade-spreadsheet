@@ -7,6 +7,7 @@ import (
 )
 
 type Application struct {
+	ID            string    `json:"id"`
 	SpreadsheetID string    `json:"spreadsheet_id"`
 	ApplicationNo int       `json:"no"`
 	Link          string    `json:"link"`
@@ -28,6 +29,7 @@ func EncodeApplication(input *domain.Application) *Application {
 	}
 
 	return &Application{
+		ID:            input.ID,
 		SpreadsheetID: input.SpreadsheetID,
 		ApplicationNo: input.ApplicationNo,
 		Link:          input.Link,

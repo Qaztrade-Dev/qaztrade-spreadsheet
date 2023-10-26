@@ -16,6 +16,7 @@ type SpreadsheetService interface {
 }
 
 type Application struct {
+	ID            string
 	UserID        string
 	SpreadsheetID string
 	ApplicationNo int
