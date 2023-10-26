@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
+	"github.com/doodocs/qaztrade/backend/pkg/storage"
 )
 
 type GetArchiveRequest struct {
@@ -14,7 +15,7 @@ type GetArchiveRequest struct {
 
 type GetArchiveResponse struct {
 	ArchiveReader io.ReadCloser
-	RemoveFunc    domain.RemoveFunction
+	RemoveFunc    storage.RemoveFunction
 }
 
 func (s *service) GetArchive(ctx context.Context, req *GetArchiveRequest) (*GetArchiveResponse, error) {

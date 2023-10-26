@@ -22,6 +22,9 @@ type Application struct {
 	Link          string
 	Status        string
 	CreatedAt     time.Time
+	DigitalAttrs  any
+	FinanceAttrs  any
+	LegalAttrs    any
 }
 
 type ApplicationList struct {

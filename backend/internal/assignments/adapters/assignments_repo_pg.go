@@ -360,6 +360,16 @@ func getOne(ctx context.Context, querier postgres.Querier, input *domain.GetMany
 }
 
 func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBuilder {
+	const inass = `(
+		select 
+			coalesce(inappst.value, 'manager_reviewing') as status,
+			inass.application_id,
+			inass.sheet_title,
+			inass.type
+		from assignments inass
+		left join application_statuses inappst on inappst.id = inass.resolution_status_id
+	)`
+
 	mainStmt := psql.
 		Select(
 			"app.id",
@@ -380,11 +390,21 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 			"coalesce(assres.total_completed, 0)",
 			"ass.is_completed",
 			"ass.completed_at",
+			"appst.value",
+			"ass.resolved_at",
+			"ass.countdown_duration",
+			"digital.status",
+			"finance.status",
+			"legal.status",
 		).
 		From("assignments ass").
 		Join("applications app on app.id = ass.application_id").
+		LeftJoin("application_statuses appst on appst.id = ass.resolution_status_id").
 		Join("users u on u.id = ass.user_id").
 		LeftJoin("assignment_results assres on assres.id = ass.last_result_id").
+		LeftJoin(inass+" digital on digital.application_id = ass.application_id and digital.sheet_title = ass.sheet_title and digital.type = 'digital'").
+		LeftJoin(inass+" finance on finance.application_id = ass.application_id and finance.sheet_title = ass.sheet_title and finance.type = 'finance'").
+		LeftJoin(inass+" legal on legal.application_id = ass.application_id and legal.sheet_title = ass.sheet_title and legal.type = 'legal'").
 		OrderBy("app.no asc", "ass.type asc")
 
 	if input.AssigneeID != nil {
@@ -466,24 +486,30 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		objects = make([]*domain.AssignmentView, 0)
 
 		// scans
-		tmpApplicationID  *string
-		tmpAssignmentID   *uint64
-		tmpID             *uint64
-		tmpApplicantName  *string
-		tmpApplicantBIN   *string
-		tmpSpreadsheetID  *string
-		tmpSheetTitle     *string
-		tmpSheetID        *uint64
-		tmpAssignmentType *string
-		tmpLink           *string
-		tmpSignLink       *string
-		tmpAssigneeName   *string
-		tmpAssigneeID     *string
-		tmpTotalRows      *int
-		tmpTotalSum       *int
-		tmpRowsCompleted  *int
-		tmpIsCompleted    *bool
-		tmpCompletedAt    *time.Time
+		tmpApplicationID     *string
+		tmpAssignmentID      *uint64
+		tmpID                *int64
+		tmpApplicantName     *string
+		tmpApplicantBIN      *string
+		tmpSpreadsheetID     *string
+		tmpSheetTitle        *string
+		tmpSheetID           *uint64
+		tmpAssignmentType    *string
+		tmpLink              *string
+		tmpSignLink          *string
+		tmpAssigneeName      *string
+		tmpAssigneeID        *string
+		tmpTotalRows         *int
+		tmpTotalSum          *int
+		tmpRowsCompleted     *int
+		tmpIsCompleted       *bool
+		tmpCompletedAt       *time.Time
+		tmpResolutionStatus  *string
+		tmpResolvedAt        *time.Time
+		tmpCountdownDuration *time.Duration
+		tmpDigitalStatus     *string
+		tmpFinanaceStatus    *string
+		tmpLegalStatus       *string
 	)
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
@@ -505,26 +531,38 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		&tmpRowsCompleted,
 		&tmpIsCompleted,
 		&tmpCompletedAt,
+		&tmpResolutionStatus,
+		&tmpResolvedAt,
+		&tmpCountdownDuration,
+		&tmpDigitalStatus,
+		&tmpFinanaceStatus,
+		&tmpLegalStatus,
 	}, func(pgx.QueryFuncRow) error {
 		objects = append(objects, &domain.AssignmentView{
-			ApplicationID:  postgres.Value(tmpApplicationID),
-			AssignmentID:   postgres.Value(tmpAssignmentID),
-			ID:             postgres.Value(tmpID),
-			ApplicantName:  postgres.Value(tmpApplicantName),
-			ApplicantBIN:   postgres.Value(tmpApplicantBIN),
-			SpreadsheetID:  postgres.Value(tmpSpreadsheetID),
-			SheetTitle:     postgres.Value(tmpSheetTitle),
-			SheetID:        postgres.Value(tmpSheetID),
-			AssignmentType: postgres.Value(tmpAssignmentType),
-			Link:           postgres.Value(tmpLink),
-			SignLink:       postgres.Value(tmpSignLink),
-			AssigneeName:   postgres.Value(tmpAssigneeName),
-			AssigneeID:     postgres.Value(tmpAssigneeID),
-			TotalRows:      postgres.Value(tmpTotalRows),
-			TotalSum:       postgres.Value(tmpTotalSum),
-			RowsCompleted:  postgres.Value(tmpRowsCompleted),
-			IsCompleted:    postgres.Value(tmpIsCompleted),
-			CompletedAt:    postgres.Value(tmpCompletedAt),
+			ApplicationID:     postgres.Value(tmpApplicationID),
+			AssignmentID:      postgres.Value(tmpAssignmentID),
+			ID:                postgres.Value(tmpID),
+			ApplicantName:     postgres.Value(tmpApplicantName),
+			ApplicantBIN:      postgres.Value(tmpApplicantBIN),
+			SpreadsheetID:     postgres.Value(tmpSpreadsheetID),
+			SheetTitle:        postgres.Value(tmpSheetTitle),
+			SheetID:           postgres.Value(tmpSheetID),
+			AssignmentType:    postgres.Value(tmpAssignmentType),
+			Link:              postgres.Value(tmpLink),
+			SignLink:          postgres.Value(tmpSignLink),
+			AssigneeName:      postgres.Value(tmpAssigneeName),
+			AssigneeID:        postgres.Value(tmpAssigneeID),
+			TotalRows:         postgres.Value(tmpTotalRows),
+			TotalSum:          postgres.Value(tmpTotalSum),
+			RowsCompleted:     postgres.Value(tmpRowsCompleted),
+			IsCompleted:       postgres.Value(tmpIsCompleted),
+			CompletedAt:       postgres.Value(tmpCompletedAt),
+			ResolutionStatus:  postgres.Value(tmpResolutionStatus),
+			ResolvedAt:        postgres.Value(tmpResolvedAt),
+			CountdownDuration: postgres.Value(tmpCountdownDuration),
+			DigitalStatus:     postgres.Value(tmpDigitalStatus),
+			FinanceStatus:     postgres.Value(tmpFinanaceStatus),
+			LegalStatus:       postgres.Value(tmpLegalStatus),
 		})
 		return nil
 	})
@@ -548,6 +586,64 @@ func (r *AssignmentsRepositoryPostgres) UpdateAssignees(ctx context.Context, inp
 
 		return nil
 	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *AssignmentsRepositoryPostgres) SetResolution(ctx context.Context, input *domain.SetResolutionInput) error {
+	stmt := psql.Update("assignments").Where("id = ?", input.AssignmentID)
+	stmt = stmt.Set("resolved_at", input.ResolvedAt)
+	stmt = stmt.Set("countdown_duration", input.CountdownDuration)
+
+	if input.ResolutionStatus != "" {
+		stmt = stmt.Set("resolution_status_id", squirrel.Expr("(select id from application_statuses where value = ?)", input.ResolutionStatus))
+	}
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return err
+	}
+
+	if _, err := r.pg.Exec(ctx, sql, args...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *AssignmentsRepositoryPostgres) AllAssignmentsStatusEq(ctx context.Context, applicationID, statusName string) (bool, error) {
+	const sql = `
+		select
+			$2 = all(
+				select
+					ast.value
+				from assignments ass
+				join application_statuses ast on ast.id = ass.resolution_status_id
+				where 
+					ass.application_id = $1 and
+					ass.resolution_status_id is not null
+			)
+	`
+
+	var all bool
+	if err := r.pg.QueryRow(ctx, sql, applicationID, statusName).Scan(&all); err != nil {
+		return false, err
+	}
+
+	return all, nil
+}
+
+func (r *AssignmentsRepositoryPostgres) UpdateStatus(ctx context.Context, input *domain.UpdateStatusInput) error {
+	const sql = `
+		update "assignments" set
+			resolution_status_id = (select id from application_statuses where value = $2)
+		where 
+			id = $1
+	`
+
+	if _, err := r.pg.Exec(ctx, sql, input.AssignmentID, input.StatusName); err != nil {
 		return err
 	}
 

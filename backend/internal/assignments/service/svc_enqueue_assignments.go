@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
 	"golang.org/x/net/context"
@@ -17,9 +18,10 @@ func (s *service) EnqueueAssignments(ctx context.Context) error {
 		return fmt.Errorf("assignmentRepo.GetMany: %w", err)
 	}
 
-	assignmentIDs := make([]uint64, 0, assignments.Total)
+	assignmentIDs := make([][]byte, 0, assignments.Total)
 	for _, assignment := range assignments.Objects {
-		assignmentIDs = append(assignmentIDs, assignment.AssignmentID)
+		payload := strconv.FormatUint(assignment.AssignmentID, 10)
+		assignmentIDs = append(assignmentIDs, []byte(payload))
 	}
 
 	if err := s.publisher.Publish(ctx, assignmentIDs...); err != nil {

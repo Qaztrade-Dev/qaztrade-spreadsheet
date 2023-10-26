@@ -39,6 +39,11 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 			authEndpoint.MakeAuthMiddleware(authDomain.RoleManager),
 		)
 
+		mdlwChainUser = endpoint.Chain(
+			authEndpoint.MakeClaimsMiddleware[authDomain.UserClaims](jwtcli),
+			authEndpoint.MakeAuthMiddleware(authDomain.RoleUser),
+		)
+
 		createBatchHandler = kithttp.NewServer(
 			mdlwChainAdmin(assignmentsEndpoint.MakeCreateBatchEndpoint(svc)),
 			assignmentsTransport.DecodeCreateBatchRequest, common.EncodeResponse,
@@ -88,6 +93,24 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 			assignmentsTransport.DecodeEnqueueAssignmentsRequest, common.EncodeResponse,
 			opts...,
 		)
+
+		sendNoticeHandler = kithttp.NewServer(
+			mdlwChainManager(assignmentsEndpoint.MakeSendNoticeEndpoint(svc)),
+			assignmentsTransport.DecodeSendNotice, common.EncodeResponse,
+			opts...,
+		)
+
+		respondNoticeHandler = kithttp.NewServer(
+			mdlwChainUser(assignmentsEndpoint.MakeRespondNoticeEndpoint(svc)),
+			assignmentsTransport.DecodeRespondNotice, common.EncodeResponse,
+			opts...,
+		)
+
+		updateAssignmentStatusHandler = kithttp.NewServer(
+			mdlwChainManager(assignmentsEndpoint.MakeUpdateAssignmentStatusEndpoint(svc)),
+			assignmentsTransport.DecodeUpdateAssignmentStatusRequest, common.EncodeResponse,
+			opts...,
+		)
 	)
 
 	r := mux.NewRouter()
@@ -99,6 +122,9 @@ func MakeHandler(svc assignmentsService.Service, jwtcli *jwt.Client, logger kitl
 	r.Handle("/assignments/{assignment_id}/archive", getArchiveHandler).Methods(http.MethodGet)
 	r.Handle("/assignments/{assignment_id}/check", checkAssignmentHandler).Methods(http.MethodPost)
 	r.Handle("/assignments/enqueue", enqueueAssignmentsHandler).Methods(http.MethodPost)
+	r.Handle("/assignments/{assignment_id}/notice", sendNoticeHandler).Methods(http.MethodPost)
+	r.Handle("/assignments/applications/{application_id}/replies/{assignment_type}", respondNoticeHandler).Methods(http.MethodPost)
+	r.Handle("/assignments/{assignment_id}/status", updateAssignmentStatusHandler).Methods(http.MethodPatch)
 
 	return r
 }

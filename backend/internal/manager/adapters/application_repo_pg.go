@@ -93,6 +93,48 @@ func (r *ApplicationRepositoryPostgre) GetMany(ctx context.Context, query *domai
 }
 
 func getApplicationQueryStatement(input *domain.GetManyInput) squirrel.SelectBuilder {
+	const withQuery = `
+	with "application_progress" as (
+		SELECT distinct on (ass.application_id)
+			ass.application_id,
+			ass.total_rows,
+			ass.total_sum,
+			CASE 
+				WHEN digital.id IS NULL THEN NULL
+				ELSE jsonb_build_object(
+					'user_id', digital.user_id,
+					'status', COALESCE(digital_status.value, 'manager_reviewing'),
+					'resolved_at', digital.resolved_at,
+					'reply_end_at', digital.resolved_at + digital.countdown_duration
+				)
+			END as digital, 
+			CASE 
+				WHEN finance.id IS NULL THEN NULL
+				ELSE jsonb_build_object(
+					'user_id', finance.user_id,
+					'status', COALESCE(finance_status.value, 'manager_reviewing'),
+					'resolved_at', finance.resolved_at,
+					'reply_end_at', finance.resolved_at + finance.countdown_duration
+				)
+			END as finance, 
+			CASE 
+				WHEN legal.id IS NULL THEN NULL
+				ELSE jsonb_build_object(
+					'user_id', legal.user_id,
+					'status', COALESCE(legal_status.value, 'manager_reviewing'),
+					'resolved_at', legal.resolved_at,
+					'reply_end_at', legal.resolved_at + legal.countdown_duration
+				)
+			END as legal 
+		from assignments ass
+		left join assignments digital on digital.application_id = ass.application_id and digital.type = 'digital'
+		left join application_statuses digital_status on digital_status.id = digital.resolution_status_id
+		left join assignments finance on finance.application_id = ass.application_id and finance.type = 'finance'
+		left join application_statuses finance_status on finance_status.id = finance.resolution_status_id
+		left join assignments legal on legal.application_id = ass.application_id and legal.type = 'legal'
+		left join application_statuses legal_status on legal_status.id = legal.resolution_status_id
+	)`
+
 	mainStmt := psql.
 		Select(
 			"a.id",
@@ -103,35 +145,14 @@ func getApplicationQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 			"a.link",
 			"a.sign_document_id",
 			"a.sign_at",
-			`
-			jsonb_build_object(
-				'application', a.attrs->'application',
-				'sheets_agg', a.attrs->'sheets_agg',
-				'sheets', (
-					SELECT jsonb_agg(
-						jsonb_build_object(
-							'title', sub.item->>'title',
-							'sheet_id', coalesce(sub.item->>'sheet_id', '0')::double precision,
-							'rows', coalesce(sub.item->>'rows', '0')::double precision,
-							'expenses', coalesce(sub.item->>'expenses', '0')::double precision,
-							'assignee_id_digital', (
-								select user_id from assignments where sheet_id = coalesce(sub.item->>'sheet_id', '0')::bigint and type = 'digital'
-							),
-							'assignee_id_finance', (
-								select user_id from assignments where sheet_id = coalesce(sub.item->>'sheet_id', '0')::bigint and type = 'finance'
-							),
-							'assignee_id_legal', (
-								select user_id from assignments where sheet_id = coalesce(sub.item->>'sheet_id', '0')::bigint and type = 'legal'
-							)
-						)
-					)
-					FROM jsonb_array_elements(a.attrs->'sheets') sub(item)
-				)
-			)
-			`,
-		).
+			"a.attrs->'application'",
+			"apr.digital",
+			"apr.finance",
+			"apr.legal",
+		).Prefix(withQuery).
 		From("applications a").
 		Join("application_statuses ast on ast.id = a.status_id").
+		Join("application_progress apr on apr.application_id = a.id").
 		Where("a.no > 0").
 		OrderBy("a.no asc")
 
@@ -181,7 +202,16 @@ func getApplicationQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
 func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, input *domain.GetManyInput) ([]*domain.Application, error) {
-	stmt := getApplicationQueryStatement(input).Limit(input.Limit).Offset(input.Offset)
+	stmt := getApplicationQueryStatement(input)
+
+	if input.Limit > 0 {
+		stmt = stmt.Limit(input.Limit)
+	}
+
+	if input.Offset > 0 {
+		stmt = stmt.Offset(input.Offset)
+	}
+
 	sql, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, err
@@ -229,6 +259,9 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 		applSignDocumentID *string
 		applSignAt         *time.Time
 		applAttrs          *interface{}
+		attrsDigital       *interface{}
+		attrsFinance       *interface{}
+		attrsLegal         *interface{}
 	)
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
@@ -241,6 +274,9 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 		&applSignDocumentID,
 		&applSignAt,
 		&applAttrs,
+		&attrsDigital,
+		&attrsFinance,
+		&attrsLegal,
 	}, func(pgx.QueryFuncRow) error {
 		applications = append(applications, &domain.Application{
 			ID:             postgres.Value(applID),
@@ -252,6 +288,9 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 			SignDocumentID: postgres.Value(applSignDocumentID),
 			SignedAt:       postgres.Value(applSignAt),
 			Attrs:          postgres.Value(applAttrs),
+			AttrsDigital:   postgres.Value(attrsDigital),
+			AttrsFinance:   postgres.Value(attrsFinance),
+			AttrsLegal:     postgres.Value(attrsLegal),
 		})
 		return nil
 	})

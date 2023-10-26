@@ -2,15 +2,33 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"io"
 	"time"
+)
+
+var (
+	ErrUnauthorized                    = errors.New("Пользователь не имеет доступа к данной заявке")
+	ErrAssignmentNotOnFix              = errors.New("Задача не на исправлении")
+	ErrAssignmentCountdownDurationOver = errors.New("Время на исправление задачи истекло")
 )
 
 const (
 	TypeDigital = "digital"
 	TypeFinance = "finance"
 	TypeLegal   = "legal"
+
+	ResolutionStatusOnReview  = "manager_reviewing"
+	ResolutionStatusOnFix     = "user_fixing"
+	ResolutionStatusCompleted = "completed"
+	ResolutionStatusRejected  = "rejected"
+
+	ApplicationStatusOnReview = "manager_reviewing"
+	ApplicationStatusOnFix    = "user_fixing"
+)
+
+var (
+	DefaultCountdownDuration = 7 * 24 * time.Hour
 )
 
 type AssignmentInput struct {
@@ -25,24 +43,30 @@ type AssignmentInput struct {
 }
 
 type AssignmentView struct {
-	ApplicationID  string
-	AssignmentID   uint64
-	ID             uint64
-	ApplicantName  string
-	ApplicantBIN   string
-	SpreadsheetID  string
-	SheetTitle     string
-	SheetID        uint64
-	AssignmentType string
-	Link           string
-	SignLink       string
-	AssigneeName   string
-	AssigneeID     string
-	TotalRows      int
-	TotalSum       int
-	RowsCompleted  int
-	IsCompleted    bool
-	CompletedAt    time.Time
+	ApplicationID     string
+	AssignmentID      uint64
+	ID                int64
+	ApplicantName     string
+	ApplicantBIN      string
+	SpreadsheetID     string
+	SheetTitle        string
+	SheetID           uint64
+	AssignmentType    string
+	Link              string
+	SignLink          string
+	AssigneeName      string
+	AssigneeID        string
+	TotalRows         int
+	TotalSum          int
+	RowsCompleted     int
+	IsCompleted       bool
+	CompletedAt       time.Time
+	ResolutionStatus  string
+	ResolvedAt        time.Time
+	CountdownDuration time.Duration
+	DigitalStatus     string
+	FinanceStatus     string
+	LegalStatus       string
 }
 
 type AssignmentsInfo struct {
@@ -54,10 +78,6 @@ type AssignmentsList struct {
 	Total   int
 	Objects []*AssignmentView
 }
-
-var (
-	ErrAssignmentNotFound = fmt.Errorf("assignment not found")
-)
 
 type GetManyInput struct {
 	AssigneeID     *string
@@ -79,10 +99,17 @@ type ChangeAssigneeInput struct {
 	AssignmentID uint64
 }
 
-var (
-	ErrorEmptySheets   = fmt.Errorf("empty sheets")
-	ErrorEmptyManagers = fmt.Errorf("empty managers")
-)
+type SetResolutionInput struct {
+	AssignmentID      uint64
+	CountdownDuration *time.Duration
+	ResolvedAt        *time.Time
+	ResolutionStatus  string
+}
+
+type UpdateStatusInput struct {
+	AssignmentID uint64
+	StatusName   string
+}
 
 type AssignmentsRepository interface {
 	GetInfo(ctx context.Context, input *GetInfoInput) (*AssignmentsInfo, error)
@@ -108,22 +135,54 @@ type AssignmentsRepository interface {
 	InsertAssignmentResult(ctx context.Context, assignmentID uint64, total uint64) error
 
 	UpdateAssignees(ctx context.Context, inputs []*AssignmentInput) error
+
+	SetResolution(ctx context.Context, input *SetResolutionInput) error
+
+	AllAssignmentsStatusEq(ctx context.Context, applicationID, statusName string) (bool, error)
+
+	UpdateStatus(ctx context.Context, input *UpdateStatusInput) error
 }
 
-type RemoveFunction func() error
-
-type Storage interface {
-	GetArchive(ctx context.Context, folderName string) (io.ReadCloser, RemoveFunction, error)
-}
+var (
+	ErrAssignmentNotFound = fmt.Errorf("assignment not found")
+	ErrorEmptySheets      = fmt.Errorf("empty sheets")
+	ErrorEmptyManagers    = fmt.Errorf("empty managers")
+)
 
 type Publisher interface {
 	Publish(ctx context.Context, assignmentID ...uint64) error
 }
 
-var (
-	ErrorSheetNotFound = fmt.Errorf("sheet not found")
-)
+type MessageAttrs map[string]interface{}
 
-type SpreadsheetRepository interface {
-	GetSheetData(ctx context.Context, spreadsheetID string, sheetTitle string) ([][]string, error)
+type CreateMessageInput struct {
+	AssignmentID      uint64
+	UserID            string
+	Attrs             MessageAttrs
+	DoodocsDocumentID string
 }
+
+type GetMessageInput struct {
+	DoodocsDocumentID string
+}
+
+type Message struct {
+	MessageID    string
+	AssignmentID uint64
+}
+
+type UpdateMessageInput struct {
+	MessageID       string
+	DoodocsSignedAt time.Time
+	DoodocsIsSigned bool
+}
+
+type MessagesRepository interface {
+	CreateMessage(ctx context.Context, input *CreateMessageInput) error
+	GetOne(ctx context.Context, input *GetMessageInput) (*Message, error)
+	UpdateMessage(ctx context.Context, input *UpdateMessageInput) error
+}
+
+var (
+	ErrMessageNotFound = fmt.Errorf("message not found")
+)

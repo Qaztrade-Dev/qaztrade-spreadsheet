@@ -28,6 +28,9 @@ type Application struct {
 	Attrs          interface{}
 	SignedAt       time.Time
 	CreatedAt      time.Time
+	AttrsDigital   interface{}
+	AttrsFinance   interface{}
+	AttrsLegal     interface{}
 }
 
 type ApplicationList struct {
@@ -105,6 +108,7 @@ type ApplicationAttrs struct {
 	ExpensesList          string
 	ApplicationDate       string
 }
+
 type ApplicationRepository interface {
 	GetMany(ctx context.Context, query *GetManyInput) (*ApplicationList, error)
 	GetOne(ctx context.Context, query *GetManyInput) (*Application, error)

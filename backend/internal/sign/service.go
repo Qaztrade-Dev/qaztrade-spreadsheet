@@ -3,10 +3,12 @@ package sign
 import (
 	"context"
 
+	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/doodocs/qaztrade/backend/internal/sign/adapters"
 	"github.com/doodocs/qaztrade/backend/internal/sign/adapters/pdfservice"
 	"github.com/doodocs/qaztrade/backend/internal/sign/service"
 	"github.com/doodocs/qaztrade/backend/pkg/jwt"
+	"github.com/doodocs/qaztrade/backend/pkg/publisher"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -30,9 +32,10 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 	var (
 		signSvc         = adapters.NewSigningServiceDoodocs(deps.signUrlBase, deps.signLogin, deps.signPassword)
 		applicationRepo = adapters.NewApplicationRepositoryPostgre(deps.pg)
+		publisher       = publisher.NewPublisherClient(deps.publisher, deps.topicDoodocsDocumentSigned)
 	)
 
-	svc := service.NewService(pdfSvc, signSvc, spreadsheetSvc, applicationRepo)
+	svc := service.NewService(pdfSvc, signSvc, spreadsheetSvc, applicationRepo, publisher)
 	return svc
 }
 
@@ -48,6 +51,9 @@ type dependencies struct {
 
 	adminAccount string
 	svcAccount   string
+
+	publisher                  message.Publisher
+	topicDoodocsDocumentSigned string
 }
 
 func (d *dependencies) setDefaults() {
@@ -89,5 +95,17 @@ func WithAdmin(input string) Option {
 func WithServiceAccount(input string) Option {
 	return func(d *dependencies) {
 		d.svcAccount = input
+	}
+}
+
+func WithPublisher(publisher message.Publisher) Option {
+	return func(d *dependencies) {
+		d.publisher = publisher
+	}
+}
+
+func WithTopicDoodocsDocumentSigned(input string) Option {
+	return func(d *dependencies) {
+		d.topicDoodocsDocumentSigned = input
 	}
 }

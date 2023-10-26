@@ -11,6 +11,10 @@ type ConfirmSignRequest struct {
 }
 
 func (s *service) ConfirmSign(ctx context.Context, req *ConfirmSignRequest) error {
+	if err := s.publisher.Publish(ctx, []byte(req.SignDocumentID)); err != nil {
+		return err
+	}
+
 	signedAt, err := s.signSvc.GetSigningTime(ctx, req.SignDocumentID)
 	if err != nil {
 		return err

@@ -19,7 +19,7 @@ func TestComments(t *testing.T) {
 		adminAccount = getenv("ADMIN_ACCOUNT")
 		svcAccount   = getenv("SERVICE_ACCOUNT")
 		// spreadsheetID = os.Getenv("TEMPLATE_SPREADSHEET_ID")
-		spreadsheetID = "1OdfMSikfzh6NvAq2rs1bFVWgs9PWVtUBCN4gCvZgW_I"
+		spreadsheetID = "1qzB8mLsvc0dl9yC3gTskpmnubQwn__1ipT89W_s32YA"
 	)
 
 	svc, err := NewSpreadsheetService(ctx, credentialsSA, adminAccount, svcAccount)
@@ -29,7 +29,7 @@ func TestComments(t *testing.T) {
 		ID:            "1",
 		SpreadsheetID: spreadsheetID,
 		No:            1,
-	}, "Оспанова Динара Шариповна")
+	}, "Капанов Ержан Кайдарович")
 	require.Nil(t, err)
 	require.NotNil(t, revision)
 }
