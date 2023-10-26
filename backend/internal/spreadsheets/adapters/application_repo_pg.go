@@ -117,7 +117,7 @@ func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domai
 			apr.legal
 		from "applications" a
 		join "application_statuses" ast on ast.id = a.status_id
-		join "application_progress" apr on apr.application_id = a.id
+		left join "application_progress" apr on apr.application_id = a.id
 		where 
 			a.user_id = $1
 		order by a.created_at desc
