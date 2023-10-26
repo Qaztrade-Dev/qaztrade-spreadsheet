@@ -34,6 +34,10 @@ func MakeHandler(svc managerService.Service, jwtcli *jwt.Client, logger kitlog.L
 			authEndpoint.MakeAuthMiddleware(authDomain.RoleManager),
 		)
 
+		authChain = endpoint.Chain(
+			authEndpoint.MakeClaimsMiddleware[authDomain.UserClaims](jwtcli),
+		)
+
 		switchStatusHandler = kithttp.NewServer(
 			mdlwChain(managerEndpoint.MakeSwitchStatusEndpoint(svc)),
 			managerTransport.DecodeSwitchStatusRequest, common.EncodeResponse,
@@ -51,9 +55,8 @@ func MakeHandler(svc managerService.Service, jwtcli *jwt.Client, logger kitlog.L
 			managerTransport.DecodeGetDDCard, managerTransport.EncodeGetDDCardResponse,
 			opts...,
 		)
-
 		getManagersHandler = kithttp.NewServer(
-			mdlwChain(managerEndpoint.MakeGetManagersEndpoint(svc)),
+			authChain(managerEndpoint.MakeGetManagersEndpoint(svc)),
 			managerTransport.DecodeGetManagers, common.EncodeResponse,
 			opts...,
 		)

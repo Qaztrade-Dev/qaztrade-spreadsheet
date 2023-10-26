@@ -56,11 +56,10 @@ type dependencies struct {
 	adminAccount string
 	svcAccount   string
 
-	s3AccessKey         string
-	s3SecretKey         string
-	s3Endpoint          string
-	s3Bucket            string
-	originSpreadsheetID string
+	s3AccessKey string
+	s3SecretKey string
+	s3Endpoint  string
+	s3Bucket    string
 
 	mailEmail, mailPassword string
 }

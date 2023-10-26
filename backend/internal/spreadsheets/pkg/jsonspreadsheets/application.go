@@ -12,9 +12,9 @@ type Application struct {
 	Link          string    `json:"link"`
 	Status        string    `json:"status,omitempty"`
 	CreatedAt     time.Time `json:"created_at,omitempty"`
-	DigitalAttrs  any       `json:"digital_attrs,omitempty"`
-	FinanceAttrs  any       `json:"finance_attrs"`
-	LegalAttrs    any       `json:"legal_attrs"`
+	DigitalAttrs  any       `json:"digital,omitempty"`
+	FinanceAttrs  any       `json:"finance"`
+	LegalAttrs    any       `json:"legal"`
 }
 
 type ApplicationList struct {
