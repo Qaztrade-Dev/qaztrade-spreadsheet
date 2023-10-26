@@ -7,7 +7,7 @@ import (
 )
 
 type Application struct {
-	ID            string    `json:"id"`
+	ID            string    `json:"application_id"`
 	SpreadsheetID string    `json:"spreadsheet_id"`
 	ApplicationNo int       `json:"no"`
 	Link          string    `json:"link"`
