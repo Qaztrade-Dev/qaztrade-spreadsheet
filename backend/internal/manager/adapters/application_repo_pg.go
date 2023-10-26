@@ -110,22 +110,39 @@ func getApplicationQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 				'sheets', (
 					SELECT jsonb_agg(
 						jsonb_build_object(
-							'title', sub.item->>'title',
-							'sheet_id', coalesce(sub.item->>'sheet_id', '0')::double precision,
-							'rows', coalesce(sub.item->>'rows', '0')::double precision,
-							'expenses', coalesce(sub.item->>'expenses', '0')::double precision,
-							'assignee_id_digital', (
-								select user_id from assignments where sheet_id = coalesce(sub.item->>'sheet_id', '0')::bigint and type = 'digital'
+							'title', ass.sheet_title,
+							'sheet_id', ass.sheet_id,
+							'rows', ass.total_rows,
+							'expenses', ass.total_sum,
+							'digital', jsonb_build_object(
+								'user_id', digital.user_id,
+								'status', coalesce(digital_status.value, 'manager_reviewing'),
+								'resolved_at', digital.resolved_at,
+								'reply_end_at', digital.resolved_at + digital.countdown_duration
 							),
-							'assignee_id_finance', (
-								select user_id from assignments where sheet_id = coalesce(sub.item->>'sheet_id', '0')::bigint and type = 'finance'
+							'finance', jsonb_build_object(
+								'user_id', finance.user_id,
+								'status', coalesce(finance_status.value, 'manager_reviewing'),
+								'resolved_at', finance.resolved_at,
+								'reply_end_at', finance.resolved_at + finance.countdown_duration
 							),
-							'assignee_id_legal', (
-								select user_id from assignments where sheet_id = coalesce(sub.item->>'sheet_id', '0')::bigint and type = 'legal'
+							'legal', jsonb_build_object(
+								'user_id', legal.user_id,
+								'status', coalesce(legal_status.value, 'manager_reviewing'),
+								'resolved_at', legal.resolved_at,
+								'reply_end_at', legal.resolved_at + legal.countdown_duration
 							)
 						)
 					)
-					FROM jsonb_array_elements(a.attrs->'sheets') sub(item)
+					from assignments ass
+					left join assignments digital on digital.application_id = ass.application_id and digital.type = 'digital'
+					left join application_statuses digital_status on digital_status.id = digital.resolution_status_id
+					left join assignments finance on finance.application_id = ass.application_id and finance.type = 'finance'
+					left join application_statuses finance_status on finance_status.id = finance.resolution_status_id
+					left join assignments legal on legal.application_id = ass.application_id and legal.type = 'legal'
+					left join application_statuses legal_status on legal_status.id = legal.resolution_status_id
+					where ass.application_id = a.id
+					group by ass.application_id
 				)
 			)
 			`,

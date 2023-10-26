@@ -360,6 +360,16 @@ func getOne(ctx context.Context, querier postgres.Querier, input *domain.GetMany
 }
 
 func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBuilder {
+	const inass = `(
+		select 
+			coalesce(inappst.value, 'manager_reviewing') as status,
+			inass.application_id,
+			inass.sheet_title,
+			inass.type
+		from assignments inass
+		left join application_statuses inappst on inappst.id = inass.resolution_status_id
+	)`
+
 	mainStmt := psql.
 		Select(
 			"app.id",
@@ -383,12 +393,18 @@ func getAssignmentsQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 			"appst.value",
 			"ass.resolved_at",
 			"ass.countdown_duration",
+			"digital.status",
+			"finance.status",
+			"legal.status",
 		).
 		From("assignments ass").
 		Join("applications app on app.id = ass.application_id").
 		LeftJoin("application_statuses appst on appst.id = ass.resolution_status_id").
 		Join("users u on u.id = ass.user_id").
 		LeftJoin("assignment_results assres on assres.id = ass.last_result_id").
+		LeftJoin(inass+" digital on digital.application_id = ass.application_id and digital.sheet_title = ass.sheet_title and digital.type = 'digital'").
+		LeftJoin(inass+" finance on finance.application_id = ass.application_id and finance.sheet_title = ass.sheet_title and finance.type = 'finance'").
+		LeftJoin(inass+" legal on legal.application_id = ass.application_id and legal.sheet_title = ass.sheet_title and legal.type = 'legal'").
 		OrderBy("app.no asc", "ass.type asc")
 
 	if input.AssigneeID != nil {
@@ -491,6 +507,9 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		tmpResolutionStatus  *string
 		tmpResolvedAt        *time.Time
 		tmpCountdownDuration *time.Duration
+		tmpDigitalStatus     *string
+		tmpFinanaceStatus    *string
+		tmpLegalStatus       *string
 	)
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
@@ -515,6 +534,9 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 		&tmpResolutionStatus,
 		&tmpResolvedAt,
 		&tmpCountdownDuration,
+		&tmpDigitalStatus,
+		&tmpFinanaceStatus,
+		&tmpLegalStatus,
 	}, func(pgx.QueryFuncRow) error {
 		objects = append(objects, &domain.AssignmentView{
 			ApplicationID:     postgres.Value(tmpApplicationID),
@@ -538,6 +560,9 @@ func queryAssignmentViews(ctx context.Context, q postgres.Querier, sqlQuery stri
 			ResolutionStatus:  postgres.Value(tmpResolutionStatus),
 			ResolvedAt:        postgres.Value(tmpResolvedAt),
 			CountdownDuration: postgres.Value(tmpCountdownDuration),
+			DigitalStatus:     postgres.Value(tmpDigitalStatus),
+			FinanceStatus:     postgres.Value(tmpFinanaceStatus),
+			LegalStatus:       postgres.Value(tmpLegalStatus),
 		})
 		return nil
 	})

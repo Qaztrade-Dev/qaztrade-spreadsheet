@@ -64,6 +64,9 @@ type AssignmentView struct {
 	ResolutionStatus  string
 	ResolvedAt        time.Time
 	CountdownDuration time.Duration
+	DigitalStatus     string
+	FinanceStatus     string
+	LegalStatus       string
 }
 
 type AssignmentsInfo struct {

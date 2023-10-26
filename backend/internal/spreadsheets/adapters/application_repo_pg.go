@@ -68,14 +68,56 @@ func (r *ApplicationRepositoryPostgre) GetMany(ctx context.Context, query *domai
 
 func (r *ApplicationRepositoryPostgre) getMany(ctx context.Context, query *domain.ApplicationQuery) ([]*domain.Application, error) {
 	const sql = `
+		with "application_progress" as (
+			SELECT distinct on (ass.application_id)
+				ass.application_id,
+				CASE 
+					WHEN digital.id IS NULL THEN NULL
+					ELSE jsonb_build_object(
+						'user_id', digital.user_id,
+						'status', COALESCE(digital_status.value, 'manager_reviewing'),
+						'resolved_at', digital.resolved_at,
+						'reply_end_at', digital.resolved_at + digital.countdown_duration
+					)
+				END as digital, 
+				CASE 
+					WHEN finance.id IS NULL THEN NULL
+					ELSE jsonb_build_object(
+						'user_id', finance.user_id,
+						'status', COALESCE(finance_status.value, 'manager_reviewing'),
+						'resolved_at', finance.resolved_at,
+						'reply_end_at', finance.resolved_at + finance.countdown_duration
+					)
+				END as finance, 
+				CASE 
+					WHEN legal.id IS NULL THEN NULL
+					ELSE jsonb_build_object(
+						'user_id', legal.user_id,
+						'status', COALESCE(legal_status.value, 'manager_reviewing'),
+						'resolved_at', legal.resolved_at,
+						'reply_end_at', legal.resolved_at + legal.countdown_duration
+					)
+				END as legal 
+			from assignments ass
+			left join assignments digital on digital.application_id = ass.application_id and digital.type = 'digital'
+			left join application_statuses digital_status on digital_status.id = digital.resolution_status_id
+			left join assignments finance on finance.application_id = ass.application_id and finance.type = 'finance'
+			left join application_statuses finance_status on finance_status.id = finance.resolution_status_id
+			left join assignments legal on legal.application_id = ass.application_id and legal.type = 'legal'
+			left join application_statuses legal_status on legal_status.id = legal.resolution_status_id
+		)
 		select 
 			a.created_at,
 			ast.value,
 			a.spreadsheet_id,
 			a.link,
-			a.no
+			a.no,
+			apr.digital,
+			apr.finance,
+			apr.legal
 		from "applications" a
 		join "application_statuses" ast on ast.id = a.status_id
+		join "application_progress" apr on apr.application_id = a.id
 		where 
 			a.user_id = $1
 		order by a.created_at desc
@@ -118,6 +160,9 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 		applSpreadsheetID *string
 		applLink          *string
 		applNo            *int
+		digitalAttrs      *any
+		financeAttrs      *any
+		legalAttrs        *any
 	)
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
@@ -126,6 +171,9 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 		&applSpreadsheetID,
 		&applLink,
 		&applNo,
+		&digitalAttrs,
+		&financeAttrs,
+		&legalAttrs,
 	}, func(pgx.QueryFuncRow) error {
 		applications = append(applications, &domain.Application{
 			CreatedAt:     postgres.Value(applCreatedAt),
@@ -133,6 +181,9 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 			SpreadsheetID: postgres.Value(applSpreadsheetID),
 			Link:          postgres.Value(applLink),
 			ApplicationNo: postgres.Value(applNo),
+			DigitalAttrs:  postgres.Value(digitalAttrs),
+			FinanceAttrs:  postgres.Value(financeAttrs),
+			LegalAttrs:    postgres.Value(legalAttrs),
 		})
 		return nil
 	})
