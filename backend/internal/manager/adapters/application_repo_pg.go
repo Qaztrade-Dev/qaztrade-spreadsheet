@@ -139,6 +139,7 @@ func getApplicationQueryStatement(input *domain.GetManyInput) squirrel.SelectBui
 		Select(
 			"a.id",
 			"a.no",
+			"a.user_id",
 			"a.created_at",
 			"ast.value",
 			"a.spreadsheet_id",
@@ -254,6 +255,7 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 		// scans
 		applID             *string
 		applNo             *int
+		applUserID         *string
 		applCreatedAt      *time.Time
 		applStatus         *string
 		applSpreadsheetID  *string
@@ -271,6 +273,7 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
 		&applID,
 		&applNo,
+		&applUserID,
 		&applCreatedAt,
 		&applStatus,
 		&applSpreadsheetID,
@@ -287,6 +290,7 @@ func queryApplications(ctx context.Context, q postgres.Querier, sqlQuery string,
 		applications = append(applications, &domain.Application{
 			ID:             postgres.Value(applID),
 			No:             postgres.Value(applNo),
+			UserID:         postgres.Value(applUserID),
 			CreatedAt:      postgres.Value(applCreatedAt),
 			Status:         postgres.Value(applStatus),
 			SpreadsheetID:  postgres.Value(applSpreadsheetID),
