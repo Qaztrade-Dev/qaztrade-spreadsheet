@@ -110,7 +110,8 @@ func EncodeAssignmentsInfo(input *domain.AssignmentsInfo) *AssignmentsInfo {
 type DialogMessage struct {
 	SentAt          *time.Time `json:"sent_at"`
 	UserDisplayName *string    `json:"user_display_name"`
-	UserEmail       *string    `json:"user_email"`
+	UserEmail       string     `json:"user_email"`
+	UserID          string     `json:"user_id"`
 	Body            string     `json:"body"`
 }
 
@@ -120,11 +121,9 @@ func EncodeDialogMessage(input *domain.Message) *DialogMessage {
 	}
 
 	msg := &DialogMessage{
-		SentAt: timeToPtr(input.CreatedAt),
-	}
-
-	if input.Email != "" {
-		msg.UserEmail = &input.Email
+		SentAt:    timeToPtr(input.CreatedAt),
+		UserEmail: input.Email,
+		UserID:    input.UserID,
 	}
 
 	if input.FullName != "" {
