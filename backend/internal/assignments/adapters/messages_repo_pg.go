@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"context"
+	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
 	"github.com/doodocs/qaztrade/backend/pkg/postgres"
@@ -50,11 +51,24 @@ func getMessagesQueryStatement(input *domain.GetMessageInput) squirrel.SelectBui
 		Select(
 			"msg.id",
 			"msg.assignment_id",
+			"msg.created_at",
+			"msg.attrs",
+			"msg.user_id",
+			"u.email",
+			"u.attrs->>'full_name'",
+			"msg.doodocs_is_signed",
+			"msg.doodocs_signed_at",
 		).
-		From("assignment_messages msg")
+		From("assignment_messages msg").
+		Join("users u on u.id = msg.user_id").
+		OrderBy("msg.created_at asc")
 
 	if input.DoodocsDocumentID != "" {
 		mainStmt = mainStmt.Where("msg.doodocs_document_id = ?", input.DoodocsDocumentID)
+	}
+
+	if input.AssignmentID != 0 {
+		mainStmt = mainStmt.Where("msg.assignment_id = ?", input.AssignmentID)
 	}
 
 	return mainStmt
@@ -65,17 +79,38 @@ func queryMessages(ctx context.Context, q postgres.Querier, sqlQuery string, arg
 		objects = make([]*domain.Message, 0)
 
 		// scans
-		tmpMessageID    *string
-		tmpAssignmentID *uint64
+		tmpMessageID       *string
+		tmpAssignmentID    *uint64
+		tmpCreatedAt       *time.Time
+		tmpAttrs           *map[string]interface{}
+		tmpUserID          *string
+		tmpEmail           *string
+		tmpFullName        *string
+		tmpDoodocsIsSigned *bool
+		tmpDoodocsSignedAt *time.Time
 	)
 
 	_, err := q.QueryFunc(ctx, sqlQuery, args, []any{
 		&tmpMessageID,
 		&tmpAssignmentID,
+		&tmpCreatedAt,
+		&tmpAttrs,
+		&tmpUserID,
+		&tmpEmail,
+		&tmpFullName,
+		&tmpDoodocsIsSigned,
+		&tmpDoodocsSignedAt,
 	}, func(pgx.QueryFuncRow) error {
 		objects = append(objects, &domain.Message{
-			MessageID:    postgres.Value(tmpMessageID),
-			AssignmentID: postgres.Value(tmpAssignmentID),
+			MessageID:       postgres.Value(tmpMessageID),
+			AssignmentID:    postgres.Value(tmpAssignmentID),
+			CreatedAt:       postgres.Value(tmpCreatedAt),
+			Attrs:           postgres.Value(tmpAttrs),
+			UserID:          postgres.Value(tmpUserID),
+			Email:           postgres.Value(tmpEmail),
+			FullName:        postgres.Value(tmpFullName),
+			DoodocsIsSigned: postgres.Value(tmpDoodocsIsSigned),
+			DoodocsSignedAt: postgres.Value(tmpDoodocsSignedAt),
 		})
 		return nil
 	})
@@ -122,4 +157,15 @@ func (r *MessagesRepositoryPostgres) UpdateMessage(ctx context.Context, input *d
 	}
 
 	return nil
+}
+
+func (r *MessagesRepositoryPostgres) GetMany(ctx context.Context, input *domain.GetMessageInput) ([]*domain.Message, error) {
+	stmt := getMessagesQueryStatement(input)
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	return queryMessages(ctx, r.pg, sql, args...)
 }

@@ -42,6 +42,8 @@ type Service interface {
 	RespondNoticeConfirm(ctx context.Context, documentID string) error
 
 	UpdateAssignmentStatus(ctx context.Context, input *UpdateAssignmentStatusRequest) error
+
+	GetAssignmentDialog(ctx context.Context, assignmentID uint64) (*GetAssignmentDialogResponse, error)
 }
 
 type service struct {

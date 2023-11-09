@@ -1,6 +1,7 @@
 package jsondomain
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
@@ -104,6 +105,64 @@ func EncodeAssignmentsInfo(input *domain.AssignmentsInfo) *AssignmentsInfo {
 		Total:     input.Total,
 		Completed: input.Completed,
 	}
+}
+
+type DialogMessage struct {
+	SentAt          *time.Time `json:"sent_at"`
+	UserDisplayName *string    `json:"user_display_name"`
+	UserEmail       *string    `json:"user_email"`
+	Body            string     `json:"body"`
+}
+
+func EncodeDialogMessage(input *domain.Message) *DialogMessage {
+	if input == nil {
+		return nil
+	}
+
+	msg := &DialogMessage{
+		SentAt: timeToPtr(input.CreatedAt),
+	}
+
+	if input.Email != "" {
+		msg.UserEmail = &input.Email
+	}
+
+	if input.FullName != "" {
+		msg.UserDisplayName = &input.FullName
+	}
+
+	var body string
+
+	if _, ok := input.Attrs["file_url"]; ok {
+		body = dialogMsgManagerNotice(input)
+	}
+
+	if _, ok := input.Attrs["sign_link"]; ok {
+		body = dialogMsgUserRespond(input)
+	}
+
+	msg.Body = body
+
+	return msg
+}
+
+func dialogMsgManagerNotice(input *domain.Message) string {
+	return fmt.Sprintf(`Отправлен [Документ-уведомеление](%s)`, input.Attrs["file_url"])
+}
+
+func dialogMsgUserRespond(input *domain.Message) string {
+	var body string
+
+	if input.DoodocsIsSigned {
+		body = fmt.Sprintf(`Отправлено [Сопроводительное письмо](%s)`, input.Attrs["sign_link"])
+		body += "\n\n✅ Подписано"
+		body += fmt.Sprintf("\n\n✅ Время подписания: %s", input.CreatedAt.Format("02.01.2006 15:04:05"))
+	} else {
+		body = fmt.Sprintf(`Создано [Сопроводительное письмо](%s)`, input.Attrs["sign_link"])
+		body += "\n\n⏳ Ожидается подписание"
+	}
+
+	return body
 }
 
 // encoder func for encoding from D (domain) to J (json)

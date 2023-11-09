@@ -164,11 +164,19 @@ type CreateMessageInput struct {
 
 type GetMessageInput struct {
 	DoodocsDocumentID string
+	AssignmentID      uint64
 }
 
 type Message struct {
-	MessageID    string
-	AssignmentID uint64
+	MessageID       string
+	AssignmentID    uint64
+	CreatedAt       time.Time
+	Attrs           MessageAttrs
+	UserID          string
+	Email           string
+	FullName        string
+	DoodocsIsSigned bool
+	DoodocsSignedAt time.Time
 }
 
 type UpdateMessageInput struct {
@@ -180,6 +188,7 @@ type UpdateMessageInput struct {
 type MessagesRepository interface {
 	CreateMessage(ctx context.Context, input *CreateMessageInput) error
 	GetOne(ctx context.Context, input *GetMessageInput) (*Message, error)
+	GetMany(ctx context.Context, input *GetMessageInput) ([]*Message, error)
 	UpdateMessage(ctx context.Context, input *UpdateMessageInput) error
 }
 

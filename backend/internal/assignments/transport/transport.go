@@ -254,3 +254,11 @@ func DecodeUpdateAssignmentStatusRequest(_ context.Context, r *http.Request) (in
 		StatusName:   body.StatusName,
 	}, nil
 }
+
+func DecodeGetAssignmentDialogRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		assignmentIDStr = mux.Vars(r)["assignment_id"]
+	)
+
+	return strconv.ParseUint(assignmentIDStr, 10, 0)
+}
