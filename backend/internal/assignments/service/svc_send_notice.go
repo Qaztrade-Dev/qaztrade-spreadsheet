@@ -72,7 +72,7 @@ func (s *service) SendNotice(ctx context.Context, input *SendNoticeRequest) erro
 
 	if err := s.assignmentRepo.SetResolution(ctx, &domain.SetResolutionInput{
 		AssignmentID:      input.AssignmentID,
-		CountdownDuration: &domain.DefaultCountdownDuration,
+		CountdownDuration: domain.CalculateCountdown(now),
 		ResolvedAt:        &now,
 		ResolutionStatus:  domain.ResolutionStatusOnFix,
 	}); err != nil {
