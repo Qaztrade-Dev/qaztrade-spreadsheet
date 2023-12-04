@@ -49,28 +49,32 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 		if err != nil {
 			return err
 		}
-		if len(response.MatchedDeveloperMetadata) != 0 {
-			folderName := fmt.Sprintf("%s/%s", req.SpreadsheetID, req.SheetName)
-			filekey := fmt.Sprintf("%s/%s-%s", folderName, uuid.NewString(), req.FileName)
-
-			value, err := s.storage.Upload(ctx, filekey, req.FileSize, req.FileReader)
-			if err != nil {
-				log.Printf("storage.Upload error file: folderName - %s, fileName - %s\n", folderName, req.FileName)
-				return err
-			}
-
-			if err := s.sheetsRepo.UpdateCell(ctx, req.SpreadsheetID, &domain.UpdateCellInput{
-				SheetID:   req.SheetID,
-				RowIdx:    req.RowIdx,
-				ColumnIdx: req.ColumnIdx,
-				Value:     value,
-				Replace:   false,
-				SheetName: req.SheetName,
-			}); err != nil {
-				return err
-			}
+		if len(response.MatchedDeveloperMetadata) == 0 {
+			log.Printf("empty developer metadata: %s\n", key)
+			return fmt.Errorf("empty developer metadata")
 		}
 
+		var (
+			folderName = fmt.Sprintf("%s/%s", req.SpreadsheetID, req.SheetName)
+			filekey    = fmt.Sprintf("%s/%s-%s", folderName, uuid.NewString(), req.FileName)
+		)
+
+		value, err := s.storage.Upload(ctx, filekey, req.FileSize, req.FileReader)
+		if err != nil {
+			log.Printf("storage.Upload error file: folderName - %s, fileName - %s\n", folderName, req.FileName)
+			return err
+		}
+
+		if err := s.sheetsRepo.UpdateCell(ctx, req.SpreadsheetID, &domain.UpdateCellInput{
+			SheetID:   req.SheetID,
+			RowIdx:    req.RowIdx,
+			ColumnIdx: req.ColumnIdx,
+			Value:     value,
+			Replace:   false,
+			SheetName: req.SheetName,
+		}); err != nil {
+			return err
+		}
 	} else if statusApplication.Status == domain.StatusUserFilling {
 		// 2. if the cell contains url, delete the file
 		Hyperlink, err := s.sheetsRepo.GetHyperLink(ctx, req.SpreadsheetID, req.SheetName, req.RowIdx, req.ColumnIdx)
