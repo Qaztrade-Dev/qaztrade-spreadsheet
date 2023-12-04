@@ -30,10 +30,9 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 	}
 
 	if statusApplication.Status == domain.StatusUserFixing {
-
 		var (
 			filter []*sheets.DataFilter
-			key    = fmt.Sprintf("!%s-%d:%d", req.SheetName, req.RowIdx, req.ColumnIdx)
+			key    = fmt.Sprintf("!%s-%d:%d", req.SheetName[:31], req.RowIdx, req.ColumnIdx)
 		)
 
 		filter = append(filter, &sheets.DataFilter{
