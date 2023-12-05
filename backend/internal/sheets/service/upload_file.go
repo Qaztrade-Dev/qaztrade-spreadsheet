@@ -32,7 +32,7 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 	if statusApplication.Status == domain.StatusUserFixing {
 		var (
 			filter    []*sheets.DataFilter
-			sheetName = string([]rune(req.SheetName)[:31])
+			sheetName = string([]rune(strings.TrimSpace(req.SheetName))[:31])
 			key       = fmt.Sprintf("!%s-%d:%d", sheetName, req.RowIdx, req.ColumnIdx)
 		)
 
