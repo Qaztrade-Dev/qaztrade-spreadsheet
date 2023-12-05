@@ -335,6 +335,9 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 			summary.Remarks += fmt.Sprint("\u200b         Таблица " + i + ":\n")
 
 			for _, j := range comments {
+				x, y, _ := excelize.CellNameToCoordinates(j.Cell)
+				// fmt.Println(j.Text, int64(y), int64(x), commentOwnedByUser(j.Text, managerName))
+
 				if !commentOwnedByUser(j.Text, managerName) {
 					continue
 				}
@@ -342,12 +345,13 @@ func (s *SpreadsheetServiceGoogle) Comments(ctx context.Context, application *do
 				cnt++
 				y2 := 3
 				x2 := 1
-				x, y, _ := excelize.CellNameToCoordinates(j.Cell)
+
 				arrMetadata = append(arrMetadata, &MetaDataCommentsPack{
 					sheetName: i,
 					rowIdx:    int64(y),
 					colIdx:    int64(x),
 				})
+
 				if i != "Заявление" {
 					x2 = x
 					y = 3
@@ -396,14 +400,20 @@ func commentOwnedByUser(commentText, managerName string) bool {
 		return false
 	}
 
-	var (
-		authorName          = commentSplit[len(commentSplit)-1]
-		managerSplit        = strings.Split(managerName, " ")
-		lastName, firstName = managerSplit[0], managerSplit[1]
-		owned               = (authorName == fmt.Sprintf("%s %s", firstName, lastName)) || (authorName == fmt.Sprintf("%s %s", lastName, firstName))
-	)
+	for _, comment := range commentSplit {
+		var (
+			managerSplit        = strings.Split(managerName, " ")
+			lastName, firstName = managerSplit[0], managerSplit[1]
+			authorName          = comment
+			owned               = strings.HasPrefix(authorName, fmt.Sprintf("%s %s", firstName, lastName)) ||
+				strings.HasPrefix(authorName, fmt.Sprintf("%s %s", lastName, firstName))
+		)
+		if owned {
+			return true
+		}
+	}
 
-	return owned
+	return false
 }
 
 func (s *SpreadsheetServiceGoogle) deleteMetadataByKey(ctx context.Context, spreadsheetID, key string, batch *BatchUpdate) {
