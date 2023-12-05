@@ -30,10 +30,15 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 	}
 
 	if statusApplication.Status == domain.StatusUserFixing {
+		sheetName := req.SheetName
+		if len([]rune(sheetName)) > 31 {
+			fmt.Println("here?")
+			sheetName = string([]rune(req.SheetName)[:31])
+		}
+
 		var (
-			filter    []*sheets.DataFilter
-			sheetName = string([]rune(strings.TrimSpace(req.SheetName))[:31])
-			key       = fmt.Sprintf("!%s-%d:%d", sheetName, req.RowIdx, req.ColumnIdx)
+			filter []*sheets.DataFilter
+			key    = fmt.Sprintf("!%s-%d:%d", sheetName, req.RowIdx, req.ColumnIdx)
 		)
 
 		filter = append(filter, &sheets.DataFilter{
