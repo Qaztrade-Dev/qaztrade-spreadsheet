@@ -52,4 +52,5 @@ type Application struct {
 type StatusApplication struct {
 	SpreadsheetID string
 	Status        string
+	ApplicationNo int
 }

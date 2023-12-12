@@ -23,7 +23,8 @@ func NewApplicationRepositoryPostgre(pg *pgxpool.Pool) *ApplicationRepositoryPos
 func (r *ApplicationRepositoryPostgre) GetApplication(ctx context.Context, spreadsheetID string) (*domain.StatusApplication, error) {
 	const query = `
 		select
-			aps.value
+			aps.value,
+			a.no
 		from "applications" a
 		join "application_statuses" aps on aps.id = a.status_id
 		where 
@@ -32,16 +33,19 @@ func (r *ApplicationRepositoryPostgre) GetApplication(ctx context.Context, sprea
 
 	var (
 		scanStatus *string
+		scanNo     *int
 	)
 
 	if err := r.pg.QueryRow(ctx, query, spreadsheetID).Scan(
 		&scanStatus,
+		&scanNo,
 	); err != nil {
 		return nil, err
 	}
 
 	result := &domain.StatusApplication{
-		Status: postgres.Value(scanStatus),
+		Status:        postgres.Value(scanStatus),
+		ApplicationNo: postgres.Value(scanNo),
 	}
 
 	return result, nil

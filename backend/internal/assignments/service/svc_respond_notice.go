@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/assignments/domain"
 	applicationDomain "github.com/doodocs/qaztrade/backend/internal/manager/domain"
@@ -88,11 +87,11 @@ func checkAssignmentCanBeResponded(assignment *domain.AssignmentView) error {
 		return domain.ErrAssignmentNotOnFix
 	}
 
-	now := time.Now().UTC()
+	// now := time.Now().UTC()
 
-	if assignment.ResolvedAt.UTC().Add(assignment.CountdownDuration).Before(now) {
-		return domain.ErrAssignmentCountdownDurationOver
-	}
+	// if assignment.ResolvedAt.UTC().Add(assignment.CountdownDuration).Before(now) {
+	// 	return domain.ErrAssignmentCountdownDurationOver
+	// }
 
 	return nil
 }

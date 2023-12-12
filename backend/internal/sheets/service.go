@@ -3,6 +3,7 @@ package sheets
 import (
 	"context"
 
+	assignmentsAdapters "github.com/doodocs/qaztrade/backend/internal/assignments/adapters"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/adapters"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/service"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -28,8 +29,10 @@ func MakeService(ctx context.Context, opts ...Option) service.Service {
 	var (
 		applicationRepo           = adapters.NewApplicationRepositoryPostgre(deps.pg)
 		spreadsheetDevMetadataSvc = sheetsRepo.NewSpreadsheetServiceMetadata()
+		assignmentsRepo           = assignmentsAdapters.NewAssignmentsRepositoryPostgres(deps.pg)
 	)
-	svc := service.NewService(sheetsRepo, storage, applicationRepo, *spreadsheetDevMetadataSvc)
+
+	svc := service.NewService(sheetsRepo, storage, applicationRepo, *spreadsheetDevMetadataSvc, assignmentsRepo)
 	return svc
 }
 

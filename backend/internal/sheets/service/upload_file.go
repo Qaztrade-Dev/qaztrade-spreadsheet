@@ -6,7 +6,9 @@ import (
 	"io"
 	"log"
 	"strings"
+	"time"
 
+	assignmentsDomain "github.com/doodocs/qaztrade/backend/internal/assignments/domain"
 	"github.com/doodocs/qaztrade/backend/internal/sheets/domain"
 	"github.com/google/uuid"
 	"google.golang.org/api/sheets/v4"
@@ -23,6 +25,29 @@ type UploadFileRequest struct {
 	FileName      string
 }
 
+func (s *service) checkAssignments(ctx context.Context, applicationNo int) error {
+	assignments, err := s.assignmentsRepo.GetMany(ctx, &assignmentsDomain.GetManyInput{
+		ApplicationNo: &applicationNo,
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, assignment := range assignments.Objects {
+		if assignment.ResolutionStatus != assignmentsDomain.ResolutionStatusOnFix {
+			continue
+		}
+
+		now := time.Now().UTC()
+
+		if assignment.ResolvedAt.UTC().Add(assignment.CountdownDuration).Before(now) {
+			return assignmentsDomain.ErrAssignmentCountdownDurationOver
+		}
+	}
+
+	return nil
+}
+
 func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error {
 	statusApplication, err := s.applicationRepo.GetApplication(ctx, req.SpreadsheetID)
 	if err != nil {
@@ -30,9 +55,12 @@ func (s *service) UploadFile(ctx context.Context, req *UploadFileRequest) error 
 	}
 
 	if statusApplication.Status == domain.StatusUserFixing {
+		if err := s.checkAssignments(ctx, statusApplication.ApplicationNo); err != nil {
+			return err
+		}
+
 		sheetName := req.SheetName
 		if len([]rune(sheetName)) > 31 {
-			fmt.Println("here?")
 			sheetName = string([]rune(req.SheetName)[:31])
 		}
 
