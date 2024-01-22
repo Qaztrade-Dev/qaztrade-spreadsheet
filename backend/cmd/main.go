@@ -53,6 +53,7 @@ func main() {
 		postgresPassword      = getenv("POSTGRES_PASSWORD", "postgres")
 		postgresHost          = getenv("POSTGRES_HOST", "localhost")
 		postgresDatabase      = getenv("POSTGRES_DATABASE", "qaztrade")
+		postgresPort          = getenv("POSTGRES_PORT", "5432")
 		mailLogin             = getenv("MAIL_LOGIN")
 		mailPassword          = getenv("MAIL_PASSWORD")
 		svcAccount            = getenv("SERVICE_ACCOUNT")
@@ -69,7 +70,7 @@ func main() {
 		topicDoodocsSigned    = getenv("TOPIC_DOODOCS_SIGNED", "doodocs-signed")
 
 		addr        = ":" + port
-		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:5432/%s", postgresLogin, postgresPassword, postgresHost, postgresDatabase)
+		postgresURL = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", postgresLogin, postgresPassword, postgresHost, postgresPort, postgresDatabase)
 		jwtcli      = jwt.NewClient(jwtsecret)
 	)
 
