@@ -40,6 +40,7 @@ const (
 	defaultPort = "8082"
 )
 
+// The main
 func main() {
 	var (
 		ctx                   = context.Background()
