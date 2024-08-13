@@ -26,7 +26,6 @@ func (s *service) CreateSign(ctx context.Context, req *CreateSignRequest) (strin
 	/*if time.Now().UTC().After(time.Date(2023, 07, 21, 11, 00, 00, 00, time.UTC)) {
 		return "", domain.ErrorApplyClosed
 	}*/
-
 	sheets, err := s.spreadsheetRepo.GetSheets(ctx, req.SpreadsheetID)
 	if err != nil {
 		return "", err
