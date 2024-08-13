@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/doodocs/qaztrade/backend/internal/sign/domain"
 )
